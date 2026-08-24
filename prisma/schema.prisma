@@ -1,0 +1,170 @@
+// Prisma-Schema für das Kurzlink- und Tracking-System.
+// Datenbank: PostgreSQL (anbieterunabhängig über DATABASE_URL).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Wiederverwendbares Amazon-Ziel. Mehrere Kurzlinks können auf dieselbe
+/// Destination zeigen.
+model Destination {
+  id        String   @id @default(cuid())
+  /// Interne Bezeichnung, z. B. "Amazon Buchseite (DE)"
+  name      String
+  /// Vollständige HTTPS-Ziel-URL (nur erlaubte Amazon-Hosts)
+  url       String
+  /// Hostname des Ziels, z. B. "www.amazon.de" (denormalisiert für Anzeige/Filter)
+  host      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  shortLinks ShortLink[]
+
+  @@index([active])
+}
+
+/// Kurzlink mit exakt vier Kleinbuchstaben als Code.
+/// Der Code ist nach Erstellung unveränderlich (wird in der Anwendung erzwungen).
+model ShortLink {
+  id            String    @id @default(cuid())
+  /// Exakt 4 Kleinbuchstaben a-z, kryptografisch zufällig, eindeutig.
+  code          String    @unique @db.VarChar(4)
+  /// Interner Linkname, z. B. "Instagram Profil Bio"
+  name          String
+  source        String
+  medium        String?
+  campaign      String?
+  content       String?
+  note          String?
+  active        Boolean   @default(true)
+  expiresAt     DateTime? @db.Timestamptz(3)
+  destinationId String
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Restrict)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
+
+  clickEvents ClickEvent[]
+
+  @@index([destinationId])
+  @@index([active])
+  @@index([source])
+  @@index([campaign])
+}
+
+/// Serverseitig erfasster Aufruf eines Kurzlinks.
+/// Zeitstempel werden ausschließlich in UTC gespeichert; die Anzeige erfolgt
+/// in Europe/Berlin. Es werden keine vollständigen IP-Adressen gespeichert.
+model ClickEvent {
+  /// Sichere, serverseitig erzeugte Event-ID (UUID v4).
+  id            String   @id
+  shortLinkId   String
+  shortLink     ShortLink @relation(fields: [shortLinkId], references: [id], onDelete: Cascade)
+  code          String   @db.VarChar(4)
+  destinationId String
+  ts            DateTime @default(now()) @db.Timestamptz(3)
+
+  // Kopien der Link-Metadaten zum Zeitpunkt des Klicks (stabil für Auswertungen)
+  linkName String
+  source   String
+  medium   String?
+  campaign String?
+  content  String?
+
+  // Request-Daten (datensparsam)
+  referrer   String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  utmTerm     String?
+  deviceType String?
+  browser    String?
+  os         String?
+  country    String?
+  region     String?
+  city       String?
+
+  // Bot-Klassifizierung
+  isBot     Boolean @default(false)
+  botReason String?
+
+  /// Nicht rückrechenbarer, täglich rotierender HMAC-Hash für Unique-Visitor-Zählung.
+  visitorHash String?
+
+  /// Lag zum Zeitpunkt des Klicks eine gültige Marketing-Einwilligung vor?
+  consent Boolean @default(false)
+
+  // Clientseitige Bestätigungen (nur mit gültigem signiertem Event-Token setzbar)
+  bridgeLoaded    Boolean @default(false)
+  trackingFired   Boolean @default(false)
+  redirectStarted Boolean @default(false)
+  manualClick     Boolean @default(false)
+
+  @@index([ts])
+  @@index([shortLinkId, ts])
+  @@index([isBot, ts])
+  @@index([code])
+  @@index([source])
+  @@index([campaign])
+  @@index([destinationId])
+  @@index([visitorHash])
+}
+
+/// Tagesaggregat für langfristige Statistiken. Bleibt erhalten, wenn alte
+/// detaillierte ClickEvents durch die Retention gelöscht werden.
+model DailyAggregate {
+  id          String   @id @default(cuid())
+  /// Kalendertag in Europe/Berlin (als UTC-Mitternacht des lokalen Datums gespeichert)
+  date        DateTime @db.Date
+  shortLinkId String?
+  code        String?
+  source      String?
+  campaign    String?
+  humanClicks Int      @default(0)
+  botClicks   Int      @default(0)
+  uniqueVisitors Int   @default(0)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([date, shortLinkId])
+  @@index([date])
+}
+
+/// Audit-Log für alle relevanten Admin-Aktionen.
+model AuditLog {
+  id         String   @id @default(cuid())
+  ts         DateTime @default(now()) @db.Timestamptz(3)
+  actor      String
+  action     String
+  entityType String
+  entityId   String?
+  /// JSON mit den geänderten Feldern (keine Secrets)
+  changes    Json?
+
+  @@index([ts])
+  @@index([entityType, entityId])
+}
+
+/// Einfache Key-Value-Einstellungen der Anwendung (z. B. Redirect-Verzögerung).
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+/// Fehlgeschlagene und erfolgreiche Loginversuche für Rate Limiting.
+/// Enthält keine IP-Adressen, sondern nur einen HMAC-Hash.
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  /// HMAC-Hash der Client-Kennung (IP + User-Agent), nicht rückrechenbar
+  identifier String
+  success    Boolean
+  ts         DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([identifier, ts])
+}

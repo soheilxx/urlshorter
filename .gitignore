@@ -1,0 +1,31 @@
+# Dependencies
+/node_modules
+
+# Next.js
+/.next/
+/out/
+
+# Produktion
+/build
+
+# Environment (niemals committen – enthält Secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Tests
+/playwright-report/
+/test-results/
+/coverage/
+
+# Lokale Postgres-Testinstanz
+/pgdata/
+
+# Sonstiges
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+*.pem
+npm-debug.log*
