@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getDestinationHostsHint } from "@/lib/env";
 import { formatBerlinDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Ziel bearbeiten" };
@@ -49,6 +50,7 @@ export default async function DestinationDetailPage({
           <DestinationEditForm
             destination={{ id: destination.id, name: destination.name, url: destination.url }}
             linkCount={destination.shortLinks.length}
+            hostsHint={getDestinationHostsHint()}
           />
         </CardContent>
       </Card>

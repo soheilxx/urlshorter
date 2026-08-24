@@ -89,6 +89,12 @@ export default async function SettingsPage() {
                 </dd>
               </div>
               <div className="flex items-center justify-between">
+                <dt className="text-zinc-600">Reddit Pixel</dt>
+                <dd>
+                  <ConfigBadge configured={Boolean(env.REDDIT_PIXEL_ID)} />
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
                 <dt className="text-zinc-600">Consent-Modus</dt>
                 <dd>
                   <Badge variant={env.TRACKING_CONSENT_MODE === "required" ? "success" : "warning"}>
@@ -121,7 +127,9 @@ export default async function SettingsPage() {
               <div className="flex items-center justify-between">
                 <dt className="text-zinc-600">Erlaubte Ziel-Hosts</dt>
                 <dd className="max-w-[220px] truncate text-right font-mono text-xs">
-                  {env.allowedDestinationHosts.join(", ")}
+                  {env.allowedDestinationHosts.includes("*")
+                    ? "Alle Hosts (nur HTTPS)"
+                    : env.allowedDestinationHosts.join(", ")}
                 </dd>
               </div>
             </dl>

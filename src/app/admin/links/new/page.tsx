@@ -57,7 +57,7 @@ export default async function NewLinkPage({
           <CardContent className="py-8 text-center text-sm text-zinc-500">
             Es gibt noch kein aktives Ziel.{" "}
             <Link href="/admin/destinations" className="font-medium text-zinc-900 underline">
-              Lege zuerst eine Amazon-Destination an.
+              Lege zuerst ein Ziel an.
             </Link>
           </CardContent>
         </Card>

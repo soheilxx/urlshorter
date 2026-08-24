@@ -13,6 +13,7 @@ export interface BridgeTrackingConfig {
   gtmContainerId: string | null;
   ga4MeasurementId: string | null;
   metaPixelId: string | null;
+  redditPixelId: string | null;
 }
 
 export interface BridgeEventParams {
@@ -42,6 +43,7 @@ export interface BridgePageOptions {
 const GTM_ID_PATTERN = /^GTM-[A-Z0-9]{4,12}$/;
 const GA4_ID_PATTERN = /^G-[A-Z0-9]{4,16}$/;
 const META_PIXEL_PATTERN = /^[0-9]{5,20}$/;
+const REDDIT_PIXEL_PATTERN = /^a2_[a-z0-9]{4,24}$/i;
 
 export function sanitizeTrackingConfig(config: BridgeTrackingConfig): BridgeTrackingConfig {
   return {
@@ -55,6 +57,10 @@ export function sanitizeTrackingConfig(config: BridgeTrackingConfig): BridgeTrac
         : null,
     metaPixelId:
       config.metaPixelId && META_PIXEL_PATTERN.test(config.metaPixelId) ? config.metaPixelId : null,
+    redditPixelId:
+      config.redditPixelId && REDDIT_PIXEL_PATTERN.test(config.redditPixelId)
+        ? config.redditPixelId
+        : null,
   };
 }
 
@@ -65,11 +71,13 @@ export function sanitizeTrackingConfig(config: BridgeTrackingConfig): BridgeTrac
 export function buildBridgeCsp(extraHosts: string[]): string {
   const extra = extraHosts.map((h) => `https://${h.replace(/^https?:\/\//, "")}`).join(" ");
   const scriptSrc =
-    `script-src 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net` +
+    `script-src 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net ` +
+    `https://www.redditstatic.com` +
     (extra ? ` ${extra}` : "");
   const connectSrc =
     `connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com ` +
-    `https://*.analytics.google.com https://stats.g.doubleclick.net https://www.facebook.com` +
+    `https://*.analytics.google.com https://stats.g.doubleclick.net https://www.facebook.com ` +
+    `https://alb.reddit.com https://pixel.redditmedia.com https://www.redditstatic.com` +
     (extra ? ` ${extra}` : "");
   return [
     "default-src 'none'",
@@ -83,10 +91,27 @@ export function buildBridgeCsp(extraHosts: string[]): string {
   ].join("; ");
 }
 
+/**
+ * Anzeigename des Ziels auf der Bridge-Page: "Amazon" für Amazon-Hosts,
+ * sonst der bereinigte Hostname (z. B. "example.com").
+ */
+export function destinationLabel(host: string): string {
+  const normalized = (host ?? "").toLowerCase().replace(/\.+$/, "");
+  if (
+    /(^|\.)amazon\.[a-z.]{2,10}$/.test(normalized) ||
+    /(^|\.)amzn\.[a-z.]{2,10}$/.test(normalized)
+  ) {
+    return "Amazon";
+  }
+  const cleaned = normalized.replace(/^www\./, "");
+  return cleaned.length > 0 ? cleaned : "deinem Ziel";
+}
+
 export function renderBridgePage(opts: BridgePageOptions): string {
   const tracking = sanitizeTrackingConfig(opts.tracking);
   const dest = opts.destinationUrl;
   const destHtml = escapeHtml(dest);
+  const label = escapeHtml(destinationLabel(opts.eventParams.destination_host));
   const delayMs = Math.min(2000, Math.max(300, Math.round(opts.delayMs)));
   const noscriptDelaySeconds = Math.max(0, Math.round(delayMs / 1000));
 
@@ -100,6 +125,7 @@ export function renderBridgePage(opts: BridgePageOptions): string {
     // doppelte Event-Auslösung über den Container).
     ga4: opts.hasMarketingConsent && !tracking.gtmContainerId ? tracking.ga4MeasurementId : null,
     meta: opts.hasMarketingConsent ? tracking.metaPixelId : null,
+    reddit: opts.hasMarketingConsent ? tracking.redditPixelId : null,
     params: opts.eventParams,
   };
 
@@ -118,7 +144,7 @@ export function renderBridgePage(opts: BridgePageOptions): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>Weiterleitung zu Amazon …</title>
+<title>Weiterleitung zu ${label} …</title>
 <noscript><meta http-equiv="refresh" content="${noscriptDelaySeconds};url=${destHtml}"></noscript>
 <style>
 :root{color-scheme:light dark}
@@ -143,9 +169,9 @@ footer a{color:inherit;text-decoration:underline;margin:0 8px}
 </head>
 <body>
 <div class="spinner" aria-hidden="true"></div>
-<h1>Du wirst zu Amazon weitergeleitet …</h1>
+<h1>Du wirst zu ${label} weitergeleitet …</h1>
 <p class="hint">Falls die automatische Weiterleitung nicht startet, nutze bitte den Button.</p>
-<a class="btn" id="go" href="${destHtml}">Jetzt zu Amazon</a>
+<a class="btn" id="go" href="${destHtml}">Jetzt zu ${label}</a>
 ${footerLinks.length > 0 ? `<footer>${footerLinks.join(" · ")}</footer>` : ""}
 <script>
 (function(){
@@ -204,6 +230,17 @@ try{
     fbq("init",C.meta);
     fbq("track","PageView",{},{eventID:C.params.event_id});
     fbq("trackCustom","AmazonOutboundClick",C.params,{eventID:C.params.event_id});
+  }
+  if(C.reddit){
+    trackingAttempted=true;
+    !function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?
+    p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];
+    var t=d.createElement("script");
+    t.src="https://www.redditstatic.com/ads/pixel.js";t.async=!0;
+    var s=d.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}}(window,document);
+    rdt("init",C.reddit);
+    rdt("track","PageVisit");
+    rdt("track","Custom",{customEventName:"OutboundClick",conversionId:C.params.event_id});
   }
 }catch(e){}
 if(trackingAttempted){beacon("tracking");}

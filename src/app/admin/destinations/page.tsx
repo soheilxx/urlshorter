@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getDestinationHostsHint } from "@/lib/env";
 import { formatBerlinDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Ziele" };
@@ -28,8 +29,7 @@ export default async function DestinationsPage() {
       <div>
         <h1 className="text-xl font-bold tracking-tight">Ziele (Destinations)</h1>
         <p className="text-sm text-zinc-500">
-          Wiederverwendbare Amazon-Ziele – beliebig viele Kurzlinks können auf dasselbe Ziel
-          verweisen.
+          Wiederverwendbare Ziel-URLs – beliebig viele Kurzlinks können auf dasselbe Ziel verweisen.
         </p>
       </div>
 
@@ -39,7 +39,7 @@ export default async function DestinationsPage() {
             <CardTitle>Neues Ziel anlegen</CardTitle>
           </CardHeader>
           <CardContent>
-            <DestinationCreateForm />
+            <DestinationCreateForm hostsHint={getDestinationHostsHint()} />
           </CardContent>
         </Card>
 

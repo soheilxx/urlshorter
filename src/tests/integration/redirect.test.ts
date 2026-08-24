@@ -158,10 +158,11 @@ describe("Redirect-Route /{code}", () => {
     const dest = await createTestDestination();
     await createTestLink(dest.id, { code: "abcd" });
 
-    // Ohne Consent-Cookie (Modus "required", META_PIXEL_ID ist in .env.test gesetzt)
+    // Ohne Consent-Cookie (Modus "required"; META/REDDIT-IDs sind in .env.test gesetzt)
     const withoutConsent = await GET(buildRedirectRequest("abcd"), routeContext("abcd"));
     const htmlWithout = await withoutConsent.text();
     expect(htmlWithout).toContain('"meta":null');
+    expect(htmlWithout).toContain('"reddit":null');
 
     // Mit gültigem Consent-Cookie
     const withConsent = await GET(
@@ -170,6 +171,7 @@ describe("Redirect-Route /{code}", () => {
     );
     const htmlWith = await withConsent.text();
     expect(htmlWith).toContain('"meta":"123456789012345"');
+    expect(htmlWith).toContain('"reddit":"a2_testpixel1"');
 
     const events = await prisma.clickEvent.findMany();
     expect(events).toHaveLength(2);

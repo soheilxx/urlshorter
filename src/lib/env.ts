@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { DEFAULT_ALLOWED_HOSTS, parseAllowedHosts } from "@/lib/url-validation";
+import { allowsAllHosts, DEFAULT_ALLOWED_HOSTS, parseAllowedHosts } from "@/lib/url-validation";
 
 /**
  * Zentrale, defensive Env-Verarbeitung.
@@ -43,6 +43,7 @@ const envSchema = z.object({
   GTM_CONTAINER_ID: optionalString,
   GA4_MEASUREMENT_ID: optionalString,
   META_PIXEL_ID: optionalString,
+  REDDIT_PIXEL_ID: optionalString,
   TRACKING_CONSENT_MODE: z
     .string()
     .optional()
@@ -82,6 +83,14 @@ export function resetEnvCache(): void {
 }
 
 export { DEFAULT_ALLOWED_HOSTS };
+
+/** Hinweistext zur Ziel-URL-Beschränkung für die Admin-Formulare. */
+export function getDestinationHostsHint(): string {
+  const env = getEnv();
+  return allowsAllHosts(env.allowedDestinationHosts)
+    ? "Beliebige HTTPS-Ziel-URL erlaubt (Amazon, Landingpages, Shops …)."
+    : `Erlaubte Hosts: ${env.allowedDestinationHosts.join(", ")} (inkl. Subdomains).`;
+}
 
 /** Anzeigename der Anwendung (Hostname der PUBLIC_BASE_URL, z. B. "lizenzzumerfolg.com"). */
 export function getPublicHostname(): string {

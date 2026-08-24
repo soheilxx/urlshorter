@@ -2,8 +2,7 @@ import { Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { generateUniqueShortCode, SHORT_CODE_PATTERN } from "@/lib/shortcode";
-import { validateDestinationUrl } from "@/lib/url-validation";
-import { DEFAULT_ALLOWED_HOSTS } from "@/lib/url-validation";
+import { AMAZON_HOSTS, validateDestinationUrl } from "@/lib/url-validation";
 import { createTestDestination, createTestLink, truncateAll } from "./helpers";
 
 describe("Kurzlinks und Destinations (Datenbank)", () => {
@@ -50,10 +49,8 @@ describe("Kurzlinks und Destinations (Datenbank)", () => {
   });
 
   it("eine Destination mit ungültiger URL wird bereits durch die Validierung abgelehnt", () => {
-    expect(
-      validateDestinationUrl("https://amazon.de.example.com/x", DEFAULT_ALLOWED_HOSTS).ok,
-    ).toBe(false);
-    expect(validateDestinationUrl("http://www.amazon.de/x", DEFAULT_ALLOWED_HOSTS).ok).toBe(false);
+    expect(validateDestinationUrl("https://amazon.de.example.com/x", AMAZON_HOSTS).ok).toBe(false);
+    expect(validateDestinationUrl("http://www.amazon.de/x", AMAZON_HOSTS).ok).toBe(false);
   });
 
   it("eine Destination mit verknüpften Links kann nicht gelöscht werden (Restrict)", async () => {

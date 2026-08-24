@@ -78,8 +78,8 @@ export default async function LinksPage() {
               {links.length === 0 ? (
                 <tr>
                   <Td colSpan={9} className="py-10 text-center text-zinc-400">
-                    Noch keine Kurzlinks. Lege zuerst unter „Ziele“ eine Amazon-Destination an und
-                    erstelle dann deinen ersten Link.
+                    Noch keine Kurzlinks. Lege zuerst unter „Ziele“ eine Ziel-URL an und erstelle
+                    dann deinen ersten Link.
                   </Td>
                 </tr>
               ) : (

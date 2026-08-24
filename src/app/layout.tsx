@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     default: "urlshorter",
     template: "%s · urlshorter",
   },
-  description: "Redirect- und Tracking-System für Amazon-Kurzlinks",
+  description: "Redirect- und Tracking-System für Kurzlinks",
   robots: { index: false, follow: false },
 };
 

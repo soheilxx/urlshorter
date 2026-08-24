@@ -1,13 +1,14 @@
-# urlshorter – Amazon-Kurzlink-Tracking für `lizenzzumerfolg.com`
+# urlshorter – Kurzlink-Tracking für `lizenzzumerfolg.com`
 
-Redirect- und Tracking-System für den Buchverkauf über Amazon. Da auf der
-Amazon-Produktseite keine eigenen Pixel installiert werden können, misst dieses
-System den Klick **vor** der Weiterleitung: Ein Besucher ruft z. B.
+Redirect- und Tracking-System für Kurzlinks mit **beliebigen HTTPS-Zielen**
+(Amazon-Produktseiten, Landingpages, Shops …). Auf Zielseiten wie Amazon
+können keine eigenen Pixel installiert werden – dieses System misst den Klick
+deshalb **vor** der Weiterleitung: Ein Besucher ruft z. B.
 `https://lizenzzumerfolg.com/abcd` auf, der Klick wird serverseitig erfasst,
 eine minimale Weiterleitungsseite („Bridge-Page“) stößt die konfigurierten
-Tracking-Pixel an und leitet danach automatisch zur hinterlegten
-Amazon-Bestellseite weiter. Die Domain `lizenzzumerfolg.com` wird
-ausschließlich für dieses Tracking-Projekt genutzt.
+Tracking-Pixel an und leitet danach automatisch zur hinterlegten Ziel-URL
+weiter. Die Domain `lizenzzumerfolg.com` wird ausschließlich für dieses
+Tracking-Projekt genutzt.
 
 ---
 
@@ -46,7 +47,7 @@ Prisma ORM · Tailwind CSS 4 · Recharts · Zod · Vitest · Playwright · Verce
 4. Bot-Klassifizierung (User-Agent, HEAD, Prefetch-Header).
 5. Click-Event wird serverseitig gespeichert (via `after()` **nach** der Response –
    kostet den Besucher keine Zeit).
-6. **Bots:** direkter 302-Redirect zur Amazon-URL (keine Pixel nötig).
+6. **Bots:** direkter 302-Redirect zur Ziel-URL (keine Pixel nötig).
    **Menschen:** minimale Bridge-Page (Status 200, wenige KB Inline-HTML/CSS/JS,
    kein React, keine Bilder/Fonts):
    - `dataLayer`-Initialisierung + Google Consent Mode v2,
@@ -55,37 +56,38 @@ Prisma ORM · Tailwind CSS 4 · Recharts · Zod · Vitest · Playwright · Verce
      Tracking angestoßen, Redirect gestartet, manueller Klick,
    - nach konfigurierbarer Verzögerung (300–2000 ms, Standard 900 ms):
      `window.location.replace(amazonUrl)`,
-   - sichtbarer Fallback-Button „Jetzt zu Amazon“, `<noscript>`-Meta-Refresh,
+   - sichtbarer Fallback-Button („Jetzt zu Amazon“ bei Amazon-Zielen, sonst
+     „Jetzt zu &lt;hostname&gt;“), `<noscript>`-Meta-Refresh,
    - Links zu Datenschutz und Impressum.
 7. Die Route sendet strikte `Cache-Control: no-store`-Header (inkl.
    `Vercel-CDN-Cache-Control`) – jeder Aufruf wird serverseitig verarbeitet.
 
 **Fehlerphilosophie:** Sobald der Kurzlink geladen ist, hat die Erreichbarkeit
-von Amazon Priorität. Scheitert irgendetwas danach (Datenbank, Einstellungen,
+des Ziels Priorität. Scheitert irgendetwas danach (Datenbank, Einstellungen,
 Token), wird der Fehler strukturiert geloggt und der Besucher direkt per 302
 weitergeleitet – ein Trackingfehler kostet nie einen Kauf.
 
 ### Wichtige Dateien
 
-| Pfad                                    | Zweck                                                   |
-| --------------------------------------- | ------------------------------------------------------- |
-| `src/app/[code]/route.ts`               | Redirect-/Tracking-Route (Kern des Systems)             |
-| `src/lib/bridge-html.ts`                | Generierung der Bridge-Page + Fehlerseiten + CSP        |
-| `src/lib/bot-detection.ts`              | Bot-/Crawler-/Preview-Erkennung                         |
-| `src/lib/event-token.ts`                | Signierte, kurzlebige Event-Tokens (HMAC)               |
-| `src/app/api/beacon/route.ts`           | Clientseitige Event-Bestätigungen                       |
-| `src/lib/url-validation.ts`             | Host-Allowlist (Open-Redirect-Schutz)                   |
-| `src/lib/shortcode.ts`                  | Kryptografisch sichere 4-Buchstaben-Codes               |
-| `src/lib/auth.ts`, `src/lib/session.ts` | Single-Admin-Auth, Session, Rate Limiting               |
-| `src/lib/stats.ts`                      | Serverseitig aggregierte Dashboard-Statistiken          |
-| `src/lib/retention.ts`                  | Aggregation + Löschung alter Events                     |
-| `src/app/admin/**`                      | Deutschsprachiges Admin-Dashboard                       |
-| `src/actions/**`                        | Server Actions (Zod-validiert, auth-geprüft, auditiert) |
-| `prisma/schema.prisma`                  | Datenmodell inkl. Indizes                               |
+| Pfad                                    | Zweck                                                     |
+| --------------------------------------- | --------------------------------------------------------- |
+| `src/app/[code]/route.ts`               | Redirect-/Tracking-Route (Kern des Systems)               |
+| `src/lib/bridge-html.ts`                | Generierung der Bridge-Page + Fehlerseiten + CSP          |
+| `src/lib/bot-detection.ts`              | Bot-/Crawler-/Preview-Erkennung                           |
+| `src/lib/event-token.ts`                | Signierte, kurzlebige Event-Tokens (HMAC)                 |
+| `src/app/api/beacon/route.ts`           | Clientseitige Event-Bestätigungen                         |
+| `src/lib/url-validation.ts`             | Ziel-URL-Validierung (HTTPS-Pflicht, optionale Allowlist) |
+| `src/lib/shortcode.ts`                  | Kryptografisch sichere 4-Buchstaben-Codes                 |
+| `src/lib/auth.ts`, `src/lib/session.ts` | Single-Admin-Auth, Session, Rate Limiting                 |
+| `src/lib/stats.ts`                      | Serverseitig aggregierte Dashboard-Statistiken            |
+| `src/lib/retention.ts`                  | Aggregation + Löschung alter Events                       |
+| `src/app/admin/**`                      | Deutschsprachiges Admin-Dashboard                         |
+| `src/actions/**`                        | Server Actions (Zod-validiert, auth-geprüft, auditiert)   |
+| `prisma/schema.prisma`                  | Datenmodell inkl. Indizes                                 |
 
 ### Datenmodell
 
-`Destination` (wiederverwendbares Amazon-Ziel) ← `ShortLink` (4-Buchstaben-Code,
+`Destination` (wiederverwendbare Ziel-URL) ← `ShortLink` (4-Buchstaben-Code,
 Source/Medium/Kampagne/Content, Aktiv-Flag, Ablaufdatum) ← `ClickEvent`
 (UTC-Zeitstempel, UTM-Parameter, Gerät/Browser/OS, Geo aus Vercel-Headern,
 Bot-Flag + Grund, anonymer Besucher-Hash, Client-Bestätigungen). Dazu:
@@ -142,26 +144,27 @@ createdb urlshorter
 
 Vollständige, kommentierte Vorlage: [`.env.example`](.env.example). Kurzfassung:
 
-| Variable                                                | Pflicht  | Geheim | Zweck                                         |
-| ------------------------------------------------------- | -------- | ------ | --------------------------------------------- |
-| `DATABASE_URL`                                          | ✅       | ✅     | PostgreSQL-Verbindung                         |
-| `PUBLIC_BASE_URL`                                       | ✅       | –      | `https://lizenzzumerfolg.com`                 |
-| `AUTH_SECRET`                                           | ✅       | ✅     | Session-Signierung (≥ 32 Zeichen)             |
-| `APP_SECRET`                                            | ✅       | ✅     | Event-Tokens + Besucher-Hashes (≥ 32 Zeichen) |
-| `ADMIN_EMAIL`                                           | ✅       | ✅     | Admin-Login                                   |
-| `ADMIN_PASSWORD_HASH_BASE64`                            | ✅       | ✅     | bcrypt-Hash, Base64-codiert                   |
-| `ALLOWED_DESTINATION_HOSTS`                             | –        | –      | Standard: `amazon.de,www.amazon.de,amzn.eu`   |
-| `DEFAULT_REDIRECT_DELAY_MS`                             | –        | –      | 300–2000, Standard 900                        |
-| `EVENT_RETENTION_DAYS`                                  | –        | –      | Standard 90                                   |
-| `CRON_SECRET`                                           | für Cron | ✅     | Schutz des Cleanup-Endpoints                  |
-| `GTM_CONTAINER_ID`                                      | –        | –      | z. B. `GTM-XXXXXXX`                           |
-| `GA4_MEASUREMENT_ID`                                    | –        | –      | z. B. `G-XXXXXXXXXX` (nur ohne GTM)           |
-| `META_PIXEL_ID`                                         | –        | –      | z. B. `1234567890`                            |
-| `TRACKING_CONSENT_MODE`                                 | –        | –      | `required` (Standard) oder `not-required`     |
-| `CONSENT_COOKIE_NAME` / `CONSENT_COOKIE_ACCEPTED_VALUE` | –        | –      | Consent-Erkennung                             |
-| `PRIVACY_URL` / `IMPRINT_URL`                           | –        | –      | Footer-Links der Bridge-Page                  |
-| `BRIDGE_EXTRA_CSP_HOSTS`                                | –        | –      | Zusätzliche CSP-Hosts für GTM-Tags            |
-| `SENTRY_DSN` / `SENTRY_ENVIRONMENT`                     | –        | ✅/–   | Vorbereitet, optional                         |
+| Variable                                                | Pflicht  | Geheim | Zweck                                            |
+| ------------------------------------------------------- | -------- | ------ | ------------------------------------------------ |
+| `DATABASE_URL`                                          | ✅       | ✅     | PostgreSQL-Verbindung                            |
+| `PUBLIC_BASE_URL`                                       | ✅       | –      | `https://lizenzzumerfolg.com`                    |
+| `AUTH_SECRET`                                           | ✅       | ✅     | Session-Signierung (≥ 32 Zeichen)                |
+| `APP_SECRET`                                            | ✅       | ✅     | Event-Tokens + Besucher-Hashes (≥ 32 Zeichen)    |
+| `ADMIN_EMAIL`                                           | ✅       | ✅     | Admin-Login                                      |
+| `ADMIN_PASSWORD_HASH_BASE64`                            | ✅       | ✅     | bcrypt-Hash, Base64-codiert                      |
+| `ALLOWED_DESTINATION_HOSTS`                             | –        | –      | `*` = alle HTTPS-Hosts (Standard) oder Allowlist |
+| `DEFAULT_REDIRECT_DELAY_MS`                             | –        | –      | 300–2000, Standard 900                           |
+| `EVENT_RETENTION_DAYS`                                  | –        | –      | Standard 90                                      |
+| `CRON_SECRET`                                           | für Cron | ✅     | Schutz des Cleanup-Endpoints                     |
+| `GTM_CONTAINER_ID`                                      | –        | –      | z. B. `GTM-XXXXXXX`                              |
+| `GA4_MEASUREMENT_ID`                                    | –        | –      | z. B. `G-XXXXXXXXXX` (nur ohne GTM)              |
+| `META_PIXEL_ID`                                         | –        | –      | z. B. `1234567890`                               |
+| `REDDIT_PIXEL_ID`                                       | –        | –      | z. B. `a2_abc123def`                             |
+| `TRACKING_CONSENT_MODE`                                 | –        | –      | `required` (Standard) oder `not-required`        |
+| `CONSENT_COOKIE_NAME` / `CONSENT_COOKIE_ACCEPTED_VALUE` | –        | –      | Consent-Erkennung                                |
+| `PRIVACY_URL` / `IMPRINT_URL`                           | –        | –      | Footer-Links der Bridge-Page                     |
+| `BRIDGE_EXTRA_CSP_HOSTS`                                | –        | –      | Zusätzliche CSP-Hosts für GTM-Tags               |
+| `SENTRY_DSN` / `SENTRY_ENVIRONMENT`                     | –        | ✅/–   | Vorbereitet, optional                            |
 
 Secrets erzeugen:
 
@@ -308,6 +311,17 @@ der Conversions API.
 
 **Testen:** Meta Events Manager → Test-Events, oder Browser-Erweiterung
 „Meta Pixel Helper“; im Network-Tab Requests an `facebook.com/tr` prüfen.
+
+### Reddit Pixel (`REDDIT_PIXEL_ID`)
+
+Sendet `PageVisit` sowie ein Custom Event `OutboundClick` mit
+`conversionId` = Event-ID des Klicks (vorbereitet für Deduplication mit der
+Reddit Conversions API). Die Pixel-ID beginnt mit `a2_` (Reddit Ads →
+Events Manager → Reddit Pixel).
+
+**Testen:** Browser-Erweiterung „Reddit Pixel Helper“ oder im
+Network-Tab Requests an `redditstatic.com/ads/pixel.js` und `alb.reddit.com`
+prüfen; im Reddit Events Manager erscheinen die Events nach wenigen Minuten.
 
 ### Woran erkenne ich, dass ein Link korrekt trackt?
 

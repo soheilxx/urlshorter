@@ -7,7 +7,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 
-export function DestinationCreateForm() {
+export function DestinationCreateForm({ hostsHint }: { hostsHint: string }) {
   const [state, formAction, pending] = useActionState(
     createDestinationAction,
     EMPTY_DESTINATION_STATE,
@@ -29,18 +29,16 @@ export function DestinationCreateForm() {
         />
       </div>
       <div>
-        <Label htmlFor="dest-url">Amazon-Ziel-URL (HTTPS)</Label>
+        <Label htmlFor="dest-url">Ziel-URL (HTTPS)</Label>
         <Input
           id="dest-url"
           name="url"
           type="url"
           required
           maxLength={2000}
-          placeholder="https://www.amazon.de/dp/XXXXXXXXXX"
+          placeholder="https://www.amazon.de/dp/… oder jede andere HTTPS-URL"
         />
-        <p className="mt-1 text-xs text-zinc-400">
-          Erlaubt sind nur die konfigurierten Amazon-Hosts (inkl. Subdomains).
-        </p>
+        <p className="mt-1 text-xs text-zinc-400">{hostsHint}</p>
       </div>
       <Button type="submit" disabled={pending}>
         {pending ? "Wird angelegt …" : "Ziel anlegen"}
@@ -52,9 +50,11 @@ export function DestinationCreateForm() {
 export function DestinationEditForm({
   destination,
   linkCount,
+  hostsHint,
 }: {
   destination: { id: string; name: string; url: string };
   linkCount: number;
+  hostsHint: string;
 }) {
   const [state, formAction, pending] = useActionState(
     updateDestinationAction,
@@ -79,7 +79,7 @@ export function DestinationEditForm({
         />
       </div>
       <div>
-        <Label htmlFor="edit-dest-url">Amazon-Ziel-URL (HTTPS)</Label>
+        <Label htmlFor="edit-dest-url">Ziel-URL (HTTPS)</Label>
         <Input
           id="edit-dest-url"
           name="url"
@@ -88,6 +88,7 @@ export function DestinationEditForm({
           maxLength={2000}
           defaultValue={destination.url}
         />
+        <p className="mt-1 text-xs text-zinc-400">{hostsHint}</p>
         {linkCount > 0 ? (
           <p className="mt-1 text-xs text-amber-600">
             Dieses Ziel wird von {linkCount} Kurzlink(s) verwendet. Eine URL-Änderung wirkt sich auf

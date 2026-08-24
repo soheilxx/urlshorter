@@ -10,13 +10,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Wiederverwendbares Amazon-Ziel. Mehrere Kurzlinks können auf dieselbe
-/// Destination zeigen.
+/// Wiederverwendbare Ziel-URL (beliebige HTTPS-Ziele). Mehrere Kurzlinks
+/// können auf dieselbe Destination zeigen.
 model Destination {
   id        String   @id @default(cuid())
   /// Interne Bezeichnung, z. B. "Amazon Buchseite (DE)"
   name      String
-  /// Vollständige HTTPS-Ziel-URL (nur erlaubte Amazon-Hosts)
+  /// Vollständige HTTPS-Ziel-URL (optional per Allowlist beschränkbar)
   url       String
   /// Hostname des Ziels, z. B. "www.amazon.de" (denormalisiert für Anzeige/Filter)
   host      String

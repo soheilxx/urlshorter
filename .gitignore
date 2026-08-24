@@ -33,3 +33,8 @@ npm-debug.log*
 # Vercel (CLI-Verknüpfung und lokale Env-Kopie)
 .vercel
 .env.local
+
+# Von der Neon/Vercel-CLI lokal installierte Agent-Skills (nicht Teil der App)
+.agents/
+.claude/skills/
+skills-lock.json

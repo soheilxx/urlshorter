@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildBridgeCsp,
+  destinationLabel,
   renderBridgePage,
   renderLinkErrorPage,
   sanitizeTrackingConfig,
@@ -17,6 +18,7 @@ function baseOptions(overrides: Partial<BridgePageOptions> = {}): BridgePageOpti
       gtmContainerId: "GTM-ABC1234",
       ga4MeasurementId: "G-ABC1234567",
       metaPixelId: "123456789012345",
+      redditPixelId: "a2_abc123def",
     },
     eventParams: {
       event_id: "11111111-2222-3333-4444-555555555555",
@@ -34,8 +36,24 @@ function baseOptions(overrides: Partial<BridgePageOptions> = {}): BridgePageOpti
   };
 }
 
+describe("destinationLabel", () => {
+  it("erkennt Amazon-Hosts", () => {
+    expect(destinationLabel("www.amazon.de")).toBe("Amazon");
+    expect(destinationLabel("amazon.de")).toBe("Amazon");
+    expect(destinationLabel("amazon.co.uk")).toBe("Amazon");
+    expect(destinationLabel("amzn.eu")).toBe("Amazon");
+    expect(destinationLabel("smile.amazon.de")).toBe("Amazon");
+  });
+
+  it("liefert für andere Hosts den bereinigten Hostnamen", () => {
+    expect(destinationLabel("www.example.com")).toBe("example.com");
+    expect(destinationLabel("shop.meine-seite.de")).toBe("shop.meine-seite.de");
+    expect(destinationLabel("notamazon.de")).toBe("notamazon.de");
+  });
+});
+
 describe("renderBridgePage", () => {
-  it("enthält Hinweistext, Button, Spinner und noscript-Fallback", () => {
+  it("enthält Hinweistext, Button, Spinner und noscript-Fallback (Amazon-Ziel)", () => {
     const html = renderBridgePage(baseOptions());
     expect(html).toContain("Du wirst zu Amazon weitergeleitet");
     expect(html).toContain("Jetzt zu Amazon");
@@ -47,25 +65,46 @@ describe("renderBridgePage", () => {
     expect(html).toContain("Impressum");
   });
 
+  it("zeigt für Nicht-Amazon-Ziele den Hostnamen an", () => {
+    const html = renderBridgePage(
+      baseOptions({
+        destinationUrl: "https://www.example.com/produkt",
+        eventParams: { ...baseOptions().eventParams, destination_host: "www.example.com" },
+      }),
+    );
+    expect(html).toContain("Du wirst zu example.com weitergeleitet");
+    expect(html).toContain("Jetzt zu example.com");
+    expect(html).not.toContain("Jetzt zu Amazon");
+  });
+
   it("nutzt die konfigurierte Verzögerung (geklemmt auf 300–2000 ms)", () => {
     expect(renderBridgePage(baseOptions({ delayMs: 900 }))).toContain('"delay":900');
     expect(renderBridgePage(baseOptions({ delayMs: 50 }))).toContain('"delay":300');
     expect(renderBridgePage(baseOptions({ delayMs: 99999 }))).toContain('"delay":2000');
   });
 
-  it("bindet mit Consent GTM und Meta ein, GA4 aber nicht zusätzlich zu GTM", () => {
+  it("bindet mit Consent GTM, Meta und Reddit ein, GA4 aber nicht zusätzlich zu GTM", () => {
     const html = renderBridgePage(baseOptions());
     expect(html).toContain('"gtm":"GTM-ABC1234"');
     expect(html).toContain('"meta":"123456789012345"');
+    expect(html).toContain('"reddit":"a2_abc123def"');
     expect(html).toContain('"ga4":null');
     expect(html).toContain("amazon_outbound_click");
     expect(html).toContain("AmazonOutboundClick");
+    expect(html).toContain("redditstatic.com/ads/pixel.js");
+    expect(html).toContain('rdt("track","PageVisit")');
+    expect(html).toContain('customEventName:"OutboundClick"');
   });
 
   it("bindet GA4 nativ ein, wenn kein GTM konfiguriert ist", () => {
     const html = renderBridgePage(
       baseOptions({
-        tracking: { gtmContainerId: null, ga4MeasurementId: "G-ABC1234567", metaPixelId: null },
+        tracking: {
+          gtmContainerId: null,
+          ga4MeasurementId: "G-ABC1234567",
+          metaPixelId: null,
+          redditPixelId: null,
+        },
       }),
     );
     expect(html).toContain('"ga4":"G-ABC1234567"');
@@ -77,8 +116,8 @@ describe("renderBridgePage", () => {
     expect(html).toContain('"gtm":null');
     expect(html).toContain('"ga4":null');
     expect(html).toContain('"meta":null');
+    expect(html).toContain('"reddit":null');
     expect(html).toContain('"consent":false');
-    // Consent-Mode-Default wird clientseitig aus C.consent abgeleitet
     expect(html).toContain('ad_storage:C.consent?"granted":"denied"');
   });
 
@@ -113,11 +152,13 @@ describe("sanitizeTrackingConfig", () => {
         gtmContainerId: "GTM-ABC1234",
         ga4MeasurementId: "G-ABC1234567",
         metaPixelId: "123456789012345",
+        redditPixelId: "a2_jkbr3o78lsrk",
       }),
     ).toEqual({
       gtmContainerId: "GTM-ABC1234",
       ga4MeasurementId: "G-ABC1234567",
       metaPixelId: "123456789012345",
+      redditPixelId: "a2_jkbr3o78lsrk",
     });
   });
 
@@ -126,8 +167,25 @@ describe("sanitizeTrackingConfig", () => {
       gtmContainerId: 'GTM-X"><script>',
       ga4MeasurementId: "G-<img src=x>",
       metaPixelId: "123abc",
+      redditPixelId: 'a2_"><script>alert(1)</script>',
     });
-    expect(result).toEqual({ gtmContainerId: null, ga4MeasurementId: null, metaPixelId: null });
+    expect(result).toEqual({
+      gtmContainerId: null,
+      ga4MeasurementId: null,
+      metaPixelId: null,
+      redditPixelId: null,
+    });
+  });
+
+  it("verwirft Reddit-IDs ohne a2_-Präfix", () => {
+    expect(
+      sanitizeTrackingConfig({
+        gtmContainerId: null,
+        ga4MeasurementId: null,
+        metaPixelId: null,
+        redditPixelId: "jkbr3o78lsrk",
+      }).redditPixelId,
+    ).toBeNull();
   });
 });
 
@@ -136,6 +194,8 @@ describe("buildBridgeCsp", () => {
     const csp = buildBridgeCsp(["cdn.example.com"]);
     expect(csp).toContain("script-src 'unsafe-inline' https://www.googletagmanager.com");
     expect(csp).toContain("https://connect.facebook.net");
+    expect(csp).toContain("https://www.redditstatic.com");
+    expect(csp).toContain("https://alb.reddit.com");
     expect(csp).toContain("https://cdn.example.com");
     expect(csp).toContain("default-src 'none'");
   });

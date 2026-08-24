@@ -203,6 +203,7 @@ async function handle(request: Request, code: string): Promise<Response> {
         gtmContainerId: env.GTM_CONTAINER_ID,
         ga4MeasurementId: env.GA4_MEASUREMENT_ID,
         metaPixelId: env.META_PIXEL_ID,
+        redditPixelId: env.REDDIT_PIXEL_ID,
       },
       eventParams: {
         event_id: eventId,

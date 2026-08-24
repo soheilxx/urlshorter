@@ -32,7 +32,7 @@ export function SettingsForm({ currentDelayMs }: { currentDelayMs: number }) {
           className="max-w-[200px]"
         />
         <p className="mt-1 text-xs text-zinc-400">
-          Zeit, die die Weiterleitungsseite den Tracking-Pixeln gibt, bevor zur Amazon-URL
+          Zeit, die die Weiterleitungsseite den Tracking-Pixeln gibt, bevor zur Ziel-URL
           weitergeleitet wird.
         </p>
       </div>

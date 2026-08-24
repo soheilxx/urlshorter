@@ -14,7 +14,7 @@ test.describe("Kompletter Ablauf: Ziel → Link → Klick → Statistik", () => 
     await page.goto("/admin/destinations");
 
     await page.getByLabel("Interne Bezeichnung").fill("Amazon Buchseite (E2E)");
-    await page.getByLabel("Amazon-Ziel-URL (HTTPS)").fill(DESTINATION_URL);
+    await page.getByLabel("Ziel-URL (HTTPS)").fill(DESTINATION_URL);
     await page.getByRole("button", { name: "Ziel anlegen" }).click();
 
     await expect(page.getByText('Ziel "Amazon Buchseite (E2E)" wurde angelegt.')).toBeVisible();
@@ -26,7 +26,7 @@ test.describe("Kompletter Ablauf: Ziel → Link → Klick → Statistik", () => 
     await page.goto("/admin/destinations");
 
     await page.getByLabel("Interne Bezeichnung").fill("Böses Ziel");
-    await page.getByLabel("Amazon-Ziel-URL (HTTPS)").fill("https://amazon.de.example.com/dp/B01");
+    await page.getByLabel("Ziel-URL (HTTPS)").fill("https://amazon.de.example.com/dp/B01");
     await page.getByRole("button", { name: "Ziel anlegen" }).click();
 
     await expect(page.getByText(/ist nicht erlaubt/)).toBeVisible();
