@@ -15,6 +15,7 @@ import { getEnv, requireAppSecret } from "@/lib/env";
 import { createEventToken } from "@/lib/event-token";
 import { logger } from "@/lib/logger";
 import { extractUtmParams, getClientIp, getGeoInfo, getReferrer } from "@/lib/request-info";
+import { deriveFbc, sendMetaCapiEvents, type MetaCapiInput } from "@/lib/meta-capi";
 import { getRedirectDelayMs } from "@/lib/settings";
 import { isValidShortCode } from "@/lib/shortcode";
 import { parseUserAgent } from "@/lib/ua-parser";
@@ -168,10 +169,47 @@ async function handle(request: Request, code: string): Promise<Response> {
       consent: consent.hasMarketingConsent,
     };
 
-    // In Produktion registriert after() den Schreibvorgang für nach der
+    // Meta Conversions API: serverseitige Events mit derselben event_id wie
+    // das Browser-Pixel (Deduplication). Nur für Menschen und nur, wenn
+    // Marketing-Tracking erlaubt ist. IP/UA werden ausschließlich transient
+    // für diesen Aufruf verwendet, nicht gespeichert.
+    let metaCapiInput: MetaCapiInput | null = null;
+    if (
+      !bot.isBot &&
+      consent.hasMarketingConsent &&
+      env.META_PIXEL_ID &&
+      env.META_CAPI_ACCESS_TOKEN
+    ) {
+      metaCapiInput = {
+        pixelId: env.META_PIXEL_ID,
+        accessToken: env.META_CAPI_ACCESS_TOKEN,
+        testEventCode: env.META_CAPI_TEST_EVENT_CODE,
+        eventId,
+        eventTimeMs: Date.now(),
+        eventSourceUrl: `${env.PUBLIC_BASE_URL}/${link.code}`,
+        clientIp: getClientIp(headers),
+        clientUserAgent: userAgent,
+        fbp: cookies.get("_fbp") ?? null,
+        fbc: deriveFbc(url.searchParams.get("fbclid"), cookies.get("_fbc") ?? null),
+        customData: {
+          short_code: link.code,
+          link_name: link.name,
+          source: link.source,
+          medium: link.medium ?? "",
+          campaign: link.campaign ?? "",
+          content: link.content ?? "",
+          destination_host: link.destination.host,
+        },
+      };
+    }
+
+    // In Produktion registriert after() die Verarbeitung für nach der
     // Response (kein Await-Overhead); außerhalb des Next-Request-Kontexts
-    // (Tests) wird direkt und vollständig awaited geschrieben.
-    await scheduleAfterResponse(() => recordClickEvent(clickData));
+    // (Tests) wird direkt und vollständig awaited ausgeführt.
+    await scheduleAfterResponse(async () => {
+      await recordClickEvent(clickData);
+      if (metaCapiInput) await sendMetaCapiEvents(metaCapiInput);
+    });
 
     // HEAD-Anfragen: keine Weiterleitung, kein Body – nur Status + Header.
     if (request.method === "HEAD") {

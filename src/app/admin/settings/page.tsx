@@ -89,6 +89,14 @@ export default async function SettingsPage() {
                 </dd>
               </div>
               <div className="flex items-center justify-between">
+                <dt className="text-zinc-600">Meta Conversions API</dt>
+                <dd>
+                  <ConfigBadge
+                    configured={Boolean(env.META_PIXEL_ID && env.META_CAPI_ACCESS_TOKEN)}
+                  />
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
                 <dt className="text-zinc-600">Reddit Pixel</dt>
                 <dd>
                   <ConfigBadge configured={Boolean(env.REDDIT_PIXEL_ID)} />

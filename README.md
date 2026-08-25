@@ -306,11 +306,38 @@ nicht zusätzlich geladen (verhindert doppelte Events). Gesendet werden
 ### Meta Pixel (`META_PIXEL_ID`)
 
 Sendet `PageView` und das Custom Event `AmazonOutboundClick`, beide mit
-`eventID` = Event-ID des Klicks – vorbereitet für spätere Deduplication mit
-der Conversions API.
+`eventID` = Event-ID des Klicks (Deduplication mit der Conversions API,
+siehe unten).
 
 **Testen:** Meta Events Manager → Test-Events, oder Browser-Erweiterung
 „Meta Pixel Helper“; im Network-Tab Requests an `facebook.com/tr` prüfen.
+
+### Meta Conversions API (`META_CAPI_ACCESS_TOKEN`)
+
+Serverseitiges Tracking parallel zum Browser-Pixel: Für jeden menschlichen
+Klick sendet der Server `PageView` und `AmazonOutboundClick` direkt an die
+Graph API – mit **derselben `event_id`** wie das Browser-Pixel. Meta
+dedupliziert über (event_name, event_id): Nichts wird doppelt gezählt, aber
+Klicks mit Adblocker gehen nicht mehr verloren. Übertragen werden IP-Adresse
+und User-Agent (transient, Meta-Pflichtfelder; in der eigenen Datenbank wird
+weiterhin keine IP gespeichert) sowie – falls vorhanden – `_fbp`/`_fbc`
+bzw. ein aus `fbclid` abgeleiteter Click-Identifier für die Attribution.
+
+**Einrichten:**
+
+1. Meta Events Manager → Datenquellen → Pixel → **Einstellungen** →
+   Abschnitt „Conversions API“ → **Zugriffsschlüssel generieren**.
+2. Token als `META_CAPI_ACCESS_TOKEN` hinterlegen (geheim!), `META_PIXEL_ID`
+   muss ebenfalls gesetzt sein.
+3. Zum Prüfen optional den Code aus dem „Test-Events“-Tab als
+   `META_CAPI_TEST_EVENT_CODE` setzen – die Server-Events erscheinen dann
+   dort in Echtzeit. **Nach dem Test wieder entfernen.**
+
+Der Versand läuft nach der Response (kostet den Besucher keine Zeit), bricht
+nach 4 s ab und wird strukturiert geloggt (`meta_capi.sent` /
+`meta_capi.send_failed`). Im Events Manager erscheinen Server-Events mit
+Quelle „Server“; deduplizierte Paare werden als „Verarbeitet“ mit
+Browser+Server angezeigt.
 
 ### Reddit Pixel (`REDDIT_PIXEL_ID`)
 
@@ -434,17 +461,18 @@ zeigen so die Amazon-Seite an.
 
 ## Fehlerbehebung
 
-| Symptom                                     | Ursache / Lösung                                                                                                                                |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Login-Seite meldet „Setup unvollständig“    | Auth-Variablen fehlen → `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH_BASE64`, `AUTH_SECRET` setzen und neu deployen.                                     |
-| Login schlägt trotz korrektem Passwort fehl | Klassiker: `$`-Zeichen im bcrypt-Hash wurden vom Env-Loader expandiert → `ADMIN_PASSWORD_HASH_BASE64` verwenden (`npm run hash-password`).      |
-| „Zu viele fehlgeschlagene Loginversuche“    | Rate Limit (5 Fehlversuche/15 min) → warten oder alte `LoginAttempt`-Einträge löschen.                                                          |
-| Kurzlink zeigt Fehlerseite                  | Link oder Ziel deaktiviert bzw. abgelaufen → Dashboard → Kurzlinks/Ziele prüfen.                                                                |
-| Pixel feuern nicht                          | Consent-Modus `required` ohne gültigen Consent-Cookie (gewollt), Adblocker, oder ID-Format ungültig (Dashboard → Einstellungen → Systemstatus). |
-| GTM-Tags eines Drittanbieters laden nicht   | CSP der Bridge-Page → Host in `BRIDGE_EXTRA_CSP_HOSTS` ergänzen.                                                                                |
-| `/api/health` liefert `degraded`            | Datenbank nicht erreichbar → `DATABASE_URL`/DB-Status prüfen.                                                                                   |
-| Zu viele DB-Verbindungen (Serverless)       | Gepoolte Connection-URL verwenden.                                                                                                              |
-| Cron läuft nicht                            | `CRON_SECRET` fehlt oder Cron nicht aktiv (Vercel → Settings → Cron Jobs).                                                                      |
+| Symptom                                                  | Ursache / Lösung                                                                                                                                                                                                                                     |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Login-Seite meldet „Setup unvollständig“                 | Auth-Variablen fehlen → `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH_BASE64`, `AUTH_SECRET` setzen und neu deployen.                                                                                                                                          |
+| Login schlägt trotz korrektem Passwort fehl              | Klassiker: `$`-Zeichen im bcrypt-Hash wurden vom Env-Loader expandiert → `ADMIN_PASSWORD_HASH_BASE64` verwenden (`npm run hash-password`).                                                                                                           |
+| „Zu viele fehlgeschlagene Loginversuche“                 | Rate Limit (5 Fehlversuche/15 min) → warten oder alte `LoginAttempt`-Einträge löschen.                                                                                                                                                               |
+| Kurzlink zeigt Fehlerseite                               | Link oder Ziel deaktiviert bzw. abgelaufen → Dashboard → Kurzlinks/Ziele prüfen.                                                                                                                                                                     |
+| Pixel feuern nicht                                       | Consent-Modus `required` ohne gültigen Consent-Cookie (gewollt), Adblocker, oder ID-Format ungültig (Dashboard → Einstellungen → Systemstatus).                                                                                                      |
+| GTM-Tags eines Drittanbieters laden nicht                | CSP der Bridge-Page → Host in `BRIDGE_EXTRA_CSP_HOSTS` ergänzen.                                                                                                                                                                                     |
+| `/api/health` liefert `degraded`                         | Datenbank nicht erreichbar → `DATABASE_URL`/DB-Status prüfen.                                                                                                                                                                                        |
+| Zu viele DB-Verbindungen (Serverless)                    | Gepoolte Connection-URL verwenden.                                                                                                                                                                                                                   |
+| Cron läuft nicht                                         | `CRON_SECRET` fehlt oder Cron nicht aktiv (Vercel → Settings → Cron Jobs).                                                                                                                                                                           |
+| E2E-Tests hängen lokal sporadisch („Wird gespeichert …“) | Bekanntes lokales Windows-Phänomen bei schnell aufeinanderfolgenden Läufen unter Last (der Server-Action-Request erreicht den lokalen Testserver nicht; kein App-Fehler, tritt auf Vercel nicht auf). Lauf wiederholen oder Specs einzeln ausführen. |
 
 Systemstatus: Dashboard → Einstellungen (DB-Status, konfigurierte
 Integrationen, Consent-Modus, Retention, Audit-Log). Health-Endpoint:

@@ -43,6 +43,8 @@ const envSchema = z.object({
   GTM_CONTAINER_ID: optionalString,
   GA4_MEASUREMENT_ID: optionalString,
   META_PIXEL_ID: optionalString,
+  META_CAPI_ACCESS_TOKEN: optionalString,
+  META_CAPI_TEST_EVENT_CODE: optionalString,
   REDDIT_PIXEL_ID: optionalString,
   TRACKING_CONSENT_MODE: z
     .string()

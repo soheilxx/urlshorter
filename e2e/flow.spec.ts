@@ -12,38 +12,62 @@ test.describe("Kompletter Ablauf: Ziel → Link → Klick → Statistik", () => 
   test("Administrator legt eine Destination an", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/destinations");
+    await page.waitForLoadState("networkidle");
 
     await page.getByLabel("Interne Bezeichnung").fill("Amazon Buchseite (E2E)");
     await page.getByLabel("Ziel-URL (HTTPS)").fill(DESTINATION_URL);
-    await page.getByRole("button", { name: "Ziel anlegen" }).click();
 
-    await expect(page.getByText('Ziel "Amazon Buchseite (E2E)" wurde angelegt.')).toBeVisible();
+    // Mit Retry, da ein Klick vor Abschluss der React-Hydration verloren gehen kann.
+    const success = page.getByText('Ziel "Amazon Buchseite (E2E)" wurde angelegt.');
+    await expect(async () => {
+      const button = page.getByRole("button", { name: "Ziel anlegen" });
+      if ((await success.count()) === 0 && (await button.isEnabled().catch(() => false))) {
+        await button.click();
+      }
+      await expect(success).toBeVisible({ timeout: 4000 });
+    }).toPass({ timeout: 25_000 });
     await expect(page.getByRole("cell", { name: "Amazon Buchseite (E2E)" })).toBeVisible();
   });
 
   test("eine ungültige Ziel-URL wird abgelehnt", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/destinations");
+    await page.waitForLoadState("networkidle");
 
     await page.getByLabel("Interne Bezeichnung").fill("Böses Ziel");
     await page.getByLabel("Ziel-URL (HTTPS)").fill("https://amazon.de.example.com/dp/B01");
-    await page.getByRole("button", { name: "Ziel anlegen" }).click();
 
-    await expect(page.getByText(/ist nicht erlaubt/)).toBeVisible();
+    const rejection = page.getByText(/ist nicht erlaubt/);
+    await expect(async () => {
+      const button = page.getByRole("button", { name: "Ziel anlegen" });
+      if ((await rejection.count()) === 0 && (await button.isEnabled().catch(() => false))) {
+        await button.click();
+      }
+      await expect(rejection).toBeVisible({ timeout: 4000 });
+    }).toPass({ timeout: 25_000 });
   });
 
   test("Administrator erstellt einen Kurzlink", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/links/new");
+    await page.waitForLoadState("networkidle");
 
     await page.getByLabel("Ziel (Destination)").selectOption({ index: 1 });
     await page.getByLabel("Interner Linkname").fill("Instagram Profil Bio");
     await page.getByLabel("Source").fill("Instagram Profil");
     await page.getByLabel("Kampagne (optional)").fill("Buchlaunch");
-    await page.getByRole("button", { name: "Kurzlink erstellen" }).click();
 
+    // Mit Retry gegen verlorene Klicks; der Button ist während der Server
+    // Action disabled, daher entstehen keine Doppel-Submits.
     const success = page.getByText(/Kurzlink \/[a-z]{4} wurde erstellt\./);
-    await expect(success).toBeVisible();
+    await expect(async () => {
+      const button = page.getByRole("button", { name: "Kurzlink erstellen" });
+      if ((await success.count()) === 0 && (await button.isEnabled().catch(() => false))) {
+        await button.click();
+      }
+      await expect(success).toBeVisible({ timeout: 4000 });
+    }).toPass({ timeout: 25_000 });
+
     const text = await success.textContent();
     shortCode = text?.match(/\/([a-z]{4})/)?.[1] ?? "";
     expect(shortCode).toMatch(/^[a-z]{4}$/);
@@ -173,15 +197,22 @@ test.describe("Kompletter Ablauf: Ziel → Link → Klick → Statistik", () => 
   test("Sammel-Erstellung legt mehrere Links für dieselbe Destination an", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/links/bulk");
+    await page.waitForLoadState("networkidle");
 
     await page.getByLabel("Ziel (Destination) für alle Links").selectOption({ index: 1 });
     await page.getByLabel("Namens-Präfix").fill("Buchlaunch");
     await page
       .getByLabel("Sources (eine pro Zeile, max. 50)")
       .fill("Meta Ad 01\nNewsletter\nPlakat Berlin");
-    await page.getByRole("button", { name: "Alle Kurzlinks erstellen" }).click();
 
-    await expect(page.getByText(/3 Kurzlinks wurden erstellt/)).toBeVisible();
+    const success = page.getByText(/3 Kurzlinks wurden erstellt/);
+    await expect(async () => {
+      const button = page.getByRole("button", { name: "Alle Kurzlinks erstellen" });
+      if ((await success.count()) === 0 && (await button.isEnabled().catch(() => false))) {
+        await button.click();
+      }
+      await expect(success).toBeVisible({ timeout: 4000 });
+    }).toPass({ timeout: 25_000 });
 
     await page.goto("/admin/links");
     await expect(page.getByRole("cell", { name: "Buchlaunch – Newsletter" })).toBeVisible();
