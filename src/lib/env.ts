@@ -54,6 +54,14 @@ const envSchema = z.object({
   CONSENT_COOKIE_ACCEPTED_VALUE: optionalString,
   PRIVACY_URL: optionalString,
   IMPRINT_URL: optionalString,
+  ROOT_REDIRECT_URL: z
+    .string()
+    .optional()
+    .transform((v) => {
+      const trimmed = v?.trim();
+      if (trimmed && /^https:\/\/[^\s]+$/.test(trimmed)) return trimmed;
+      return "https://soheil-hosseini.de";
+    }),
   BRIDGE_EXTRA_CSP_HOSTS: z.string().optional(),
   SENTRY_DSN: optionalString,
 });

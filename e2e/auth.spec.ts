@@ -2,6 +2,15 @@ import { expect, test } from "@playwright/test";
 import { ADMIN_EMAIL, loginAsAdmin } from "./helpers";
 
 test.describe("Authentifizierung", () => {
+  test("die Startseite leitet zur Hauptseite weiter, /admin bleibt erreichbar", async ({
+    request,
+  }) => {
+    const response = await request.get("/", { maxRedirects: 0 });
+    expect(response.status()).toBeGreaterThanOrEqual(301);
+    expect(response.status()).toBeLessThanOrEqual(308);
+    expect(response.headers()["location"]).toBe("https://soheil-hosseini.de");
+  });
+
   test("nicht angemeldete Besucher werden zur Login-Seite umgeleitet", async ({ page }) => {
     await page.goto("/admin/links");
     await expect(page).toHaveURL(/\/admin\/login/);
