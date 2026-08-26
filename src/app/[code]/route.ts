@@ -16,6 +16,7 @@ import { createEventToken } from "@/lib/event-token";
 import { logger } from "@/lib/logger";
 import { extractUtmParams, getClientIp, getGeoInfo, getReferrer } from "@/lib/request-info";
 import { deriveFbc, sendMetaCapiEvents, type MetaCapiInput } from "@/lib/meta-capi";
+import { sendTikTokEvents, type TikTokEventsInput } from "@/lib/tiktok-events";
 import { getRedirectDelayMs } from "@/lib/settings";
 import { isValidShortCode } from "@/lib/shortcode";
 import { parseUserAgent } from "@/lib/ua-parser";
@@ -203,12 +204,43 @@ async function handle(request: Request, code: string): Promise<Response> {
       };
     }
 
+    // TikTok Events API: analoges Muster (ClickButton mit derselben event_id
+    // wie das Browser-Pixel; TikTok dedupliziert).
+    let tiktokInput: TikTokEventsInput | null = null;
+    if (
+      !bot.isBot &&
+      consent.hasMarketingConsent &&
+      env.TIKTOK_PIXEL_ID &&
+      env.TIKTOK_EVENTS_API_TOKEN
+    ) {
+      tiktokInput = {
+        pixelId: env.TIKTOK_PIXEL_ID,
+        accessToken: env.TIKTOK_EVENTS_API_TOKEN,
+        testEventCode: env.TIKTOK_TEST_EVENT_CODE,
+        eventId,
+        eventTimeMs: Date.now(),
+        pageUrl: `${env.PUBLIC_BASE_URL}/${link.code}`,
+        clientIp: getClientIp(headers),
+        clientUserAgent: userAgent,
+        ttclid: url.searchParams.get("ttclid"),
+        ttp: cookies.get("_ttp") ?? null,
+        properties: {
+          content_name: link.name,
+          content_category: link.source,
+          short_code: link.code,
+          campaign: link.campaign ?? "",
+          destination_host: link.destination.host,
+        },
+      };
+    }
+
     // In Produktion registriert after() die Verarbeitung für nach der
     // Response (kein Await-Overhead); außerhalb des Next-Request-Kontexts
     // (Tests) wird direkt und vollständig awaited ausgeführt.
     await scheduleAfterResponse(async () => {
       await recordClickEvent(clickData);
       if (metaCapiInput) await sendMetaCapiEvents(metaCapiInput);
+      if (tiktokInput) await sendTikTokEvents(tiktokInput);
     });
 
     // HEAD-Anfragen: keine Weiterleitung, kein Body – nur Status + Header.
@@ -242,6 +274,7 @@ async function handle(request: Request, code: string): Promise<Response> {
         ga4MeasurementId: env.GA4_MEASUREMENT_ID,
         metaPixelId: env.META_PIXEL_ID,
         redditPixelId: env.REDDIT_PIXEL_ID,
+        tiktokPixelId: env.TIKTOK_PIXEL_ID,
       },
       eventParams: {
         event_id: eventId,

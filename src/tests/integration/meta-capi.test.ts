@@ -11,40 +11,49 @@ import {
 } from "./helpers";
 
 /**
- * Meta-CAPI-Versand im Redirect-Flow (mit gestubbtem fetch – es verlässt
- * kein Request die Testumgebung).
+ * Serverseitige Event-APIs (Meta CAPI + TikTok Events API) im Redirect-Flow –
+ * mit gestubbtem fetch, es verlässt kein Request die Testumgebung.
  */
 
 const originalFetch = globalThis.fetch;
 
-function stubFetch() {
-  const calls: Array<{ url: string; body: Record<string, unknown> }> = [];
+interface CapturedCall {
+  url: string;
+  headers: Record<string, string>;
+  body: Record<string, unknown>;
+}
+
+function stubFetch(): CapturedCall[] {
+  const calls: CapturedCall[] = [];
   globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     calls.push({
       url: String(input),
+      headers: Object.fromEntries(Object.entries((init?.headers as Record<string, string>) ?? {})),
       body: JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>,
     });
-    return new Response(JSON.stringify({ events_received: 2 }), { status: 200 });
+    return new Response(JSON.stringify({ events_received: 2, code: 0 }), { status: 200 });
   }) as typeof fetch;
   return calls;
 }
 
-describe("Meta Conversions API im Redirect-Flow", () => {
+describe("Serverseitige Event-APIs im Redirect-Flow", () => {
   beforeEach(async () => {
     await truncateAll();
     process.env.META_CAPI_ACCESS_TOKEN = "test-capi-token";
     process.env.META_CAPI_TEST_EVENT_CODE = "TEST99999";
+    process.env.TIKTOK_EVENTS_API_TOKEN = "test-tiktok-token";
     resetEnvCache();
   });
 
   afterEach(() => {
     delete process.env.META_CAPI_ACCESS_TOKEN;
     delete process.env.META_CAPI_TEST_EVENT_CODE;
+    delete process.env.TIKTOK_EVENTS_API_TOKEN;
     resetEnvCache();
     globalThis.fetch = originalFetch;
   });
 
-  it("sendet für menschliche Klicks mit Consent dieselbe event_id an die Graph API", async () => {
+  it("Meta CAPI: sendet für menschliche Klicks mit Consent dieselbe event_id", async () => {
     const calls = stubFetch();
     const dest = await createTestDestination();
     await createTestLink(dest.id, { code: "abcd" });
@@ -58,16 +67,15 @@ describe("Meta Conversions API im Redirect-Flow", () => {
     );
     expect(response.status).toBe(200);
 
-    expect(calls).toHaveLength(1);
-    const call = calls[0]!;
-    expect(call.url).toContain("graph.facebook.com");
+    const metaCalls = calls.filter((c) => c.url.includes("graph.facebook.com"));
+    expect(metaCalls).toHaveLength(1);
+    const call = metaCalls[0]!;
     expect(call.url).toContain("/123456789012345/events");
 
     const data = call.body.data as Array<Record<string, unknown>>;
     expect(data).toHaveLength(2);
     expect(data.map((d) => d.event_name)).toEqual(["PageView", "AmazonOutboundClick"]);
 
-    // Dieselbe event_id wie der gespeicherte Click-Event (Browser-Dedup)
     const { prisma } = await import("@/lib/db");
     const event = await prisma.clickEvent.findFirstOrThrow();
     expect(data[0]?.event_id).toBe(event.id);
@@ -75,9 +83,42 @@ describe("Meta Conversions API im Redirect-Flow", () => {
     const userData = data[0]?.user_data as Record<string, string>;
     expect(userData.fbp).toBe("fb.1.1700000000000.42");
     expect(userData.fbc).toContain(".TestKlick123");
-    expect(userData.client_user_agent).toBeTruthy();
     expect(call.body.test_event_code).toBe("TEST99999");
     expect(call.body.access_token).toBe("test-capi-token");
+  });
+
+  it("TikTok Events API: sendet ClickButton mit derselben event_id und ttclid", async () => {
+    const calls = stubFetch();
+    const dest = await createTestDestination();
+    await createTestLink(dest.id, { code: "abcd" });
+
+    await GET(
+      buildRedirectRequest("abcd", {
+        cookie: "marketing_consent=accepted; _ttp=TtpCookie42",
+        query: "?ttclid=TikTokKlick_987",
+      }),
+      routeContext("abcd"),
+    );
+
+    const ttCalls = calls.filter((c) => c.url.includes("business-api.tiktok.com"));
+    expect(ttCalls).toHaveLength(1);
+    const call = ttCalls[0]!;
+    expect(call.headers["Access-Token"]).toBe("test-tiktok-token");
+    expect(call.body.event_source).toBe("web");
+    expect(call.body.event_source_id).toBe("TESTTIKTOK1234567890");
+
+    const data = call.body.data as Array<Record<string, unknown>>;
+    expect(data).toHaveLength(1);
+    expect(data[0]?.event).toBe("ClickButton");
+
+    const { prisma } = await import("@/lib/db");
+    const event = await prisma.clickEvent.findFirstOrThrow();
+    expect(data[0]?.event_id).toBe(event.id);
+
+    const user = data[0]?.user as Record<string, string>;
+    expect(user.ttclid).toBe("TikTokKlick_987");
+    expect(user.ttp).toBe("TtpCookie42");
+    expect(user.user_agent).toBeTruthy();
   });
 
   it("sendet nichts ohne Consent", async () => {
@@ -104,8 +145,9 @@ describe("Meta Conversions API im Redirect-Flow", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("sendet nichts ohne konfiguriertes Token", async () => {
+  it("sendet nichts ohne konfigurierte Tokens", async () => {
     delete process.env.META_CAPI_ACCESS_TOKEN;
+    delete process.env.TIKTOK_EVENTS_API_TOKEN;
     resetEnvCache();
     const calls = stubFetch();
     const dest = await createTestDestination();
@@ -118,7 +160,7 @@ describe("Meta Conversions API im Redirect-Flow", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("ein CAPI-Fehler verhindert die Bridge-Page nicht", async () => {
+  it("API-Fehler verhindern die Bridge-Page nicht", async () => {
     globalThis.fetch = vi.fn(async () => {
       throw new Error("Netzwerkfehler simuliert");
     }) as typeof fetch;

@@ -103,6 +103,20 @@ export default async function SettingsPage() {
                 </dd>
               </div>
               <div className="flex items-center justify-between">
+                <dt className="text-zinc-600">TikTok Pixel</dt>
+                <dd>
+                  <ConfigBadge configured={Boolean(env.TIKTOK_PIXEL_ID)} />
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-zinc-600">TikTok Events API</dt>
+                <dd>
+                  <ConfigBadge
+                    configured={Boolean(env.TIKTOK_PIXEL_ID && env.TIKTOK_EVENTS_API_TOKEN)}
+                  />
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
                 <dt className="text-zinc-600">Consent-Modus</dt>
                 <dd>
                   <Badge variant={env.TRACKING_CONSENT_MODE === "required" ? "success" : "warning"}>

@@ -350,6 +350,28 @@ Events Manager → Reddit Pixel).
 Network-Tab Requests an `redditstatic.com/ads/pixel.js` und `alb.reddit.com`
 prüfen; im Reddit Events Manager erscheinen die Events nach wenigen Minuten.
 
+### TikTok Pixel (`TIKTOK_PIXEL_ID`) + Events API (`TIKTOK_EVENTS_API_TOKEN`)
+
+Das Browser-Pixel sendet `Pageview` sowie das Standard-Event **`ClickButton`**
+mit `event_id` = Event-ID des Klicks. Die Events API sendet parallel
+serverseitig dasselbe `ClickButton`-Event mit derselben `event_id` an die
+TikTok Business API – TikTok dedupliziert über (event, event_id), sodass
+nichts doppelt zählt, Adblocker-Klicks aber erfasst bleiben. Für die
+Ads-Attribution werden `ttclid` (Query-Parameter aus TikTok-Anzeigen) und das
+`_ttp`-Cookie mitgesendet; IP/User-Agent nur transient (keine Speicherung).
+
+**Einrichten:**
+
+1. TikTok Ads Manager → Tools → **Events** → Web Events → dein Pixel.
+2. Die Pixel-ID als `TIKTOK_PIXEL_ID` hinterlegen.
+3. Für die Events API: Pixel → **Einstellungen** → Abschnitt „Events API“ →
+   **„Access Token generieren“** → Token als `TIKTOK_EVENTS_API_TOKEN`
+   hinterlegen (geheim!).
+4. Optional zum Prüfen: Code aus dem „Test Events“-Tab als
+   `TIKTOK_TEST_EVENT_CODE` setzen (danach wieder entfernen).
+
+Logs: `tiktok_events.sent` / `tiktok_events.send_failed`.
+
 ### Woran erkenne ich, dass ein Link korrekt trackt?
 
 1. Kurzlink im Inkognito-Fenster öffnen → Bridge-Page → Amazon.

@@ -19,6 +19,7 @@ function baseOptions(overrides: Partial<BridgePageOptions> = {}): BridgePageOpti
       ga4MeasurementId: "G-ABC1234567",
       metaPixelId: "123456789012345",
       redditPixelId: "a2_abc123def",
+      tiktokPixelId: "DA79R2JC77UES9742I10",
     },
     eventParams: {
       event_id: "11111111-2222-3333-4444-555555555555",
@@ -83,17 +84,22 @@ describe("renderBridgePage", () => {
     expect(renderBridgePage(baseOptions({ delayMs: 99999 }))).toContain('"delay":2000');
   });
 
-  it("bindet mit Consent GTM, Meta und Reddit ein, GA4 aber nicht zusätzlich zu GTM", () => {
+  it("bindet mit Consent GTM, Meta, Reddit und TikTok ein, GA4 aber nicht zusätzlich zu GTM", () => {
     const html = renderBridgePage(baseOptions());
     expect(html).toContain('"gtm":"GTM-ABC1234"');
     expect(html).toContain('"meta":"123456789012345"');
     expect(html).toContain('"reddit":"a2_abc123def"');
+    expect(html).toContain('"tiktok":"DA79R2JC77UES9742I10"');
     expect(html).toContain('"ga4":null');
     expect(html).toContain("amazon_outbound_click");
     expect(html).toContain("AmazonOutboundClick");
     expect(html).toContain("redditstatic.com/ads/pixel.js");
     expect(html).toContain('rdt("track","PageVisit")');
     expect(html).toContain('customEventName:"OutboundClick"');
+    expect(html).toContain("analytics.tiktok.com/i18n/pixel/events.js");
+    expect(html).toContain("ttq.page()");
+    expect(html).toContain('ttq.track("ClickButton"');
+    expect(html).toContain("event_id:C.params.event_id");
   });
 
   it("bindet GA4 nativ ein, wenn kein GTM konfiguriert ist", () => {
@@ -104,6 +110,7 @@ describe("renderBridgePage", () => {
           ga4MeasurementId: "G-ABC1234567",
           metaPixelId: null,
           redditPixelId: null,
+          tiktokPixelId: null,
         },
       }),
     );
@@ -117,6 +124,7 @@ describe("renderBridgePage", () => {
     expect(html).toContain('"ga4":null');
     expect(html).toContain('"meta":null');
     expect(html).toContain('"reddit":null');
+    expect(html).toContain('"tiktok":null');
     expect(html).toContain('"consent":false');
     expect(html).toContain('ad_storage:C.consent?"granted":"denied"');
   });
@@ -153,12 +161,14 @@ describe("sanitizeTrackingConfig", () => {
         ga4MeasurementId: "G-ABC1234567",
         metaPixelId: "123456789012345",
         redditPixelId: "a2_jkbr3o78lsrk",
+        tiktokPixelId: "DA79R2JC77UES9742I10",
       }),
     ).toEqual({
       gtmContainerId: "GTM-ABC1234",
       ga4MeasurementId: "G-ABC1234567",
       metaPixelId: "123456789012345",
       redditPixelId: "a2_jkbr3o78lsrk",
+      tiktokPixelId: "DA79R2JC77UES9742I10",
     });
   });
 
@@ -168,12 +178,14 @@ describe("sanitizeTrackingConfig", () => {
       ga4MeasurementId: "G-<img src=x>",
       metaPixelId: "123abc",
       redditPixelId: 'a2_"><script>alert(1)</script>',
+      tiktokPixelId: 'DA79"><script>alert(1)</script>',
     });
     expect(result).toEqual({
       gtmContainerId: null,
       ga4MeasurementId: null,
       metaPixelId: null,
       redditPixelId: null,
+      tiktokPixelId: null,
     });
   });
 
@@ -184,6 +196,7 @@ describe("sanitizeTrackingConfig", () => {
         ga4MeasurementId: null,
         metaPixelId: null,
         redditPixelId: "jkbr3o78lsrk",
+        tiktokPixelId: null,
       }).redditPixelId,
     ).toBeNull();
   });
@@ -196,6 +209,8 @@ describe("buildBridgeCsp", () => {
     expect(csp).toContain("https://connect.facebook.net");
     expect(csp).toContain("https://www.redditstatic.com");
     expect(csp).toContain("https://alb.reddit.com");
+    expect(csp).toContain("https://analytics.tiktok.com");
+    expect(csp).toContain("https://*.tiktok.com");
     expect(csp).toContain("https://cdn.example.com");
     expect(csp).toContain("default-src 'none'");
   });

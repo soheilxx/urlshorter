@@ -46,6 +46,9 @@ const envSchema = z.object({
   META_CAPI_ACCESS_TOKEN: optionalString,
   META_CAPI_TEST_EVENT_CODE: optionalString,
   REDDIT_PIXEL_ID: optionalString,
+  TIKTOK_PIXEL_ID: optionalString,
+  TIKTOK_EVENTS_API_TOKEN: optionalString,
+  TIKTOK_TEST_EVENT_CODE: optionalString,
   TRACKING_CONSENT_MODE: z
     .string()
     .optional()

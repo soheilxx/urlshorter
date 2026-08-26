@@ -14,6 +14,7 @@ export interface BridgeTrackingConfig {
   ga4MeasurementId: string | null;
   metaPixelId: string | null;
   redditPixelId: string | null;
+  tiktokPixelId: string | null;
 }
 
 export interface BridgeEventParams {
@@ -44,6 +45,7 @@ const GTM_ID_PATTERN = /^GTM-[A-Z0-9]{4,12}$/;
 const GA4_ID_PATTERN = /^G-[A-Z0-9]{4,16}$/;
 const META_PIXEL_PATTERN = /^[0-9]{5,20}$/;
 const REDDIT_PIXEL_PATTERN = /^a2_[a-z0-9]{4,24}$/i;
+const TIKTOK_PIXEL_PATTERN = /^[A-Z0-9]{10,32}$/i;
 
 export function sanitizeTrackingConfig(config: BridgeTrackingConfig): BridgeTrackingConfig {
   return {
@@ -61,6 +63,10 @@ export function sanitizeTrackingConfig(config: BridgeTrackingConfig): BridgeTrac
       config.redditPixelId && REDDIT_PIXEL_PATTERN.test(config.redditPixelId)
         ? config.redditPixelId
         : null,
+    tiktokPixelId:
+      config.tiktokPixelId && TIKTOK_PIXEL_PATTERN.test(config.tiktokPixelId)
+        ? config.tiktokPixelId
+        : null,
   };
 }
 
@@ -72,12 +78,13 @@ export function buildBridgeCsp(extraHosts: string[]): string {
   const extra = extraHosts.map((h) => `https://${h.replace(/^https?:\/\//, "")}`).join(" ");
   const scriptSrc =
     `script-src 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net ` +
-    `https://www.redditstatic.com` +
+    `https://www.redditstatic.com https://analytics.tiktok.com` +
     (extra ? ` ${extra}` : "");
   const connectSrc =
     `connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com ` +
     `https://*.analytics.google.com https://stats.g.doubleclick.net https://www.facebook.com ` +
-    `https://alb.reddit.com https://pixel.redditmedia.com https://www.redditstatic.com` +
+    `https://alb.reddit.com https://pixel.redditmedia.com https://www.redditstatic.com ` +
+    `https://analytics.tiktok.com https://*.tiktok.com` +
     (extra ? ` ${extra}` : "");
   return [
     "default-src 'none'",
@@ -126,6 +133,7 @@ export function renderBridgePage(opts: BridgePageOptions): string {
     ga4: opts.hasMarketingConsent && !tracking.gtmContainerId ? tracking.ga4MeasurementId : null,
     meta: opts.hasMarketingConsent ? tracking.metaPixelId : null,
     reddit: opts.hasMarketingConsent ? tracking.redditPixelId : null,
+    tiktok: opts.hasMarketingConsent ? tracking.tiktokPixelId : null,
     params: opts.eventParams,
   };
 
@@ -241,6 +249,26 @@ try{
     rdt("init",C.reddit);
     rdt("track","PageVisit");
     rdt("track","Custom",{customEventName:"OutboundClick",conversionId:C.params.event_id});
+  }
+  if(C.tiktok){
+    trackingAttempted=true;
+    !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
+    ttq.methods=["page","track","identify","instances","debug","on","off","once","ready",
+    "alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"];
+    ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(
+    Array.prototype.slice.call(arguments,0)))}};
+    for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
+    ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)
+    ttq.setAndDefer(e,ttq.methods[n]);return e};
+    ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js";
+    ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=r;ttq._t=ttq._t||{};ttq._t[e]=+new Date;
+    ttq._o=ttq._o||{};ttq._o[e]=n||{};n=d.createElement("script");n.type="text/javascript";
+    n.async=!0;n.src=r+"?sdkid="+e+"&lib="+t;e=d.getElementsByTagName("script")[0];
+    e.parentNode.insertBefore(n,e)}}(window,document,"ttq");
+    ttq.load(C.tiktok);
+    ttq.page();
+    ttq.track("ClickButton",{content_name:C.params.link_name,
+    content_category:C.params.source},{event_id:C.params.event_id});
   }
 }catch(e){}
 if(trackingAttempted){beacon("tracking");}
