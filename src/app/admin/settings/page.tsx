@@ -117,6 +117,22 @@ export default async function SettingsPage() {
                 </dd>
               </div>
               <div className="flex items-center justify-between">
+                <dt className="text-zinc-600">LinkedIn Insight Tag</dt>
+                <dd>
+                  <ConfigBadge configured={Boolean(env.LINKEDIN_PARTNER_ID)} />
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-zinc-600">LinkedIn Conversions API</dt>
+                <dd>
+                  <ConfigBadge
+                    configured={Boolean(
+                      env.LINKEDIN_CONVERSION_RULE_ID && env.LINKEDIN_CAPI_ACCESS_TOKEN,
+                    )}
+                  />
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
                 <dt className="text-zinc-600">Consent-Modus</dt>
                 <dd>
                   <Badge variant={env.TRACKING_CONSENT_MODE === "required" ? "success" : "warning"}>

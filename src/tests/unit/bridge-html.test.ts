@@ -20,6 +20,7 @@ function baseOptions(overrides: Partial<BridgePageOptions> = {}): BridgePageOpti
       metaPixelId: "123456789012345",
       redditPixelId: "a2_abc123def",
       tiktokPixelId: "DA79R2JC77UES9742I10",
+      linkedInPartnerId: "7654321",
     },
     eventParams: {
       event_id: "11111111-2222-3333-4444-555555555555",
@@ -100,6 +101,8 @@ describe("renderBridgePage", () => {
     expect(html).toContain("ttq.page()");
     expect(html).toContain('ttq.track("ClickButton"');
     expect(html).toContain("event_id:C.params.event_id");
+    expect(html).toContain('"linkedin":"7654321"');
+    expect(html).toContain("snap.licdn.com/li.lms-analytics/insight.min.js");
   });
 
   it("bindet GA4 nativ ein, wenn kein GTM konfiguriert ist", () => {
@@ -111,6 +114,7 @@ describe("renderBridgePage", () => {
           metaPixelId: null,
           redditPixelId: null,
           tiktokPixelId: null,
+          linkedInPartnerId: null,
         },
       }),
     );
@@ -125,6 +129,7 @@ describe("renderBridgePage", () => {
     expect(html).toContain('"meta":null');
     expect(html).toContain('"reddit":null');
     expect(html).toContain('"tiktok":null');
+    expect(html).toContain('"linkedin":null');
     expect(html).toContain('"consent":false');
     expect(html).toContain('ad_storage:C.consent?"granted":"denied"');
   });
@@ -162,6 +167,7 @@ describe("sanitizeTrackingConfig", () => {
         metaPixelId: "123456789012345",
         redditPixelId: "a2_jkbr3o78lsrk",
         tiktokPixelId: "DA79R2JC77UES9742I10",
+        linkedInPartnerId: "7654321",
       }),
     ).toEqual({
       gtmContainerId: "GTM-ABC1234",
@@ -169,6 +175,7 @@ describe("sanitizeTrackingConfig", () => {
       metaPixelId: "123456789012345",
       redditPixelId: "a2_jkbr3o78lsrk",
       tiktokPixelId: "DA79R2JC77UES9742I10",
+      linkedInPartnerId: "7654321",
     });
   });
 
@@ -179,6 +186,7 @@ describe("sanitizeTrackingConfig", () => {
       metaPixelId: "123abc",
       redditPixelId: 'a2_"><script>alert(1)</script>',
       tiktokPixelId: 'DA79"><script>alert(1)</script>',
+      linkedInPartnerId: '123"><script>',
     });
     expect(result).toEqual({
       gtmContainerId: null,
@@ -186,6 +194,7 @@ describe("sanitizeTrackingConfig", () => {
       metaPixelId: null,
       redditPixelId: null,
       tiktokPixelId: null,
+      linkedInPartnerId: null,
     });
   });
 
@@ -197,6 +206,7 @@ describe("sanitizeTrackingConfig", () => {
         metaPixelId: null,
         redditPixelId: "jkbr3o78lsrk",
         tiktokPixelId: null,
+        linkedInPartnerId: null,
       }).redditPixelId,
     ).toBeNull();
   });
@@ -211,6 +221,8 @@ describe("buildBridgeCsp", () => {
     expect(csp).toContain("https://alb.reddit.com");
     expect(csp).toContain("https://analytics.tiktok.com");
     expect(csp).toContain("https://*.tiktok.com");
+    expect(csp).toContain("https://snap.licdn.com");
+    expect(csp).toContain("https://px.ads.linkedin.com");
     expect(csp).toContain("https://cdn.example.com");
     expect(csp).toContain("default-src 'none'");
   });

@@ -372,6 +372,32 @@ Ads-Attribution werden `ttclid` (Query-Parameter aus TikTok-Anzeigen) und das
 
 Logs: `tiktok_events.sent` / `tiktok_events.send_failed`.
 
+### LinkedIn Insight Tag (`LINKEDIN_PARTNER_ID`) + Conversions API
+
+Das Insight Tag (optional, numerische Partner-ID) läuft auf der Bridge-Page
+für Audiences/Retargeting. Die **Conversions API** meldet Conversions
+serverseitig – LinkedIn verlangt dafür zwingend eine Nutzer-Kennung. Ohne
+E-Mails bleibt die LinkedIn-Klick-ID **`li_fat_id`**, die LinkedIn an
+Anzeigen-Ziel-URLs anhängt (bzw. das Insight-Tag-Cookie): Server-Events
+werden daher **nur für Klicks aus LinkedIn-Anzeigen** gesendet; organische
+Klicks kann LinkedIn ohnehin nicht zuordnen. Die `eventId` entspricht der
+Klick-Event-ID (Deduplication).
+
+**Einrichten:**
+
+1. **Conversion-Regel:** Campaign Manager → Analysieren →
+   Conversion-Tracking → „Conversion erstellen“ → Quelle **„Conversions
+   API“** → Regel-ID als `LINKEDIN_CONVERSION_RULE_ID` hinterlegen.
+2. **Access Token:** LinkedIn Developer Portal → App mit Produkt
+   „Advertising API“ → OAuth-Token mit Scope `rw_conversions` generieren →
+   als `LINKEDIN_CAPI_ACCESS_TOKEN` hinterlegen (geheim!).
+   **Achtung:** LinkedIn-Tokens laufen nach ~60 Tagen ab.
+3. Optional Insight Tag: Partner-ID als `LINKEDIN_PARTNER_ID`.
+4. In den Kampagnen sicherstellen, dass LinkedIn `li_fat_id` an die
+   Ziel-URLs anhängt (Standard bei aktiviertem Conversion-Tracking).
+
+Logs: `linkedin_capi.sent` / `linkedin_capi.send_failed`.
+
 ### Woran erkenne ich, dass ein Link korrekt trackt?
 
 1. Kurzlink im Inkognito-Fenster öffnen → Bridge-Page → Amazon.

@@ -42,6 +42,8 @@ describe("Serverseitige Event-APIs im Redirect-Flow", () => {
     process.env.META_CAPI_ACCESS_TOKEN = "test-capi-token";
     process.env.META_CAPI_TEST_EVENT_CODE = "TEST99999";
     process.env.TIKTOK_EVENTS_API_TOKEN = "test-tiktok-token";
+    process.env.LINKEDIN_CONVERSION_RULE_ID = "1234567";
+    process.env.LINKEDIN_CAPI_ACCESS_TOKEN = "test-li-token";
     resetEnvCache();
   });
 
@@ -49,6 +51,8 @@ describe("Serverseitige Event-APIs im Redirect-Flow", () => {
     delete process.env.META_CAPI_ACCESS_TOKEN;
     delete process.env.META_CAPI_TEST_EVENT_CODE;
     delete process.env.TIKTOK_EVENTS_API_TOKEN;
+    delete process.env.LINKEDIN_CONVERSION_RULE_ID;
+    delete process.env.LINKEDIN_CAPI_ACCESS_TOKEN;
     resetEnvCache();
     globalThis.fetch = originalFetch;
   });
@@ -121,6 +125,47 @@ describe("Serverseitige Event-APIs im Redirect-Flow", () => {
     expect(user.user_agent).toBeTruthy();
   });
 
+  it("LinkedIn CAPI: sendet Conversion nur bei vorhandener li_fat_id", async () => {
+    const calls = stubFetch();
+    const dest = await createTestDestination();
+    await createTestLink(dest.id, { code: "abcd" });
+
+    // Ohne li_fat_id: kein LinkedIn-Call (Meta/TikTok laufen unabhängig)
+    await GET(
+      buildRedirectRequest("abcd", { cookie: "marketing_consent=accepted" }),
+      routeContext("abcd"),
+    );
+    expect(calls.filter((c) => c.url.includes("api.linkedin.com"))).toHaveLength(0);
+
+    // Mit li_fat_id aus einer LinkedIn-Anzeige
+    await GET(
+      buildRedirectRequest("abcd", {
+        cookie: "marketing_consent=accepted",
+        query: "?li_fat_id=AQTestLiFatId_123",
+      }),
+      routeContext("abcd"),
+    );
+    const liCalls = calls.filter((c) => c.url.includes("api.linkedin.com"));
+    expect(liCalls).toHaveLength(1);
+    const call = liCalls[0]!;
+    expect(call.url).toBe("https://api.linkedin.com/rest/conversionEvents");
+    expect(call.headers["Authorization"]).toBe("Bearer test-li-token");
+    expect(call.headers["LinkedIn-Version"]).toMatch(/^\d{6}$/);
+    expect(call.headers["X-Restli-Protocol-Version"]).toBe("2.0.0");
+    expect(call.body.conversion).toBe("urn:lla:llaPartnerConversion:1234567");
+
+    const user = call.body.user as { userIds: Array<{ idType: string; idValue: string }> };
+    expect(user.userIds[0]).toEqual({
+      idType: "LINKEDIN_FIRST_PARTY_ADS_TRACKING_UUID",
+      idValue: "AQTestLiFatId_123",
+    });
+
+    // Dieselbe event_id wie der zweite gespeicherte Click-Event
+    const { prisma } = await import("@/lib/db");
+    const events = await prisma.clickEvent.findMany();
+    expect(events.map((e) => e.id)).toContain(call.body.eventId);
+  });
+
   it("sendet nichts ohne Consent", async () => {
     const calls = stubFetch();
     const dest = await createTestDestination();
@@ -148,6 +193,7 @@ describe("Serverseitige Event-APIs im Redirect-Flow", () => {
   it("sendet nichts ohne konfigurierte Tokens", async () => {
     delete process.env.META_CAPI_ACCESS_TOKEN;
     delete process.env.TIKTOK_EVENTS_API_TOKEN;
+    delete process.env.LINKEDIN_CAPI_ACCESS_TOKEN;
     resetEnvCache();
     const calls = stubFetch();
     const dest = await createTestDestination();

@@ -49,6 +49,10 @@ const envSchema = z.object({
   TIKTOK_PIXEL_ID: optionalString,
   TIKTOK_EVENTS_API_TOKEN: optionalString,
   TIKTOK_TEST_EVENT_CODE: optionalString,
+  LINKEDIN_PARTNER_ID: optionalString,
+  LINKEDIN_CONVERSION_RULE_ID: optionalString,
+  LINKEDIN_CAPI_ACCESS_TOKEN: optionalString,
+  LINKEDIN_API_VERSION: optionalString,
   TRACKING_CONSENT_MODE: z
     .string()
     .optional()

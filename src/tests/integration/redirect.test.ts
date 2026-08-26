@@ -164,6 +164,7 @@ describe("Redirect-Route /{code}", () => {
     expect(htmlWithout).toContain('"meta":null');
     expect(htmlWithout).toContain('"reddit":null');
     expect(htmlWithout).toContain('"tiktok":null');
+    expect(htmlWithout).toContain('"linkedin":null');
 
     // Mit gültigem Consent-Cookie
     const withConsent = await GET(
@@ -174,6 +175,7 @@ describe("Redirect-Route /{code}", () => {
     expect(htmlWith).toContain('"meta":"123456789012345"');
     expect(htmlWith).toContain('"reddit":"a2_testpixel1"');
     expect(htmlWith).toContain('"tiktok":"TESTTIKTOK1234567890"');
+    expect(htmlWith).toContain('"linkedin":"7654321"');
 
     const events = await prisma.clickEvent.findMany();
     expect(events).toHaveLength(2);

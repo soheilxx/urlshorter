@@ -15,6 +15,7 @@ import { getEnv, requireAppSecret } from "@/lib/env";
 import { createEventToken } from "@/lib/event-token";
 import { logger } from "@/lib/logger";
 import { extractUtmParams, getClientIp, getGeoInfo, getReferrer } from "@/lib/request-info";
+import { isValidLiFatId, sendLinkedInCapiEvent, type LinkedInCapiInput } from "@/lib/linkedin-capi";
 import { deriveFbc, sendMetaCapiEvents, type MetaCapiInput } from "@/lib/meta-capi";
 import { sendTikTokEvents, type TikTokEventsInput } from "@/lib/tiktok-events";
 import { getRedirectDelayMs } from "@/lib/settings";
@@ -234,6 +235,29 @@ async function handle(request: Request, code: string): Promise<Response> {
       };
     }
 
+    // LinkedIn Conversions API: nur für Klicks aus LinkedIn-Anzeigen
+    // (li_fat_id aus Query-Parameter oder Insight-Tag-Cookie) – LinkedIn
+    // verlangt zwingend eine Nutzer-Kennung.
+    let linkedInInput: LinkedInCapiInput | null = null;
+    if (
+      !bot.isBot &&
+      consent.hasMarketingConsent &&
+      env.LINKEDIN_CONVERSION_RULE_ID &&
+      env.LINKEDIN_CAPI_ACCESS_TOKEN
+    ) {
+      const liFatId = url.searchParams.get("li_fat_id") ?? cookies.get("li_fat_id") ?? null;
+      if (isValidLiFatId(liFatId)) {
+        linkedInInput = {
+          conversionRuleId: env.LINKEDIN_CONVERSION_RULE_ID,
+          accessToken: env.LINKEDIN_CAPI_ACCESS_TOKEN,
+          apiVersion: env.LINKEDIN_API_VERSION,
+          eventId,
+          eventTimeMs: Date.now(),
+          liFatId,
+        };
+      }
+    }
+
     // In Produktion registriert after() die Verarbeitung für nach der
     // Response (kein Await-Overhead); außerhalb des Next-Request-Kontexts
     // (Tests) wird direkt und vollständig awaited ausgeführt.
@@ -241,6 +265,7 @@ async function handle(request: Request, code: string): Promise<Response> {
       await recordClickEvent(clickData);
       if (metaCapiInput) await sendMetaCapiEvents(metaCapiInput);
       if (tiktokInput) await sendTikTokEvents(tiktokInput);
+      if (linkedInInput) await sendLinkedInCapiEvent(linkedInInput);
     });
 
     // HEAD-Anfragen: keine Weiterleitung, kein Body – nur Status + Header.
@@ -275,6 +300,7 @@ async function handle(request: Request, code: string): Promise<Response> {
         metaPixelId: env.META_PIXEL_ID,
         redditPixelId: env.REDDIT_PIXEL_ID,
         tiktokPixelId: env.TIKTOK_PIXEL_ID,
+        linkedInPartnerId: env.LINKEDIN_PARTNER_ID,
       },
       eventParams: {
         event_id: eventId,
