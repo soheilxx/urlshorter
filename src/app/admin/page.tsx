@@ -4,7 +4,7 @@ import { BarList } from "@/components/admin/bar-list";
 import { BucketBarChart, ClicksPerDayChart } from "@/components/admin/charts";
 import { StatCard } from "@/components/admin/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireAdmin } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import {
   getClicksByDimension,
   getClicksByHour,
@@ -34,7 +34,7 @@ export default async function OverviewPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireAdmin();
+  await requireSession();
   const params = await searchParams;
   const rangeParam = typeof params.range === "string" ? params.range : undefined;
   const botFilter: BotFilter = params.bots === "only" ? "bot" : "human";

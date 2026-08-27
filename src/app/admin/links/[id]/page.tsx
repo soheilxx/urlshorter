@@ -10,9 +10,10 @@ import { StatCard } from "@/components/admin/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireAdmin } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
+import { canManageLinks } from "@/lib/permissions";
 import { getClicksPerDay, getOverviewStats, resolveRange } from "@/lib/stats";
 import { formatBerlinDate, formatNumber, formatPercent } from "@/lib/utils";
 
@@ -20,7 +21,8 @@ export const metadata: Metadata = { title: "Kurzlink-Details" };
 export const dynamic = "force-dynamic";
 
 export default async function LinkDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin();
+  const session = await requireSession();
+  const canManage = canManageLinks(session.role);
   const { id } = await params;
 
   const link = await prisma.shortLink.findUnique({
@@ -89,19 +91,21 @@ export default async function LinkDetailPage({ params }: { params: Promise<{ id:
               Klicks anzeigen
             </Button>
           </Link>
-          <form action={toggleShortLinkActiveAction}>
-            <input type="hidden" name="id" value={link.id} />
-            <input type="hidden" name="active" value={link.active ? "false" : "true"} />
-            {link.active ? (
-              <ConfirmSubmitButton confirmText="Wirklich deaktivieren?">
-                Deaktivieren
-              </ConfirmSubmitButton>
-            ) : (
-              <Button type="submit" variant="secondary" size="sm">
-                Reaktivieren
-              </Button>
-            )}
-          </form>
+          {canManage ? (
+            <form action={toggleShortLinkActiveAction}>
+              <input type="hidden" name="id" value={link.id} />
+              <input type="hidden" name="active" value={link.active ? "false" : "true"} />
+              {link.active ? (
+                <ConfirmSubmitButton confirmText="Wirklich deaktivieren?">
+                  Deaktivieren
+                </ConfirmSubmitButton>
+              ) : (
+                <Button type="submit" variant="secondary" size="sm">
+                  Reaktivieren
+                </Button>
+              )}
+            </form>
+          ) : null}
         </div>
       </div>
 
@@ -121,7 +125,8 @@ export default async function LinkDetailPage({ params }: { params: Promise<{ id:
         </CardContent>
       </Card>
 
-      <Card>
+      {canManage ? (
+        <Card>
         <CardHeader>
           <CardTitle>Link bearbeiten</CardTitle>
         </CardHeader>
@@ -154,7 +159,8 @@ export default async function LinkDetailPage({ params }: { params: Promise<{ id:
             }}
           />
         </CardContent>
-      </Card>
+        </Card>
+      ) : null}
     </div>
   );
 }

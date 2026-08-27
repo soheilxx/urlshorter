@@ -1,4 +1,4 @@
-import { getAdminSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { parseClickFilters } from "@/lib/click-filters";
 import { streamClicksCsv } from "@/lib/csv";
 import { todayBerlin } from "@/lib/date-range";
@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request): Promise<Response> {
-  const session = await getAdminSession();
+  const session = await getSession();
   if (!session) {
     return new Response("Nicht autorisiert.", { status: 401 });
   }

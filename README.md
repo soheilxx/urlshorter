@@ -19,8 +19,10 @@ Tracking-Projekt genutzt.
 3. [Datenbankeinrichtung](#datenbankeinrichtung)
 4. [Environment Variables](#environment-variables)
 5. [Admin-Passwort-Hash erzeugen](#admin-passwort-hash-erzeugen)
-6. [Migrationen](#migrationen)
-7. [Tests](#tests)
+6. [Benutzer & Rollen](#benutzer--rollen)
+7. [Analytics-Tab (Geo & Kanäle)](#analytics-tab-geo--kanäle)
+8. [Migrationen](#migrationen)
+9. [Tests](#tests)
 8. [Deployment auf Vercel](#deployment-auf-vercel)
 9. [Domain und DNS](#domain-und-dns)
 10. [Tracking-Konfiguration](#tracking-konfiguration)
@@ -78,8 +80,11 @@ weitergeleitet – ein Trackingfehler kostet nie einen Kauf.
 | `src/app/api/beacon/route.ts`           | Clientseitige Event-Bestätigungen                         |
 | `src/lib/url-validation.ts`             | Ziel-URL-Validierung (HTTPS-Pflicht, optionale Allowlist) |
 | `src/lib/shortcode.ts`                  | Kryptografisch sichere 4-Buchstaben-Codes                 |
-| `src/lib/auth.ts`, `src/lib/session.ts` | Single-Admin-Auth, Session, Rate Limiting                 |
+| `src/lib/auth.ts`, `src/lib/session.ts` | Benutzer-Auth (DB + Env-Bootstrap), Session, Rate Limiting |
+| `src/lib/permissions.ts`                | Rollen (Admin/Marketer/Viewer) und Rechte                 |
 | `src/lib/stats.ts`                      | Serverseitig aggregierte Dashboard-Statistiken            |
+| `src/lib/geo-stats.ts`, `src/lib/channels.ts` | Geo-/Kanal-Auswertungen für den Analytics-Tab       |
+| `src/lib/world-map.ts`                  | Weltkarten-Geometrie (gebündeltes TopoJSON, kein Fetch)   |
 | `src/lib/retention.ts`                  | Aggregation + Löschung alter Events                       |
 | `src/app/admin/**`                      | Deutschsprachiges Admin-Dashboard                         |
 | `src/actions/**`                        | Server Actions (Zod-validiert, auth-geprüft, auditiert)   |
@@ -89,11 +94,13 @@ weitergeleitet – ein Trackingfehler kostet nie einen Kauf.
 
 `Destination` (wiederverwendbare Ziel-URL) ← `ShortLink` (4-Buchstaben-Code,
 Source/Medium/Kampagne/Content, Aktiv-Flag, Ablaufdatum) ← `ClickEvent`
-(UTC-Zeitstempel, UTM-Parameter, Gerät/Browser/OS, Geo aus Vercel-Headern,
-Bot-Flag + Grund, anonymer Besucher-Hash, Client-Bestätigungen). Dazu:
-`DailyAggregate` (Langzeit-Statistik), `AuditLog`, `AppSetting`,
-`LoginAttempt` (Rate Limiting). Der Admin wird über Environment Variables
-konfiguriert (Single-Admin-Lösung, keine öffentliche Registrierung).
+(UTC-Zeitstempel, UTM-Parameter, Gerät/Browser/OS, Geo aus Vercel-Headern
+inkl. auf ~11 km gerundeter Koordinaten, Bot-Flag + Grund, anonymer
+Besucher-Hash, Client-Bestätigungen). Dazu: `User` (Dashboard-Benutzer mit
+Rolle, siehe [Benutzer & Rollen](#benutzer--rollen)), `DailyAggregate`
+(Langzeit-Statistik), `AuditLog`, `AppSetting`, `LoginAttempt` (Rate
+Limiting). Es gibt keine öffentliche Registrierung; der Env-Admin dient nur
+noch als Bootstrap-Zugang.
 
 ---
 
@@ -185,8 +192,56 @@ Variablenreferenz interpretiert und dadurch unbemerkt zerstört werden können.
 Die Base64-Variante ist gegen dieses Problem immun.
 
 Es gibt bewusst **keinen** Standard-Login wie `admin/admin`. Fehlen die
-Auth-Variablen, zeigt die Login-Seite eine Setup-Meldung und der Admin-Bereich
-bleibt gesperrt.
+Auth-Variablen und existiert noch kein Datenbank-Benutzer, zeigt die
+Login-Seite eine Setup-Meldung und der Admin-Bereich bleibt gesperrt.
+
+## Benutzer & Rollen
+
+Das Dashboard hat eine Benutzerverwaltung (`/admin/users`, nur für Admins)
+mit E-Mail + Passwort (bcrypt) und drei Rollen:
+
+| Rolle        | Rechte                                                                 |
+| ------------ | ---------------------------------------------------------------------- |
+| **Admin**    | Vollzugriff: Benutzer, Einstellungen, Links, Ziele, alle Auswertungen  |
+| **Marketer** | Kurzlinks & Ziele anlegen/bearbeiten, alle Auswertungen und Exporte    |
+| **Viewer**   | Nur Lesezugriff (Übersicht, Analytics, Klicks, Listen, CSV-Export)     |
+
+Funktionsweise und Schutzregeln:
+
+- **Bootstrap:** Der Env-Admin (`ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH_BASE64`)
+  bleibt gültig, solange kein Datenbank-Benutzer mit derselben E-Mail
+  existiert. Empfohlener Ablauf: mit dem Env-Admin anmelden, unter „Benutzer“
+  ein persönliches Admin-Konto anlegen, künftig damit arbeiten.
+- Rollen und Aktiv-Status werden bei **jedem Request frisch** aus der
+  Datenbank gelesen – Deaktivierung wirkt sofort.
+- Passwort-Reset (durch Admins) und eigene Passwort-Änderung
+  (`/admin/account`) invalidieren alle bestehenden Sitzungen des Kontos;
+  bei der eigenen Änderung wird die aktuelle Sitzung nahtlos erneuert.
+- Niemand kann die eigene Rolle ändern, sich selbst deaktivieren oder
+  löschen; der letzte aktive Admin ist gegen Herabstufung/Löschung geschützt.
+- Alle Benutzer-Aktionen landen im Audit-Log (ohne Passwörter/Hashes).
+- Serverseitig erzwingen `requireRole()`/`requireRoleOrThrow()` die Rechte in
+  jeder Seite bzw. Server Action (die Navigation blendet nur zusätzlich aus).
+
+## Analytics-Tab (Geo & Kanäle)
+
+`/admin/analytics` (alle Rollen) zeigt die Besucherströme wie eine
+Geo-Tracking-Plattform in einem dunklen Panel:
+
+- **Weltkarte** (gebündeltes TopoJSON aus `world-atlas`, kein externer
+  Fetch): Länder als Choropleth nach Klickzahl, Städte als pulsierende
+  Marker (Größe = Klickvolumen), Tooltips per Hover.
+- **Koordinaten** stammen aus den Vercel-Headern `x-vercel-ip-latitude`/
+  `-longitude` und werden **auf eine Nachkommastelle (~11 km) gerundet**
+  gespeichert (Stadt-Niveau, Datensparsamkeit). Ältere Klicks ohne
+  Koordinaten fallen auf Länder-Zentroide zurück.
+- **Kanäle** nach dem Vorbild der GA-Channel-Groups (Paid Ads, Organic
+  Social, Suche, E-Mail, Referral, Direct, Sonstiges) – klassifiziert aus
+  UTM-Parametern, Link-Metadaten und Referrer (`src/lib/channels.ts`).
+- Dazu: Live-Feed der letzten Klicks, Top Länder/Städte/Referrer und
+  KPI-Kacheln, Zeitraum-Filter wie auf der Übersicht.
+- Lokale Demo-Daten für die Karte: `npm run seed:demo` (nur gegen lokale
+  Dev-/Test-Datenbanken lauffähig).
 
 ## Migrationen
 
@@ -215,10 +270,12 @@ angewendet und alle Tabellen geleert. E2E-Login: `admin@test.local` /
 
 Abgedeckt sind u. a.: Codegenerierung und Kollisionen, URL-/Host-Validierung
 (inkl. `amazon.de.example.com`-Angriff), Event-Token-Signatur und -Ablauf,
+Session-Tokens inkl. Rollen, Rollen-Rechte, Kanal-Klassifizierung,
 Bot-Klassifizierung, Bridge-Page-Inhalte und XSS-Schutz, Consent-Verhalten,
 Redirect-Verhalten für deaktivierte/abgelaufene/unbekannte Links, Beacon-
-Sicherheit, Retention inkl. Idempotenz, Filter/CSV-Export sowie der komplette
-Browser-Ablauf Login → Ziel → Link → Klick → Bridge → Amazon → Dashboard.
+Sicherheit, Retention inkl. Idempotenz, Filter/CSV-Export, der komplette
+Browser-Ablauf Login → Ziel → Link → Klick → Bridge → Amazon → Dashboard
+sowie Benutzerverwaltung und Rollen-Gating (E2E `e2e/roles.spec.ts`).
 
 ## Deployment auf Vercel
 
@@ -232,13 +289,14 @@ Browser-Ablauf Login → Ziel → Link → Klick → Bridge → Amazon → Dashb
    [Environment Variables](#environment-variables), insbesondere
    `PUBLIC_BASE_URL=https://lizenzzumerfolg.com`, `AUTH_SECRET`, `APP_SECRET`,
    `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH_BASE64`, `CRON_SECRET`.
-5. **Migrationen ausführen:** lokal gegen die Produktions-DB (direkte URL):
-   ```bash
-   $env:DATABASE_URL="<direkte-produktions-url>"   # PowerShell
-   npx prisma migrate deploy
-   ```
-   Alternativ: Build-Command in Vercel auf
-   `prisma migrate deploy && next build` setzen.
+5. **Migrationen:** laufen automatisch im Vercel-Build (`vercel.json` →
+   `buildCommand: "prisma migrate deploy && next build"`), also VOR dem
+   Live-Schalten der neuen Version. Alle Migrationen sind additiv; schlägt
+   eine fehl, bricht der Build ab und die alte Version bleibt online.
+   Hinweis: Falls der Anbieter eine gepoolte und eine direkte URL anbietet
+   und `migrate deploy` an der gepoolten scheitert, die direkte URL als
+   `DATABASE_URL` fürs Build-Environment hinterlegen (oder manuell:
+   `DATABASE_URL=<direkte-url> npx prisma migrate deploy`).
 6. **Admin-Passwort-Hash erzeugen:** lokal `npm run hash-password`, Wert als
    `ADMIN_PASSWORD_HASH_BASE64` eintragen.
 7. **Deployment starten:** „Deploy“ bzw. Push auf `main`.
@@ -520,7 +578,7 @@ zeigen so die Amazon-Seite an.
 | `/api/health` liefert `degraded`                         | Datenbank nicht erreichbar → `DATABASE_URL`/DB-Status prüfen.                                                                                                                                                                                        |
 | Zu viele DB-Verbindungen (Serverless)                    | Gepoolte Connection-URL verwenden.                                                                                                                                                                                                                   |
 | Cron läuft nicht                                         | `CRON_SECRET` fehlt oder Cron nicht aktiv (Vercel → Settings → Cron Jobs).                                                                                                                                                                           |
-| E2E-Tests hängen lokal sporadisch („Wird gespeichert …“) | Bekanntes lokales Windows-Phänomen bei schnell aufeinanderfolgenden Läufen unter Last (der Server-Action-Request erreicht den lokalen Testserver nicht; kein App-Fehler, tritt auf Vercel nicht auf). Lauf wiederholen oder Specs einzeln ausführen. |
+| Formular-Submit bleibt auf „Wird gespeichert …“ hängen   | Next-15-Race: Bei `useActionState` **mit** `revalidatePath` (oder key-Remount des `<form>`) verwirft der Client-Router sporadisch die Action-Antwort – der Server hat aber geschrieben (Beleg: POST 200 + `x-action-revalidated`, kein Console-Fehler). Die Benutzer-Formulare nutzen deshalb `router.refresh()` nach Erfolg statt `revalidatePath` (siehe `user-forms.tsx`/`user-actions.ts`). Die älteren Link-/Ziel-Formulare können lokal unter Last selten noch hängen → Seite neu laden, Eintrag ist angelegt; die E2E-Tests prüfen deshalb das Ergebnis (Listeneintrag) statt nur der Erfolgsmeldung. |
 
 Systemstatus: Dashboard → Einstellungen (DB-Status, konfigurierte
 Integrationen, Consent-Modus, Retention, Audit-Log). Health-Endpoint:

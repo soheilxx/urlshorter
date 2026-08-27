@@ -1,10 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EMPTY_SETTINGS_STATE, type SettingsActionState } from "@/actions/action-states";
 import { writeAuditLog } from "@/lib/audit";
-import { requireAdminOrThrow } from "@/lib/auth";
+import { requireRoleOrThrow } from "@/lib/auth";
 import {
   clampRedirectDelay,
   REDIRECT_DELAY_MAX,
@@ -24,7 +23,7 @@ export async function updateRedirectDelayAction(
   formData: FormData,
 ): Promise<SettingsActionState> {
   try {
-    const session = await requireAdminOrThrow();
+    const session = await requireRoleOrThrow("ADMIN");
     const parsed = delaySchema.safeParse(formData.get("delayMs"));
     if (!parsed.success) {
       return {
@@ -44,7 +43,8 @@ export async function updateRedirectDelayAction(
       changes: { delayMs: value },
     });
 
-    revalidatePath("/admin/settings");
+    // Kein revalidatePath in useActionState-Actions (Race im Client-Router,
+    // siehe README → Fehlerbehebung); das Formular ruft router.refresh() auf.
     return {
       ...EMPTY_SETTINGS_STATE,
       ok: true,

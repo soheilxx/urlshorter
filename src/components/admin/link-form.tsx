@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { EMPTY_LINK_STATE } from "@/actions/action-states";
 import { createShortLinkAction, updateShortLinkAction } from "@/actions/link-actions";
+import { useSuccessRefresh } from "@/components/admin/use-success-refresh";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
@@ -38,10 +39,11 @@ export function LinkForm({
 }) {
   const action = mode === "create" ? createShortLinkAction : updateShortLinkAction;
   const [state, formAction, pending] = useActionState(action, EMPTY_LINK_STATE);
+  const formRef = useSuccessRefresh(state);
   const v = initialValues ?? {};
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} className="space-y-4">
       {state.error ? <Alert variant="error">{state.error}</Alert> : null}
       {state.success ? <Alert variant="success">{state.success}</Alert> : null}
 

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { EMPTY_DESTINATION_STATE } from "@/actions/action-states";
 import { createDestinationAction, updateDestinationAction } from "@/actions/destination-actions";
+import { useSuccessRefresh } from "@/components/admin/use-success-refresh";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -12,9 +13,10 @@ export function DestinationCreateForm({ hostsHint }: { hostsHint: string }) {
     createDestinationAction,
     EMPTY_DESTINATION_STATE,
   );
+  const formRef = useSuccessRefresh(state);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} className="space-y-4">
       {state.error ? <Alert variant="error">{state.error}</Alert> : null}
       {state.success ? <Alert variant="success">{state.success}</Alert> : null}
 
@@ -60,9 +62,10 @@ export function DestinationEditForm({
     updateDestinationAction,
     EMPTY_DESTINATION_STATE,
   );
+  const formRef = useSuccessRefresh(state);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} className="space-y-4">
       {state.error && !state.needsConfirm ? <Alert variant="error">{state.error}</Alert> : null}
       {state.success ? <Alert variant="success">{state.success}</Alert> : null}
 

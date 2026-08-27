@@ -8,16 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
-import { requireAdmin } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getDestinationHostsHint } from "@/lib/env";
+import { canManageLinks } from "@/lib/permissions";
 import { formatBerlinDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Ziele" };
 export const dynamic = "force-dynamic";
 
 export default async function DestinationsPage() {
-  await requireAdmin();
+  const session = await requireSession();
+  const canManage = canManageLinks(session.role);
 
   const destinations = await prisma.destination.findMany({
     include: { _count: { select: { shortLinks: true } } },
@@ -34,16 +36,18 @@ export default async function DestinationsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Neues Ziel anlegen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DestinationCreateForm hostsHint={getDestinationHostsHint()} />
-          </CardContent>
-        </Card>
+        {canManage ? (
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle>Neues Ziel anlegen</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DestinationCreateForm hostsHint={getDestinationHostsHint()} />
+            </CardContent>
+          </Card>
+        ) : null}
 
-        <Card className="lg:col-span-2">
+        <Card className={canManage ? "lg:col-span-2" : "lg:col-span-3"}>
           <TableWrapper>
             <Table>
               <Thead>
@@ -91,33 +95,37 @@ export default async function DestinationsPage() {
                       <Td className="text-right tabular-nums">{dest._count.shortLinks}</Td>
                       <Td className="text-zinc-500">{formatBerlinDate(dest.updatedAt)}</Td>
                       <Td>
-                        <div className="flex items-center gap-1">
-                          <Link
-                            href={`/admin/destinations/${dest.id}`}
-                            title="Bearbeiten"
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
-                          >
-                            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                            <span className="sr-only">Bearbeiten</span>
-                          </Link>
-                          <form action={toggleDestinationActiveAction}>
-                            <input type="hidden" name="id" value={dest.id} />
-                            <input
-                              type="hidden"
-                              name="active"
-                              value={dest.active ? "false" : "true"}
-                            />
-                            {dest.active ? (
-                              <ConfirmSubmitButton confirmText="Wirklich deaktivieren?">
-                                Deaktivieren
-                              </ConfirmSubmitButton>
-                            ) : (
-                              <Button type="submit" variant="secondary" size="sm">
-                                Aktivieren
-                              </Button>
-                            )}
-                          </form>
-                        </div>
+                        {canManage ? (
+                          <div className="flex items-center gap-1">
+                            <Link
+                              href={`/admin/destinations/${dest.id}`}
+                              title="Bearbeiten"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+                            >
+                              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                              <span className="sr-only">Bearbeiten</span>
+                            </Link>
+                            <form action={toggleDestinationActiveAction}>
+                              <input type="hidden" name="id" value={dest.id} />
+                              <input
+                                type="hidden"
+                                name="active"
+                                value={dest.active ? "false" : "true"}
+                              />
+                              {dest.active ? (
+                                <ConfirmSubmitButton confirmText="Wirklich deaktivieren?">
+                                  Deaktivieren
+                                </ConfirmSubmitButton>
+                              ) : (
+                                <Button type="submit" variant="secondary" size="sm">
+                                  Aktivieren
+                                </Button>
+                              )}
+                            </form>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-zinc-400">–</span>
+                        )}
                       </Td>
                     </tr>
                   ))

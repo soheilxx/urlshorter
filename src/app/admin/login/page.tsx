@@ -3,17 +3,17 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/admin/login-form";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAdminSession } from "@/lib/auth";
-import { getAuthEnv, getPublicHostname } from "@/lib/env";
+import { getLoginConfigState, getSession } from "@/lib/auth";
+import { getPublicHostname } from "@/lib/env";
 
 export const metadata: Metadata = { title: "Anmelden" };
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
-  const session = await getAdminSession();
+  const session = await getSession();
   if (session) redirect("/admin");
 
-  const authEnv = getAuthEnv();
+  const configState = await getLoginConfigState();
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
@@ -23,20 +23,20 @@ export default async function LoginPage() {
         </h1>
         <Card>
           <CardHeader>
-            <CardTitle>Admin-Anmeldung</CardTitle>
+            <CardTitle>Anmeldung</CardTitle>
           </CardHeader>
           <CardContent>
-            {authEnv.ok ? (
+            {configState.ok ? (
               <LoginForm />
             ) : (
               <Alert variant="error">
                 <p className="mb-1 font-semibold">Setup unvollständig</p>
                 <p>
-                  Der Admin-Zugang ist nicht konfiguriert. Bitte folgende Environment Variables
-                  setzen und neu deployen:
+                  Es ist noch kein Zugang konfiguriert. Bitte folgende Environment Variables setzen
+                  und neu deployen (danach können Benutzer im Dashboard angelegt werden):
                 </p>
                 <ul className="mt-2 list-inside list-disc font-mono text-xs">
-                  {authEnv.missing.map((name) => (
+                  {configState.missing.map((name) => (
                     <li key={name}>{name}</li>
                   ))}
                 </ul>

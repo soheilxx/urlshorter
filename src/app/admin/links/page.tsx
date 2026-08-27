@@ -8,16 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
-import { requireAdmin } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
+import { canManageLinks } from "@/lib/permissions";
 import { formatBerlinDate, formatNumber } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Kurzlinks" };
 export const dynamic = "force-dynamic";
 
 export default async function LinksPage() {
-  await requireAdmin();
+  const session = await requireSession();
+  const canManage = canManageLinks(session.role);
   const baseUrl = getEnv().PUBLIC_BASE_URL;
 
   const [links, humanCounts] = await Promise.all([
@@ -43,19 +45,21 @@ export default async function LinksPage() {
             {links.length} Links · Codes sind nach Erstellung unveränderlich
           </p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/admin/links/bulk">
-            <Button variant="secondary" size="sm">
-              Mehrere Links erstellen
-            </Button>
-          </Link>
-          <Link href="/admin/links/new">
-            <Button size="sm">
-              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              Neuer Kurzlink
-            </Button>
-          </Link>
-        </div>
+        {canManage ? (
+          <div className="flex gap-2">
+            <Link href="/admin/links/bulk">
+              <Button variant="secondary" size="sm">
+                Mehrere Links erstellen
+              </Button>
+            </Link>
+            <Link href="/admin/links/new">
+              <Button size="sm">
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                Neuer Kurzlink
+              </Button>
+            </Link>
+          </div>
+        ) : null}
       </div>
 
       <Card>
@@ -145,31 +149,35 @@ export default async function LinksPage() {
                             <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
                             <span className="sr-only">Statistik und Bearbeiten</span>
                           </Link>
-                          <Link
-                            href={`/admin/links/new?from=${link.id}`}
-                            title="Duplizieren"
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
-                          >
-                            <CopyIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                            <span className="sr-only">Duplizieren</span>
-                          </Link>
-                          <form action={toggleShortLinkActiveAction}>
-                            <input type="hidden" name="id" value={link.id} />
-                            <input
-                              type="hidden"
-                              name="active"
-                              value={link.active ? "false" : "true"}
-                            />
-                            {link.active ? (
-                              <ConfirmSubmitButton confirmText="Wirklich deaktivieren?">
-                                Deaktivieren
-                              </ConfirmSubmitButton>
-                            ) : (
-                              <Button type="submit" variant="secondary" size="sm">
-                                Aktivieren
-                              </Button>
-                            )}
-                          </form>
+                          {canManage ? (
+                            <>
+                              <Link
+                                href={`/admin/links/new?from=${link.id}`}
+                                title="Duplizieren"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+                              >
+                                <CopyIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                                <span className="sr-only">Duplizieren</span>
+                              </Link>
+                              <form action={toggleShortLinkActiveAction}>
+                                <input type="hidden" name="id" value={link.id} />
+                                <input
+                                  type="hidden"
+                                  name="active"
+                                  value={link.active ? "false" : "true"}
+                                />
+                                {link.active ? (
+                                  <ConfirmSubmitButton confirmText="Wirklich deaktivieren?">
+                                    Deaktivieren
+                                  </ConfirmSubmitButton>
+                                ) : (
+                                  <Button type="submit" variant="secondary" size="sm">
+                                    Aktivieren
+                                  </Button>
+                                )}
+                              </form>
+                            </>
+                          ) : null}
                         </div>
                       </Td>
                     </tr>

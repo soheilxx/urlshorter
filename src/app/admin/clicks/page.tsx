@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input, Label, Select } from "@/components/ui/input";
 import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
-import { requireAdmin } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import {
   buildClickOrderBy,
   buildClickWhere,
@@ -86,7 +86,7 @@ export default async function ClicksPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireAdmin();
+  await requireSession();
   const filters = parseClickFilters(await searchParams);
   const where = buildClickWhere(filters);
 

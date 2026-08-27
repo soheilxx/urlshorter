@@ -165,6 +165,8 @@ async function handle(request: Request, code: string): Promise<Response> {
       country: geo.country,
       region: geo.region,
       city: geo.city,
+      latitude: geo.latitude,
+      longitude: geo.longitude,
       isBot: bot.isBot,
       botReason: bot.reason,
       visitorHash,

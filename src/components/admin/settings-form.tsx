@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { EMPTY_SETTINGS_STATE } from "@/actions/action-states";
 import { updateRedirectDelayAction } from "@/actions/settings-actions";
+import { useSuccessRefresh } from "@/components/admin/use-success-refresh";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -12,9 +13,10 @@ export function SettingsForm({ currentDelayMs }: { currentDelayMs: number }) {
     updateRedirectDelayAction,
     EMPTY_SETTINGS_STATE,
   );
+  const formRef = useSuccessRefresh(state);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} className="space-y-4">
       {state.error ? <Alert variant="error">{state.error}</Alert> : null}
       {state.success ? <Alert variant="success">{state.success}</Alert> : null}
 

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EMPTY_DESTINATION_STATE, type DestinationActionState } from "@/actions/action-states";
 import { writeAuditLog } from "@/lib/audit";
-import { requireAdminOrThrow } from "@/lib/auth";
+import { requireRoleOrThrow } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { validateDestinationUrl } from "@/lib/url-validation";
@@ -19,7 +19,7 @@ export async function createDestinationAction(
   formData: FormData,
 ): Promise<DestinationActionState> {
   try {
-    const session = await requireAdminOrThrow();
+    const session = await requireRoleOrThrow("ADMIN", "MARKETER");
     const parsed = createSchema.safeParse({
       name: formData.get("name"),
       url: formData.get("url"),
@@ -48,7 +48,8 @@ export async function createDestinationAction(
       changes: { name: destination.name, url: destination.url },
     });
 
-    revalidatePath("/admin/destinations");
+    // Kein revalidatePath in useActionState-Actions (Race im Client-Router,
+    // siehe README → Fehlerbehebung); das Formular ruft router.refresh() auf.
     return {
       ...EMPTY_DESTINATION_STATE,
       ok: true,
@@ -74,7 +75,7 @@ export async function updateDestinationAction(
   formData: FormData,
 ): Promise<DestinationActionState> {
   try {
-    const session = await requireAdminOrThrow();
+    const session = await requireRoleOrThrow("ADMIN", "MARKETER");
     const parsed = updateSchema.safeParse({
       id: formData.get("id"),
       name: formData.get("name"),
@@ -132,8 +133,6 @@ export async function updateDestinationAction(
       },
     });
 
-    revalidatePath("/admin/destinations");
-    revalidatePath("/admin/links");
     return {
       ...EMPTY_DESTINATION_STATE,
       ok: true,
@@ -148,7 +147,7 @@ export async function updateDestinationAction(
 }
 
 export async function toggleDestinationActiveAction(formData: FormData): Promise<void> {
-  const session = await requireAdminOrThrow();
+  const session = await requireRoleOrThrow("ADMIN", "MARKETER");
   const id = z.string().min(1).max(64).parse(formData.get("id"));
   const active = formData.get("active") === "true";
 

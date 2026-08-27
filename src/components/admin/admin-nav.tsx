@@ -1,24 +1,54 @@
 "use client";
 
-import { LayoutDashboard, Link2, MousePointerClick, Settings, Target } from "lucide-react";
+import {
+  Globe2,
+  LayoutDashboard,
+  Link2,
+  MousePointerClick,
+  Settings,
+  Target,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { canManageSettings, canManageUsers, type Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
+/** Navigationseinträge; Sichtbarkeit pro Rolle über visible(role). */
 const NAV_ITEMS = [
-  { href: "/admin", label: "Übersicht", icon: LayoutDashboard, exact: true },
-  { href: "/admin/links", label: "Kurzlinks", icon: Link2, exact: false },
-  { href: "/admin/destinations", label: "Ziele", icon: Target, exact: false },
-  { href: "/admin/clicks", label: "Klicks", icon: MousePointerClick, exact: false },
-  { href: "/admin/settings", label: "Einstellungen", icon: Settings, exact: false },
+  { href: "/admin", label: "Übersicht", icon: LayoutDashboard, exact: true, visible: () => true },
+  { href: "/admin/analytics", label: "Analytics", icon: Globe2, exact: false, visible: () => true },
+  { href: "/admin/links", label: "Kurzlinks", icon: Link2, exact: false, visible: () => true },
+  { href: "/admin/destinations", label: "Ziele", icon: Target, exact: false, visible: () => true },
+  {
+    href: "/admin/clicks",
+    label: "Klicks",
+    icon: MousePointerClick,
+    exact: false,
+    visible: () => true,
+  },
+  {
+    href: "/admin/users",
+    label: "Benutzer",
+    icon: Users,
+    exact: false,
+    visible: (role: Role) => canManageUsers(role),
+  },
+  {
+    href: "/admin/settings",
+    label: "Einstellungen",
+    icon: Settings,
+    exact: false,
+    visible: (role: Role) => canManageSettings(role),
+  },
 ];
 
-export function AdminNav() {
+export function AdminNav({ role }: { role: Role }) {
   const pathname = usePathname();
 
   return (
     <nav aria-label="Hauptnavigation" className="flex gap-1 md:flex-col">
-      {NAV_ITEMS.map((item) => {
+      {NAV_ITEMS.filter((item) => item.visible(role)).map((item) => {
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
         const Icon = item.icon;
         return (

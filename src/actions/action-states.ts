@@ -52,3 +52,15 @@ export const EMPTY_SETTINGS_STATE: SettingsActionState = {
   error: null,
   success: null,
 };
+
+export interface UserActionState {
+  ok: boolean;
+  error: string | null;
+  success: string | null;
+}
+
+export const EMPTY_USER_STATE: UserActionState = {
+  ok: false,
+  error: null,
+  success: null,
+};

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LinkForm, type LinkFormValues } from "@/components/admin/link-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireAdmin } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Neuer Kurzlink" };
@@ -13,7 +13,7 @@ export default async function NewLinkPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireAdmin();
+  await requireRole("ADMIN", "MARKETER");
   const params = await searchParams;
   const fromId = typeof params.from === "string" ? params.from : null;
 

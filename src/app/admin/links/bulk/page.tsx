@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BulkLinkForm } from "@/components/admin/bulk-link-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireAdmin } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Mehrere Kurzlinks erstellen" };
 export const dynamic = "force-dynamic";
 
 export default async function BulkLinksPage() {
-  await requireAdmin();
+  await requireRole("ADMIN", "MARKETER");
 
   const destinations = await prisma.destination.findMany({
     where: { active: true },

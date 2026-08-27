@@ -1,8 +1,13 @@
+import { isRole, type Role } from "@/lib/permissions";
 import { base64UrlDecode, base64UrlEncode, hmacSign, hmacVerify } from "@/lib/signing";
 
 /**
- * Zustandslose, HMAC-signierte Admin-Session.
+ * Zustandslose, HMAC-signierte Dashboard-Session.
  * Läuft in Edge (Middleware) und Node identisch (Web Crypto).
+ *
+ * Die Rolle im Token dient nur der ersten Schutzschicht (Middleware) und der
+ * Anzeige – maßgeblich ist immer die frisch aus der Datenbank geladene Rolle
+ * (siehe lib/auth.ts, getSession).
  *
  * Format: base64url(JSON-Payload) + "." + HMAC-Signatur
  */
@@ -11,8 +16,10 @@ export const SESSION_COOKIE_NAME = "urlshorter_session";
 export const SESSION_MAX_AGE_SECONDS = 12 * 60 * 60; // 12 Stunden
 
 export interface SessionPayload {
-  /** E-Mail des Administrators */
+  /** E-Mail des angemeldeten Benutzers */
   sub: string;
+  /** Rolle zum Zeitpunkt der Anmeldung */
+  role: Role;
   /** Ausgestellt (Epoch-Sekunden) */
   iat: number;
   /** Ablauf (Epoch-Sekunden) */
@@ -21,11 +28,12 @@ export interface SessionPayload {
 
 export async function createSessionToken(
   email: string,
+  role: Role,
   authSecret: string,
   maxAgeSeconds: number = SESSION_MAX_AGE_SECONDS,
   now: number = Math.floor(Date.now() / 1000),
 ): Promise<string> {
-  const payload: SessionPayload = { sub: email, iat: now, exp: now + maxAgeSeconds };
+  const payload: SessionPayload = { sub: email, role, iat: now, exp: now + maxAgeSeconds };
   const encoded = base64UrlEncode(new TextEncoder().encode(JSON.stringify(payload)));
   const signature = await hmacSign(`session.${encoded}`, authSecret);
   return `${encoded}.${signature}`;
@@ -51,7 +59,8 @@ export async function verifySessionToken(
     if (
       typeof payload.sub !== "string" ||
       typeof payload.exp !== "number" ||
-      typeof payload.iat !== "number"
+      typeof payload.iat !== "number" ||
+      !isRole(payload.role)
     ) {
       return null;
     }

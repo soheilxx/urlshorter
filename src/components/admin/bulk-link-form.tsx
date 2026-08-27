@@ -7,12 +7,14 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import type { DestinationOption } from "@/components/admin/link-form";
+import { useSuccessRefresh } from "@/components/admin/use-success-refresh";
 
 export function BulkLinkForm({ destinations }: { destinations: DestinationOption[] }) {
   const [state, formAction, pending] = useActionState(createBulkLinksAction, EMPTY_LINK_STATE);
+  const formRef = useSuccessRefresh(state);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form ref={formRef} action={formAction} className="space-y-4">
       {state.error ? <Alert variant="error">{state.error}</Alert> : null}
       {state.success ? <Alert variant="success">{state.success}</Alert> : null}
 

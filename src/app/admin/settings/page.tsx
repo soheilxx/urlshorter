@@ -3,7 +3,7 @@ import { SettingsForm } from "@/components/admin/settings-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
-import { requireAdmin } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { getRedirectDelayMs } from "@/lib/settings";
@@ -21,7 +21,7 @@ function ConfigBadge({ configured }: { configured: boolean }) {
 }
 
 export default async function SettingsPage() {
-  await requireAdmin();
+  await requireRole("ADMIN");
   const env = getEnv();
 
   let dbOk = false;

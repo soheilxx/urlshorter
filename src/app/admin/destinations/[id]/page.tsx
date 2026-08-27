@@ -5,7 +5,7 @@ import { DestinationEditForm } from "@/components/admin/destination-forms";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
-import { requireAdmin } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getDestinationHostsHint } from "@/lib/env";
 import { formatBerlinDate } from "@/lib/utils";
@@ -18,7 +18,7 @@ export default async function DestinationDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAdmin();
+  await requireRole("ADMIN", "MARKETER");
   const { id } = await params;
 
   const destination = await prisma.destination.findUnique({

@@ -1,19 +1,21 @@
-import { LogOut } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
+import Link from "next/link";
 import { logoutAction } from "@/actions/auth-actions";
 import { AdminNav } from "@/components/admin/admin-nav";
-import { getAdminSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { getPublicHostname } from "@/lib/env";
+import { ROLE_LABELS } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Layout für den Admin-Bereich. Die Zugriffskontrolle für die Inhaltsseiten
- * übernimmt requireAdmin() auf jeder Seite (plus Middleware). Das Layout
- * selbst rendert die Navigation nur bei vorhandener Session – die Login-Seite
- * nutzt dasselbe Layout ohne Navigation.
+ * übernimmt requireSession()/requireRole() auf jeder Seite (plus Middleware).
+ * Das Layout selbst rendert die Navigation nur bei vorhandener Session – die
+ * Login-Seite nutzt dasselbe Layout ohne Navigation.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getAdminSession();
+  const session = await getSession();
 
   if (!session) {
     return <div className="min-h-screen">{children}</div>;
@@ -34,13 +36,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
         </div>
         <div className="mt-3 md:mt-0 md:flex-1">
-          <AdminNav />
+          <AdminNav role={session.role} />
         </div>
         <div className="hidden border-t border-zinc-100 pt-4 md:block">
-          <p className="mb-2 truncate text-xs text-zinc-400" title={session.email}>
-            {session.email}
+          <p className="truncate text-xs text-zinc-500" title={session.email}>
+            {session.name ?? session.email}
           </p>
-          <MobileLogout />
+          <p className="mb-2 text-[11px] font-medium tracking-wide text-zinc-400 uppercase">
+            {ROLE_LABELS[session.role]}
+          </p>
+          <div className="flex items-center gap-1">
+            <MobileLogout />
+            <Link
+              href="/admin/account"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+            >
+              <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
+              Passwort
+            </Link>
+          </div>
         </div>
       </aside>
       <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>

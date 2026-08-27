@@ -29,6 +29,17 @@ export interface GeoInfo {
   country: string | null;
   region: string | null;
   city: string | null;
+  /** Auf eine Nachkommastelle gerundet (~11 km, Stadt-Niveau) – Datensparsamkeit. */
+  latitude: number | null;
+  longitude: number | null;
+}
+
+/** Koordinate parsen, validieren und auf eine Nachkommastelle runden. */
+function parseCoordinate(value: string | null, min: number, max: number): number | null {
+  if (!value) return null;
+  const n = Number.parseFloat(value);
+  if (!Number.isFinite(n) || n < min || n > max) return null;
+  return Math.round(n * 10) / 10;
 }
 
 /** Geo-Informationen aus den Vercel-Hosting-Headern (falls vorhanden). */
@@ -45,6 +56,8 @@ export function getGeoInfo(headers: Headers): GeoInfo {
     country: decode(headers.get("x-vercel-ip-country")),
     region: decode(headers.get("x-vercel-ip-country-region")),
     city: decode(headers.get("x-vercel-ip-city")),
+    latitude: parseCoordinate(headers.get("x-vercel-ip-latitude"), -90, 90),
+    longitude: parseCoordinate(headers.get("x-vercel-ip-longitude"), -180, 180),
   };
 }
 

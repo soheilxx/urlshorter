@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EMPTY_LINK_STATE, type LinkActionState } from "@/actions/action-states";
 import { writeAuditLog } from "@/lib/audit";
-import { requireAdminOrThrow } from "@/lib/auth";
+import { requireRoleOrThrow } from "@/lib/auth";
 import { berlinDayStartUtc, addDays, DATE_STRING_PATTERN } from "@/lib/date-range";
 import { prisma } from "@/lib/db";
 import { generateUniqueShortCode } from "@/lib/shortcode";
@@ -78,7 +78,7 @@ export async function createShortLinkAction(
   formData: FormData,
 ): Promise<LinkActionState> {
   try {
-    const session = await requireAdminOrThrow();
+    const session = await requireRoleOrThrow("ADMIN", "MARKETER");
     const parsed = linkFieldsSchema.safeParse({
       destinationId: formData.get("destinationId"),
       name: formData.get("name"),
@@ -127,7 +127,8 @@ export async function createShortLinkAction(
       },
     });
 
-    revalidatePath("/admin/links");
+    // Kein revalidatePath in useActionState-Actions (Race im Client-Router,
+    // siehe README → Fehlerbehebung); das Formular ruft router.refresh() auf.
     return {
       ...EMPTY_LINK_STATE,
       ok: true,
@@ -160,7 +161,7 @@ export async function createBulkLinksAction(
   formData: FormData,
 ): Promise<LinkActionState> {
   try {
-    const session = await requireAdminOrThrow();
+    const session = await requireRoleOrThrow("ADMIN", "MARKETER");
     const parsed = bulkSchema.safeParse({
       destinationId: formData.get("destinationId"),
       namePrefix: formData.get("namePrefix"),
@@ -222,7 +223,6 @@ export async function createBulkLinksAction(
       changes: { destinationId: destination.id, codes: createdCodes, sources },
     });
 
-    revalidatePath("/admin/links");
     return {
       ...EMPTY_LINK_STATE,
       ok: true,
@@ -246,7 +246,7 @@ export async function updateShortLinkAction(
   formData: FormData,
 ): Promise<LinkActionState> {
   try {
-    const session = await requireAdminOrThrow();
+    const session = await requireRoleOrThrow("ADMIN", "MARKETER");
     const parsed = updateSchema.safeParse({
       id: formData.get("id"),
       destinationId: formData.get("destinationId"),
@@ -305,8 +305,6 @@ export async function updateShortLinkAction(
       },
     });
 
-    revalidatePath("/admin/links");
-    revalidatePath(`/admin/links/${updated.id}`);
     return {
       ...EMPTY_LINK_STATE,
       ok: true,
@@ -321,7 +319,7 @@ export async function updateShortLinkAction(
 }
 
 export async function toggleShortLinkActiveAction(formData: FormData): Promise<void> {
-  const session = await requireAdminOrThrow();
+  const session = await requireRoleOrThrow("ADMIN", "MARKETER");
   const id = z.string().min(1).max(64).parse(formData.get("id"));
   const active = formData.get("active") === "true";
 
