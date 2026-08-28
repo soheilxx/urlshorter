@@ -220,6 +220,11 @@ export default async function GewinnPage({
 
   return (
     <div className="gewinn-theme min-h-screen">
+      {/* Entscheidung des Betreibers (Wiresoft Portal Ltd., 28.08.2026):
+          Tracking auf dieser Seite lädt OHNE Consent-Gate ("not-required").
+          Ein eigenes Consent-Banner wird extern ergänzt – danach hier wieder
+          env.TRACKING_CONSENT_MODE übergeben, dann greift der Cookie-Check
+          (CONSENT_COOKIE_NAME / CONSENT_COOKIE_ACCEPTED_VALUE) erneut. */}
       <GewinnTracking
         gtmContainerId={env.GTM_CONTAINER_ID ?? null}
         ga4MeasurementId={env.GA4_MEASUREMENT_ID ?? null}
@@ -227,7 +232,7 @@ export default async function GewinnPage({
         tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
         redditPixelId={env.REDDIT_PIXEL_ID ?? null}
         linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
-        consentMode={env.TRACKING_CONSENT_MODE}
+        consentMode="not-required"
         consentCookieName={env.CONSENT_COOKIE_NAME ?? null}
         consentAcceptedValue={env.CONSENT_COOKIE_ACCEPTED_VALUE ?? null}
       />
