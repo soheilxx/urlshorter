@@ -2,6 +2,7 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardList,
+  ExternalLink,
   Gem,
   Handshake,
   Hotel,
@@ -12,6 +13,7 @@ import {
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { DubaiSkyline } from "@/components/gewinn/dubai-skyline";
 import { EntryForm } from "@/components/gewinn/entry-form";
 import { getEnv } from "@/lib/env";
 import {
@@ -232,8 +234,9 @@ export default async function GewinnPage({
                 "radial-gradient(60% 45% at 75% 0%, rgba(214,178,111,0.14) 0%, transparent 60%), radial-gradient(50% 40% at 10% 100%, rgba(214,178,111,0.07) 0%, transparent 60%)",
             }}
           />
-          <div className="relative mx-auto grid max-w-6xl gap-10 px-5 pt-14 pb-16 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center lg:gap-16 lg:pt-20 lg:pb-24">
-            <div className="gw-fade">
+          <DubaiSkyline className="pointer-events-none absolute inset-x-0 bottom-0 h-32 w-full sm:h-40 lg:h-52" />
+          <div className="relative mx-auto grid max-w-6xl gap-y-9 px-5 pt-12 pb-28 sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_auto] lg:gap-x-20 lg:gap-y-7 lg:pt-20 lg:pb-40">
+            <div className="gw-fade lg:col-start-1 lg:row-start-1">
               <p className="inline-flex items-center gap-2 rounded-full border gw-hairline bg-white/[0.04] px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-ink-soft)]">
                 <CalendarDays className="h-3.5 w-3.5 text-[var(--gw-gold)]" aria-hidden="true" />
                 Gewinnerbekanntgabe am {ANNOUNCEMENT_DATE_LABEL}
@@ -253,14 +256,37 @@ export default async function GewinnPage({
                 </strong>
                 .
               </p>
+            </div>
 
-              <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2.5 text-sm text-[var(--gw-ink-soft)]">
+            <div className="gw-fade-late mx-auto w-52 pr-3 sm:w-60 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:w-full lg:self-center lg:pr-6">
+              <div className="relative">
+                <div
+                  aria-hidden="true"
+                  className="absolute -inset-8 rounded-[2.5rem] bg-[radial-gradient(closest-side,rgba(214,178,111,0.2),transparent)]"
+                />
+                <div className="gw-book relative">
+                  <div className="gw-book-core">
+                    <Image
+                      src="/gewinn/buchcover.jpg"
+                      alt="Buchcover: Die Lizenz zum Erfolg von Soheil Hosseini"
+                      width={700}
+                      height={1115}
+                      priority
+                      sizes="(min-width: 1024px) 380px, (min-width: 640px) 240px, 208px"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="gw-fade lg:col-start-1 lg:row-start-2">
+              <ul className="flex flex-wrap gap-x-5 gap-y-2.5 text-sm text-[var(--gw-ink-soft)]">
                 {[
                   "Emirates Business Class",
                   "5-Sterne-Designerhotel",
                   "Suite",
                   "Exklusives Dinner",
-                  "Optionales Meet & Greet mit Soheil Hosseini",
+                  "Optionales Meet & Greet mit dem Autor",
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-2">
                     <span
@@ -272,7 +298,7 @@ export default async function GewinnPage({
                 ))}
               </ul>
 
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="mt-8 flex flex-col gap-4 sm:items-start">
                 <a
                   href="#teilnahme"
                   className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-gradient-to-b from-[var(--gw-gold-strong)] to-[var(--gw-gold-deep)] px-7 py-3.5 text-base font-semibold text-[#181207] shadow-lg shadow-black/40 outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-bg)]"
@@ -283,33 +309,16 @@ export default async function GewinnPage({
                   href={AMAZON_PRODUCT_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-[52px] items-center justify-center rounded-xl border gw-hairline bg-white/[0.04] px-7 py-3.5 text-base font-medium text-[var(--gw-ink)] outline-none hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)]"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-1.5 self-center text-sm font-medium text-[var(--gw-ink-soft)] underline decoration-[var(--gw-gold)]/40 underline-offset-4 outline-none hover:text-[var(--gw-gold-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] sm:self-start"
                 >
                   Noch kein Buch? Bei Amazon bestellen
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                 </a>
               </div>
-              <p className="mt-4 text-sm text-[var(--gw-ink-mute)]">
+              <p className="mt-3 text-sm text-[var(--gw-ink-mute)]">
                 Gesamtwert der Reise: {PRIZE_VALUE_LABEL} · Für dich und eine Begleitperson deiner
                 Wahl
               </p>
-            </div>
-
-            <div className="gw-fade-late mx-auto w-56 sm:w-64 lg:w-full">
-              <div className="relative">
-                <div
-                  aria-hidden="true"
-                  className="absolute -inset-6 rounded-[2rem] bg-[radial-gradient(closest-side,rgba(214,178,111,0.22),transparent)]"
-                />
-                <Image
-                  src="/gewinn/buchcover.jpg"
-                  alt="Buchcover: Die Lizenz zum Erfolg von Soheil Hosseini"
-                  width={700}
-                  height={1115}
-                  priority
-                  sizes="(min-width: 1024px) 340px, (min-width: 640px) 256px, 224px"
-                  className="relative rounded-lg shadow-2xl shadow-black/60 ring-1 ring-white/10"
-                />
-              </div>
             </div>
           </div>
         </section>
@@ -322,7 +331,7 @@ export default async function GewinnPage({
           className="border-y gw-hairline bg-[var(--gw-bg-soft)]"
         >
           <div className="mx-auto grid max-w-5xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-14 lg:py-20">
-            <div className="mx-auto w-52 lg:w-full">
+            <div className="mx-auto hidden w-52 lg:block lg:w-full">
               <div className="relative">
                 <div
                   aria-hidden="true"
@@ -333,7 +342,7 @@ export default async function GewinnPage({
                   alt="Soheil Hosseini, Autor von „Die Lizenz zum Erfolg“"
                   width={859}
                   height={1280}
-                  sizes="(min-width: 1024px) 260px, 208px"
+                  sizes="260px"
                   className="relative rounded-2xl shadow-2xl shadow-black/60 ring-1 ring-white/10"
                 />
               </div>
@@ -368,9 +377,17 @@ export default async function GewinnPage({
                 </p>
               </blockquote>
               <figcaption className="mt-7 flex items-center gap-4">
+                <Image
+                  src="/gewinn/autor.jpg"
+                  alt=""
+                  width={112}
+                  height={167}
+                  sizes="56px"
+                  className="w-14 rounded-xl ring-1 ring-white/10 lg:hidden"
+                />
                 <span
                   aria-hidden="true"
-                  className="h-px w-12 bg-[var(--gw-gold)]/60"
+                  className="hidden h-px w-12 bg-[var(--gw-gold)]/60 lg:block"
                 />
                 <span className="text-lg font-semibold tracking-wide text-[var(--gw-gold-strong)]">
                   Soheil Hosseini
@@ -542,7 +559,8 @@ export default async function GewinnPage({
                 "radial-gradient(55% 60% at 50% 100%, rgba(214,178,111,0.13) 0%, transparent 65%)",
             }}
           />
-          <div className="relative mx-auto max-w-3xl px-5 py-20 text-center sm:px-8 lg:py-28">
+          <DubaiSkyline className="pointer-events-none absolute inset-x-0 bottom-0 h-28 w-full opacity-60 sm:h-36" />
+          <div className="relative mx-auto max-w-3xl px-5 py-20 pb-32 text-center sm:px-8 lg:py-28 lg:pb-40">
             <h2
               id="cta-heading"
               className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl"
