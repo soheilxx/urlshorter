@@ -5,6 +5,7 @@ import {
   Globe2,
   LayoutDashboard,
   Link2,
+  MonitorSmartphone,
   MousePointerClick,
   Settings,
   Target,
@@ -12,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { canManageSettings, canManageUsers, type Role } from "@/lib/permissions";
+import { canManageLinks, canManageSettings, canManageUsers, type Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 /** Navigationseinträge; Sichtbarkeit pro Rolle über visible(role). */
@@ -27,6 +28,13 @@ const NAV_ITEMS = [
     icon: MousePointerClick,
     exact: false,
     visible: () => true,
+  },
+  {
+    href: "/admin/websites",
+    label: "Websites",
+    icon: MonitorSmartphone,
+    exact: false,
+    visible: (role: Role) => canManageLinks(role),
   },
   {
     href: "/admin/gewinnspiel",

@@ -259,6 +259,52 @@ model SweepstakesEntry {
   @@index([submissionIdentifier, createdAt])
 }
 
+/// Event aus dem zentralen Tracking-Snippet (t.js) einer angebundenen Website.
+/// Datensparsam: keine IPs, keine Query-Strings (außer extrahierter UTM),
+/// Besucher nur als rotierender HMAC bzw. HMAC der First-Party-Cookie-ID.
+model TagEvent {
+  /// UUID – identisch mit der eventID des Browser-Pixels (CAPI-Deduplication)
+  id        String @id
+  siteId    String
+  eventName String
+  /// URL ohne Query-String
+  url  String
+  path String
+  referrer String?
+
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  utmTerm     String?
+
+  country String?
+  region  String?
+  city    String?
+
+  deviceType String?
+  browser    String?
+  os         String?
+
+  /// Täglich rotierender HMAC aus IP+UA (wie ClickEvent.visitorHash)
+  visitorHash String?
+  /// HMAC der First-Party-Cookie-ID (_lze_id) – Journey über Tage hinweg
+  cookieHash String?
+
+  isBot Boolean @default(false)
+
+  /// Zeitpunkte erfolgreicher Server-Weiterleitungen (Conversion APIs)
+  metaForwardedAt   DateTime? @db.Timestamptz(3)
+  tiktokForwardedAt DateTime? @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([siteId, createdAt])
+  @@index([eventName, createdAt])
+  @@index([createdAt])
+  @@index([cookieHash])
+}
+
 /// Einfache Key-Value-Einstellungen der Anwendung (z. B. Redirect-Verzögerung).
 model AppSetting {
   key       String   @id

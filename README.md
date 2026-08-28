@@ -272,6 +272,32 @@ sofern kein früherer `ENTRY_DEADLINE` gesetzt wird. Eine automatische
 Gewinnerziehung ist bewusst nicht implementiert (Ziehung erfolgt manuell,
 Status „Gewinner“ wird im Admin gepflegt).
 
+## Zentrales Tracking-Snippet (t.js)
+
+Ein Script-Einbau bringt sämtliche Pixel auf beliebige eigene Websites –
+zentral über dieses System gesteuert:
+
+```html
+<script async src="https://lizenzzumerfolg.com/t.js" data-site="SITE_ID"></script>
+```
+
+- **Sites** werden in [`src/lib/tag-config.ts`](src/lib/tag-config.ts)
+  gepflegt (ID + Domain-Allowlist). Das Script deaktiviert sich auf fremden
+  Hostnamen; `/api/tag/collect` erzwingt die Allowlist zusätzlich serverseitig
+  (Origin + gemeldete URL) – Fremdeinbettung ist damit wirkungslos.
+- **Pixel** kommen aus den Env-Variablen (GA4/GTM, Meta, TikTok, Reddit,
+  LinkedIn): eine Änderung + Deploy aktualisiert alle angebundenen Websites.
+- **Gemessen** werden Seitenaufrufe inkl. SPA-Navigationen (History-API) und
+  eigene Events per `window.lze("event", "name")`.
+- **First-Party-Erfassung**: Jedes Event landet zusätzlich datensparsam in der
+  eigenen Tabelle `TagEvent` (Geo aus Vercel-Headern, Gerät, UTM, rotierender
+  Besucher-HMAC + HMAC der First-Party-Cookie-ID `_lze_id`; keine IPs, keine
+  Query-Strings). Übersicht: Dashboard → **Websites**.
+- **Conversion-APIs**: Ist `META_CAPI_ACCESS_TOKEN` bzw.
+  `TIKTOK_EVENTS_API_TOKEN` gesetzt, wird jedes Event serverseitig an Meta
+  CAPI / TikTok Events API weitergeleitet – mit derselben `event_id` wie das
+  Browser-Pixel, die Anbieter deduplizieren also selbst.
+
 ## Migrationen
 
 ```bash
