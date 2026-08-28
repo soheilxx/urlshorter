@@ -20,9 +20,7 @@ function validInput(overrides: Record<string, unknown> = {}): Record<string, unk
     country: "Deutschland",
     email: "Erika@Beispiel.DE",
     phone: "+49 151 1234567",
-    confirmAccuracy: true,
-    acceptTerms: true,
-    acknowledgePrivacy: true,
+    consent: true,
     ...overrides,
   };
 }
@@ -75,14 +73,13 @@ describe("submitSweepstakesEntry", () => {
     expect(await prisma.sweepstakesEntry.count()).toBe(1);
   });
 
-  it("lehnt fehlende Pflichtbestätigungen feldbezogen ab", async () => {
-    const r1 = await submitSweepstakesEntry(validInput({ acceptTerms: false }), ctx());
-    expect(r1.ok).toBe(false);
-    if (!r1.ok) expect(r1.fieldErrors?.acceptTerms).toContain("Teilnahmebedingungen");
-
-    const r2 = await submitSweepstakesEntry(validInput({ acknowledgePrivacy: false }), ctx());
-    expect(r2.ok).toBe(false);
-    if (!r2.ok) expect(r2.fieldErrors?.acknowledgePrivacy).toContain("Datenschutz");
+  it("lehnt eine fehlende Pflichtbestätigung feldbezogen ab", async () => {
+    const r = await submitSweepstakesEntry(validInput({ consent: false }), ctx());
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.fieldErrors?.consent).toContain("Teilnahmebedingungen");
+      expect(r.fieldErrors?.consent).toContain("Datenschutz");
+    }
     expect(await prisma.sweepstakesEntry.count()).toBe(0);
   });
 

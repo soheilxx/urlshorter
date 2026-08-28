@@ -49,8 +49,6 @@ test.describe("Gewinnspiel-Landingpage", () => {
     await page.getByLabel("E-Mail-Adresse").fill("erika@test.local");
     await page.getByLabel("Telefonnummer (mit Ländervorwahl)").fill("+49 151 1234567");
     await page.getByLabel(/Angaben vollständig und korrekt/).check();
-    await page.getByLabel(/Teilnahmebedingungen/).check();
-    await page.getByLabel(/Datenschutzhinweise/).check();
 
     // Mindestalter des Formular-Tokens abwarten (Bot-Schutz)
     await page.waitForTimeout(3200);
@@ -79,8 +77,6 @@ test.describe("Gewinnspiel-Landingpage", () => {
     await page.getByLabel("E-Mail-Adresse").fill("max@test.local");
     await page.getByLabel("Telefonnummer (mit Ländervorwahl)").fill("+49 160 7654321");
     await page.getByLabel(/Angaben vollständig und korrekt/).check();
-    await page.getByLabel(/Teilnahmebedingungen/).check();
-    await page.getByLabel(/Datenschutzhinweise/).check();
     await page.waitForTimeout(3200);
     await page
       .getByRole("button", { name: "Verbindlich am Gewinnspiel teilnehmen" })

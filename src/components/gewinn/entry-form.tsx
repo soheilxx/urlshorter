@@ -371,20 +371,15 @@ export function EntryForm({
 
       <fieldset className="mt-9 min-w-0">
         <legend className="text-lg font-semibold tracking-tight text-[var(--gw-ink)]">
-          Bestätigungen
+          Bestätigung
         </legend>
-        <div className="mt-4 space-y-4">
+        <div className="mt-4">
           <CheckboxRow
-            id="confirmAccuracy"
-            error={fe.confirmAccuracy}
-            label={<>Ich bestätige, dass meine Angaben vollständig und korrekt sind.</>}
-          />
-          <CheckboxRow
-            id="acceptTerms"
-            error={fe.acceptTerms}
+            id="consent"
+            error={fe.consent}
             label={
               <>
-                Ich akzeptiere die{" "}
+                Ich bestätige, dass meine Angaben vollständig und korrekt sind, akzeptiere die{" "}
                 <Link
                   href="/gewinn/teilnahmebedingungen"
                   target="_blank"
@@ -392,17 +387,8 @@ export function EntryForm({
                   className="underline decoration-[var(--gw-gold)]/50 underline-offset-2 hover:text-[var(--gw-gold-strong)]"
                 >
                   Teilnahmebedingungen
-                </Link>
-                .
-              </>
-            }
-          />
-          <CheckboxRow
-            id="acknowledgePrivacy"
-            error={fe.acknowledgePrivacy}
-            label={
-              <>
-                Ich habe die{" "}
+                </Link>{" "}
+                und habe die{" "}
                 {privacyUrl ? (
                   <a
                     href={privacyUrl}

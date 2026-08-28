@@ -119,17 +119,13 @@ export const sweepstakesInputSchema = z.object({
     .string({ message: "Bitte deine Telefonnummer angeben." })
     .trim()
     .min(1, "Bitte deine Telefonnummer angeben."),
-  confirmAccuracy: z.literal(true, {
+  /** Eine kombinierte Pflichtbestätigung: Richtigkeit + Teilnahmebedingungen
+   *  + Kenntnisnahme der Datenschutzhinweise (in der DB werden weiterhin alle
+   *  drei Zeitpunkte samt Versionen dokumentiert). */
+  consent: z.literal(true, {
     errorMap: () => ({
-      message: "Bitte bestätige, dass deine Angaben vollständig und korrekt sind.",
-    }),
-  }),
-  acceptTerms: z.literal(true, {
-    errorMap: () => ({ message: "Bitte akzeptiere die Teilnahmebedingungen." }),
-  }),
-  acknowledgePrivacy: z.literal(true, {
-    errorMap: () => ({
-      message: "Bitte bestätige die Kenntnisnahme der Datenschutzhinweise.",
+      message:
+        "Bitte bestätige deine Angaben, die Teilnahmebedingungen und die Kenntnisnahme der Datenschutzhinweise.",
     }),
   }),
 });

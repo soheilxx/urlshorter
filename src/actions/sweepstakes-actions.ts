@@ -62,9 +62,7 @@ export async function submitSweepstakesAction(
         country: str(formData, "country"),
         email: str(formData, "email"),
         phone: str(formData, "phone"),
-        confirmAccuracy: formData.get("confirmAccuracy") === "on",
-        acceptTerms: formData.get("acceptTerms") === "on",
-        acknowledgePrivacy: formData.get("acknowledgePrivacy") === "on",
+        consent: formData.get("consent") === "on",
       },
       {
         submissionIdentifier,
