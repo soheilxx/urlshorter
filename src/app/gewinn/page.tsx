@@ -15,6 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { DubaiSkyline } from "@/components/gewinn/dubai-skyline";
 import { EntryForm } from "@/components/gewinn/entry-form";
+import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import { getEnv } from "@/lib/env";
 import {
   AMAZON_PRODUCT_URL,
@@ -39,18 +40,26 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Dubai-Reise gewinnen | Die Lizenz zum Erfolg",
     description:
-      "Registriere deine Bestellung von „Die Lizenz zum Erfolg“ und sichere dir die Chance auf eine exklusive Dubai-Reise für zwei Personen im Wert von 20.000 €.",
+      "Registriere deine Bestellung von „Die Lizenz zum Erfolg“ und sichere dir die Chance auf eine exklusive 5-tägige Dubai-Reise für zwei Personen im Wert von 20.000 €.",
     url: GEWINN_URL,
     siteName: "Die Lizenz zum Erfolg",
     locale: "de_DE",
     type: "website",
-    images: [{ url: `${GEWINN_URL.replace(/\/gewinn$/, "")}/gewinn/buchcover.jpg` }],
+    images: [
+      {
+        url: `${GEWINN_URL}/og.png`,
+        width: 1200,
+        height: 630,
+        alt: "Gewinne 5 Tage Dubai für zwei – Gewinnspiel zum Buch „Die Lizenz zum Erfolg“",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Dubai-Reise gewinnen | Die Lizenz zum Erfolg",
     description:
-      "Buchbestellung registrieren und die Chance auf eine exklusive Dubai-Reise für zwei Personen im Wert von 20.000 € sichern.",
+      "Buchbestellung registrieren und die Chance auf eine exklusive 5-tägige Dubai-Reise für zwei Personen im Wert von 20.000 € sichern.",
+    images: [`${GEWINN_URL}/og.png`],
   },
 };
 
@@ -211,6 +220,17 @@ export default async function GewinnPage({
 
   return (
     <div className="gewinn-theme min-h-screen">
+      <GewinnTracking
+        gtmContainerId={env.GTM_CONTAINER_ID ?? null}
+        ga4MeasurementId={env.GA4_MEASUREMENT_ID ?? null}
+        metaPixelId={env.META_PIXEL_ID ?? null}
+        tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
+        redditPixelId={env.REDDIT_PIXEL_ID ?? null}
+        linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
+        consentMode={env.TRACKING_CONSENT_MODE}
+        consentCookieName={env.CONSENT_COOKIE_NAME ?? null}
+        consentAcceptedValue={env.CONSENT_COOKIE_ACCEPTED_VALUE ?? null}
+      />
       <a
         href="#teilnahme"
         className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-[var(--gw-gold)] focus:px-4 focus:py-2 focus:text-[#181207]"
@@ -302,6 +322,7 @@ export default async function GewinnPage({
               <div className="mt-8 flex flex-col gap-4 sm:items-start">
                 <a
                   href="#teilnahme"
+                  data-gw-event="gewinnspiel_cta_registrieren"
                   className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-gradient-to-b from-[var(--gw-gold-strong)] to-[var(--gw-gold-deep)] px-7 py-3.5 text-base font-semibold text-[#181207] shadow-lg shadow-black/40 outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-bg)]"
                 >
                   Jetzt Bestellung registrieren
@@ -310,6 +331,7 @@ export default async function GewinnPage({
                   href={AMAZON_PRODUCT_URL}
                   target="_blank"
                   rel="noopener noreferrer"
+                  data-gw-event="gewinnspiel_amazon_klick"
                   className="inline-flex min-h-[44px] items-center justify-center gap-1.5 self-center text-sm font-medium text-[var(--gw-ink-soft)] underline decoration-[var(--gw-gold)]/40 underline-offset-4 outline-none hover:text-[var(--gw-gold-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] sm:self-start"
                 >
                   Noch kein Buch? Bei Amazon bestellen
@@ -453,6 +475,7 @@ export default async function GewinnPage({
                       href={AMAZON_PRODUCT_URL}
                       target="_blank"
                       rel="noopener noreferrer"
+                      data-gw-event="gewinnspiel_amazon_klick"
                       className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-lg border gw-hairline bg-white/[0.04] px-4 py-2 text-sm font-medium text-[var(--gw-ink)] hover:bg-white/[0.08]"
                     >
                       Zum Buch auf Amazon
@@ -574,6 +597,7 @@ export default async function GewinnPage({
             </p>
             <a
               href="#teilnahme"
+              data-gw-event="gewinnspiel_cta_registrieren"
               className="mt-8 inline-flex min-h-[52px] items-center justify-center rounded-xl bg-gradient-to-b from-[var(--gw-gold-strong)] to-[var(--gw-gold-deep)] px-8 py-3.5 text-base font-semibold text-[#181207] shadow-lg shadow-black/40 outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-bg)]"
             >
               Jetzt Bestellung registrieren

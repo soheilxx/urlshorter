@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { EMPTY_SWEEPSTAKES_STATE } from "@/actions/action-states";
 import { submitSweepstakesAction } from "@/actions/sweepstakes-actions";
+import { trackGewinnEvent } from "@/lib/gewinn-analytics";
 import { ANNOUNCEMENT_DATE_LABEL, RETAILERS } from "@/lib/gewinnspiel-config";
 import { cn } from "@/lib/utils";
 
@@ -73,6 +74,7 @@ export function EntryForm({
   const [retailer, setRetailer] = useState<string>("");
   const referrerRef = useRef<HTMLInputElement>(null);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
+  const formStartTracked = useRef(false);
 
   // Ursprünglichen Referrer clientseitig erfassen (nur serverseitig gespeichert)
   useEffect(() => {
@@ -84,6 +86,12 @@ export function EntryForm({
   // Fehlerzusammenfassung fokussieren (Screenreader + Sichtbarkeit)
   useEffect(() => {
     if (state.error) errorSummaryRef.current?.focus();
+  }, [state]);
+
+  // Nicht-personenbezogene Tracking-Events (nur Event-Namen, keine Inhalte)
+  useEffect(() => {
+    if (state.ok) trackGewinnEvent("gewinnspiel_teilnahme");
+    else if (state.error) trackGewinnEvent("gewinnspiel_formular_fehler");
   }, [state]);
 
   const fe = state.fieldErrors ?? {};
@@ -135,6 +143,12 @@ export function EntryForm({
     <form
       action={formAction}
       noValidate={false}
+      onFocusCapture={() => {
+        if (!formStartTracked.current) {
+          formStartTracked.current = true;
+          trackGewinnEvent("gewinnspiel_formular_start");
+        }
+      }}
       className="rounded-2xl border gw-hairline bg-[var(--gw-surface)] p-5 sm:p-8"
     >
       {/* Anti-Bot: Honeypot (für Menschen unsichtbar) + signiertes Zeit-Token */}
