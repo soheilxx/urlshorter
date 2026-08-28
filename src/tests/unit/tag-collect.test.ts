@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { originAllowed, parseTagCollectPayload } from "@/lib/tag-collect";
-import { findTagSite, hostnameAllowed } from "@/lib/tag-config";
+import {
+  extractSiteId,
+  originAllowed,
+  parseTagCollectPayload,
+  type CollectSite,
+} from "@/lib/tag-collect";
+import { findTagSite, hostnameAllowed, parseDomainList } from "@/lib/tag-config";
+
+const SITE: CollectSite = { id: "soheil-hosseini", domains: ["soheil-hosseini.de"] };
 
 function validPayload(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -26,54 +33,74 @@ describe("Tag-Konfiguration", () => {
     expect(hostnameAllowed(site, "boese-soheil-hosseini.de")).toBe(false);
     expect(hostnameAllowed(site, "soheil-hosseini.de.evil.com")).toBe(false);
   });
+
+  it("normalisiert komma-separierte Domain-Listen", () => {
+    expect(parseDomainList(" Beispiel.DE ,  shop.beispiel.de., ,")).toEqual([
+      "beispiel.de",
+      "shop.beispiel.de",
+    ]);
+  });
+});
+
+describe("extractSiteId", () => {
+  it("liest gültige Site-IDs aus roher Payload", () => {
+    expect(extractSiteId({ site: "soheil-hosseini" })).toBe("soheil-hosseini");
+    expect(extractSiteId({ site: "kunde-123" })).toBe("kunde-123");
+  });
+
+  it("lehnt fehlende oder ungültige Site-IDs ab", () => {
+    expect(extractSiteId(null)).toBeNull();
+    expect(extractSiteId({})).toBeNull();
+    expect(extractSiteId({ site: "Böse Site!" })).toBeNull();
+    expect(extractSiteId({ site: "x".repeat(51) })).toBeNull();
+  });
 });
 
 describe("parseTagCollectPayload", () => {
   it("akzeptiert gültige Payloads und entfernt den Query-String", () => {
-    const result = parseTagCollectPayload(validPayload());
+    const result = parseTagCollectPayload(validPayload(), SITE);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
+    expect(result.data.siteId).toBe("soheil-hosseini");
     expect(result.data.url).toBe("https://www.soheil-hosseini.de/leseprobe");
     expect(result.data.path).toBe("/leseprobe");
     expect(result.data.utm.source).toBe("ig");
     expect(result.data.eventName).toBe("page_view");
   });
 
-  it("lehnt unbekannte Sites ab", () => {
-    const result = parseTagCollectPayload(validPayload({ site: "fremd" }));
-    expect(result).toMatchObject({ ok: false, reason: "unknown_site" });
+  it("lehnt Payloads ab, deren site nicht zur aufgelösten Site passt", () => {
+    const result = parseTagCollectPayload(validPayload({ site: "fremd" }), SITE);
+    expect(result).toMatchObject({ ok: false, reason: "site_mismatch" });
   });
 
   it("lehnt URLs außerhalb der Domain-Allowlist ab (Fremdeinbettung)", () => {
     const result = parseTagCollectPayload(
       validPayload({ url: "https://konkurrenz.de/produkt" }),
+      SITE,
     );
     expect(result).toMatchObject({ ok: false, reason: "host_not_allowed" });
   });
 
   it("lehnt ungültige Event-Namen und IDs ab", () => {
-    expect(parseTagCollectPayload(validPayload({ name: "Böses Event!" })).ok).toBe(false);
-    expect(parseTagCollectPayload(validPayload({ id: "keine-uuid" })).ok).toBe(false);
+    expect(parseTagCollectPayload(validPayload({ name: "Böses Event!" }), SITE).ok).toBe(false);
+    expect(parseTagCollectPayload(validPayload({ id: "keine-uuid" }), SITE).ok).toBe(false);
   });
 
   it("normalisiert Event-Namen auf Kleinschreibung", () => {
-    const result = parseTagCollectPayload(validPayload({ name: "Buch_Kauf" }));
+    const result = parseTagCollectPayload(validPayload({ name: "Buch_Kauf" }), SITE);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.data.eventName).toBe("buch_kauf");
   });
 });
 
 describe("originAllowed", () => {
-  const site = findTagSite("soheil-hosseini");
-  if (!site) throw new Error("Site fehlt");
-
   it("akzeptiert erlaubte Origins und fehlenden Header", () => {
-    expect(originAllowed(site, "https://www.soheil-hosseini.de")).toBe(true);
-    expect(originAllowed(site, null)).toBe(true);
+    expect(originAllowed(SITE, "https://www.soheil-hosseini.de")).toBe(true);
+    expect(originAllowed(SITE, null)).toBe(true);
   });
 
   it("lehnt fremde Origins ab", () => {
-    expect(originAllowed(site, "https://evil.example.com")).toBe(false);
-    expect(originAllowed(site, "kein-origin")).toBe(false);
+    expect(originAllowed(SITE, "https://evil.example.com")).toBe(false);
+    expect(originAllowed(SITE, "kein-origin")).toBe(false);
   });
 });

@@ -305,6 +305,32 @@ model TagEvent {
   @@index([cookieHash])
 }
 
+/// Konfiguration einer an TRACK.SITE angebundenen Website: Domains,
+/// Pixel-IDs und Conversion-API-Tokens (Tokens AES-256-GCM-verschlüsselt).
+/// Nicht gesetzte Felder fallen auf die globalen Env-Werte zurück.
+model TagSiteConfig {
+  /// Site-ID (Slug, Teil des Snippets: /t.js?site=ID)
+  id     String  @id
+  label  String
+  /// Komma-separierte Domain-Allowlist (Subdomains automatisch inklusive)
+  domains String
+  active  Boolean @default(true)
+
+  ga4MeasurementId String?
+  gtmContainerId   String?
+  metaPixelId      String?
+  /// verschlüsselt – niemals im Klartext ausgeben
+  metaCapiTokenEncrypted String?
+  tiktokPixelId          String?
+  /// verschlüsselt – niemals im Klartext ausgeben
+  tiktokTokenEncrypted String?
+  redditPixelId        String?
+  linkedinPartnerId    String?
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
 /// Einfache Key-Value-Einstellungen der Anwendung (z. B. Redirect-Verzögerung).
 model AppSetting {
   key       String   @id

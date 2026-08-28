@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { findTagSite, hostnameAllowed, type TagSite } from "@/lib/tag-config";
+import { domainsAllowHostname } from "@/lib/tag-config";
+
+/** Minimale Site-Sicht für die Validierung (DB- oder Code-Site). */
+export interface CollectSite {
+  id: string;
+  domains: string[];
+}
 
 /**
  * Validierung + Normalisierung der Collect-Payloads des Tracking-Snippets.
@@ -48,7 +54,7 @@ const payloadSchema = z.object({
 });
 
 export interface TagCollectData {
-  site: TagSite;
+  siteId: string;
   eventId: string;
   eventName: string;
   /** Volle URL ohne Query/Fragment */
@@ -73,15 +79,20 @@ export type TagCollectResult =
   | { ok: true; data: TagCollectData }
   | { ok: false; reason: string };
 
-export function parseTagCollectPayload(raw: unknown): TagCollectResult {
+/** Nur die Site-ID aus einer rohen Payload lesen (vor der Site-Auflösung). */
+export function extractSiteId(raw: unknown): string | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const site = (raw as Record<string, unknown>).site;
+  return typeof site === "string" && /^[a-z0-9-]{1,50}$/.test(site) ? site : null;
+}
+
+export function parseTagCollectPayload(raw: unknown, site: CollectSite): TagCollectResult {
   const parsed = payloadSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, reason: parsed.error.issues[0]?.message ?? "invalid" };
   }
   const input = parsed.data;
-
-  const site = findTagSite(input.site);
-  if (!site) return { ok: false, reason: "unknown_site" };
+  if (input.site !== site.id) return { ok: false, reason: "site_mismatch" };
 
   let url: URL;
   try {
@@ -93,14 +104,14 @@ export function parseTagCollectPayload(raw: unknown): TagCollectResult {
     return { ok: false, reason: "invalid_url" };
   }
   // Serverseitige Durchsetzung der Domain-Allowlist (gegen Fremdeinbettung)
-  if (!hostnameAllowed(site, url.hostname)) {
+  if (!domainsAllowHostname(site.domains, url.hostname)) {
     return { ok: false, reason: "host_not_allowed" };
   }
 
   return {
     ok: true,
     data: {
-      site,
+      siteId: site.id,
       eventId: input.id,
       eventName: input.name,
       url: `${url.origin}${url.pathname}`,
@@ -123,10 +134,10 @@ export function parseTagCollectPayload(raw: unknown): TagCollectResult {
 }
 
 /** Origin-/Referer-Header gegen die Site-Allowlist prüfen (Defense in Depth). */
-export function originAllowed(site: TagSite, originHeader: string | null): boolean {
+export function originAllowed(site: CollectSite, originHeader: string | null): boolean {
   if (!originHeader) return true; // ältere Browser/sendBeacon-Sonderfälle
   try {
-    return hostnameAllowed(site, new URL(originHeader).hostname);
+    return domainsAllowHostname(site.domains, new URL(originHeader).hostname);
   } catch {
     return false;
   }

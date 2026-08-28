@@ -2,11 +2,12 @@ import { randomUUID } from "node:crypto";
 import { after } from "next/server";
 import { classifyRequest } from "@/lib/bot-detection";
 import { prisma } from "@/lib/db";
-import { getEnv, requireAppSecret } from "@/lib/env";
+import { requireAppSecret } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { getClientIp, getGeoInfo } from "@/lib/request-info";
 import { sendMetaCapiSingle, sendTikTokSingle, type TagCapiEvent } from "@/lib/tag-capi";
-import { originAllowed, parseTagCollectPayload } from "@/lib/tag-collect";
+import { extractSiteId, originAllowed, parseTagCollectPayload } from "@/lib/tag-collect";
+import { resolveTagSite } from "@/lib/tag-sites";
 import { parseUserAgent } from "@/lib/ua-parser";
 import { computeVisitorHash } from "@/lib/visitor-hash";
 import { createHmac } from "node:crypto";
@@ -67,11 +68,17 @@ export async function POST(request: Request): Promise<Response> {
       return done();
     }
 
-    const parsed = parseTagCollectPayload(rawJson);
+    // Site auflösen (Dashboard-DB zuerst, Code-Bootstrap als Fallback)
+    const siteId = extractSiteId(rawJson);
+    if (!siteId) return done();
+    const site = await resolveTagSite(siteId);
+    if (!site || !site.active) return done();
+
+    const parsed = parseTagCollectPayload(rawJson, { id: site.id, domains: site.domains });
     if (!parsed.ok) return done();
     const data = parsed.data;
 
-    if (!originAllowed(data.site, origin)) return done();
+    if (!originAllowed({ id: site.id, domains: site.domains }, origin)) return done();
 
     const headers = request.headers;
     const userAgent = headers.get("user-agent");
@@ -109,7 +116,7 @@ export async function POST(request: Request): Promise<Response> {
     await prisma.tagEvent.create({
       data: {
         id: eventId,
-        siteId: data.site.id,
+        siteId: data.siteId,
         eventName: data.eventName,
         url: data.url,
         path: data.path,
@@ -130,8 +137,7 @@ export async function POST(request: Request): Promise<Response> {
       },
     });
 
-    // Conversion-APIs nach der Response (kostet den Besucher keine Zeit)
-    const env = getEnv();
+    // Conversion-APIs nach der Response – mit den Tokens der jeweiligen Site
     const capiEvent: TagCapiEvent = {
       eventId,
       eventName: data.eventName,
@@ -145,11 +151,11 @@ export async function POST(request: Request): Promise<Response> {
       ttclid: data.ttclid,
     };
     await scheduleAfterResponse(async () => {
-      if (env.META_PIXEL_ID && env.META_CAPI_ACCESS_TOKEN) {
+      if (site.pixels.meta && site.capi.metaToken) {
         const sent = await sendMetaCapiSingle(
-          env.META_PIXEL_ID,
-          env.META_CAPI_ACCESS_TOKEN,
-          env.META_CAPI_TEST_EVENT_CODE ?? null,
+          site.pixels.meta,
+          site.capi.metaToken,
+          site.capi.metaTestEventCode,
           capiEvent,
         );
         if (sent) {
@@ -158,11 +164,11 @@ export async function POST(request: Request): Promise<Response> {
             .catch(() => {});
         }
       }
-      if (env.TIKTOK_PIXEL_ID && env.TIKTOK_EVENTS_API_TOKEN) {
+      if (site.pixels.tiktok && site.capi.tiktokToken) {
         const sent = await sendTikTokSingle(
-          env.TIKTOK_PIXEL_ID,
-          env.TIKTOK_EVENTS_API_TOKEN,
-          env.TIKTOK_TEST_EVENT_CODE ?? null,
+          site.pixels.tiktok,
+          site.capi.tiktokToken,
+          site.capi.tiktokTestEventCode,
           capiEvent,
         );
         if (sent) {

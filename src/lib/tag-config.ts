@@ -41,10 +41,22 @@ export function findTagSite(siteId: string): TagSite | null {
   return TAG_SITES.find((s) => s.id === siteId) ?? null;
 }
 
+/** Komma-separierte Domain-Liste normalisieren. */
+export function parseDomainList(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((d) => d.trim().toLowerCase().replace(/\.$/, ""))
+    .filter((d) => d.length > 0);
+}
+
 /** Hostname-Prüfung inkl. Subdomains ("www.example.de" passt zu "example.de"). */
-export function hostnameAllowed(site: TagSite, hostname: string): boolean {
+export function domainsAllowHostname(domains: string[], hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/\.$/, "");
-  return site.domains.some((d) => host === d || host.endsWith(`.${d}`));
+  return domains.some((d) => host === d || host.endsWith(`.${d}`));
+}
+
+export function hostnameAllowed(site: TagSite, hostname: string): boolean {
+  return domainsAllowHostname(site.domains, hostname);
 }
 
 /** Site-ID → Domains als kompaktes Objekt fürs generierte Script. */

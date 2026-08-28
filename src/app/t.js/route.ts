@@ -1,5 +1,6 @@
 import { getEnv } from "@/lib/env";
 import { siteDomainMap } from "@/lib/tag-config";
+import { resolveTagSite } from "@/lib/tag-sites";
 
 /**
  * Zentrales Tracking-Snippet: GET /t.js
@@ -24,9 +25,21 @@ import { siteDomainMap } from "@/lib/tag-config";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function buildScript(): string {
+interface ScriptConfig {
+  ga4: string | null;
+  gtm: string | null;
+  meta: string | null;
+  tiktok: string | null;
+  reddit: string | null;
+  linkedin: string | null;
+  collect: string;
+  sites: Record<string, string[]>;
+}
+
+/** Globale Variante (Bestands-Snippets ohne ?site-Parameter). */
+function legacyConfig(): ScriptConfig {
   const env = getEnv();
-  const config = {
+  return {
     ga4: env.GA4_MEASUREMENT_ID ?? null,
     gtm: env.GTM_CONTAINER_ID ?? null,
     meta: env.META_PIXEL_ID ?? null,
@@ -36,6 +49,9 @@ function buildScript(): string {
     collect: `${env.PUBLIC_BASE_URL}/api/tag/collect`,
     sites: siteDomainMap(),
   };
+}
+
+function buildScript(config: ScriptConfig): string {
 
   return `/* lizenzzumerfolg.com Tracking-Snippet */
 (function () {
@@ -220,16 +236,41 @@ function buildScript(): string {
 `;
 }
 
-export async function GET(): Promise<Response> {
-  return new Response(buildScript(), {
-    status: 200,
-    headers: {
-      "Content-Type": "text/javascript; charset=utf-8",
-      // Kurzer Browser-Cache, längerer CDN-Cache: ID-Änderungen greifen nach
-      // dem Deploy zügig, ohne jede Anfrage neu zu rendern.
-      "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
-      "Access-Control-Allow-Origin": "*",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
+const SCRIPT_HEADERS = {
+  "Content-Type": "text/javascript; charset=utf-8",
+  // Kurzer Browser-Cache, moderater CDN-Cache: Konfigurationsänderungen im
+  // Dashboard greifen nach wenigen Minuten auf allen Websites.
+  "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=3600",
+  "Access-Control-Allow-Origin": "*",
+  "X-Content-Type-Options": "nosniff",
+};
+
+export async function GET(request: Request): Promise<Response> {
+  const siteId = new URL(request.url).searchParams.get("site");
+
+  // Ohne ?site: globale Bestands-Variante (Env-Pixel, Code-Site-Allowlist)
+  if (!siteId) {
+    return new Response(buildScript(legacyConfig()), { status: 200, headers: SCRIPT_HEADERS });
+  }
+
+  // Mit ?site: Konfiguration der Site aus Dashboard/DB (Env als Fallback)
+  const site = await resolveTagSite(siteId);
+  if (!site || !site.active) {
+    return new Response("/* TRACK.SITE: unbekannte oder deaktivierte Site */", {
+      status: 200,
+      headers: { ...SCRIPT_HEADERS, "Cache-Control": "public, max-age=60" },
+    });
+  }
+  const env = getEnv();
+  const config: ScriptConfig = {
+    ga4: site.pixels.ga4,
+    gtm: site.pixels.gtm,
+    meta: site.pixels.meta,
+    tiktok: site.pixels.tiktok,
+    reddit: site.pixels.reddit,
+    linkedin: site.pixels.linkedin,
+    collect: `${env.PUBLIC_BASE_URL}/api/tag/collect`,
+    sites: { [site.id]: site.domains },
+  };
+  return new Response(buildScript(config), { status: 200, headers: SCRIPT_HEADERS });
 }

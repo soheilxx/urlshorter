@@ -278,24 +278,31 @@ Ein Script-Einbau bringt sämtliche Pixel auf beliebige eigene Websites –
 zentral über dieses System gesteuert:
 
 ```html
-<script async src="https://lizenzzumerfolg.com/t.js" data-site="SITE_ID"></script>
+<script async src="https://lizenzzumerfolg.com/t.js?site=SITE_ID" data-site="SITE_ID"></script>
 ```
 
-- **Sites** werden in [`src/lib/tag-config.ts`](src/lib/tag-config.ts)
-  gepflegt (ID + Domain-Allowlist). Das Script deaktiviert sich auf fremden
-  Hostnamen; `/api/tag/collect` erzwingt die Allowlist zusätzlich serverseitig
-  (Origin + gemeldete URL) – Fremdeinbettung ist damit wirkungslos.
-- **Pixel** kommen aus den Env-Variablen (GA4/GTM, Meta, TikTok, Reddit,
-  LinkedIn): eine Änderung + Deploy aktualisiert alle angebundenen Websites.
+- **Sites** werden im Dashboard unter **Websites** verwaltet (nur Admin):
+  Domains, Pixel-IDs und Conversion-API-Tokens pro Website – Tokens liegen
+  AES-verschlüsselt in der Datenbank ([`src/lib/secrets.ts`](src/lib/secrets.ts))
+  und werden in der UI nur maskiert angezeigt. Neue Kunden-Websites brauchen
+  kein Deploy mehr. [`src/lib/tag-config.ts`](src/lib/tag-config.ts) enthält
+  nur noch den Code-Bootstrap der eigenen Bestands-Sites (Env-Pixel als
+  Fallback); Bestands-Snippets ohne `?site=` funktionieren unverändert.
+  Das Script deaktiviert sich auf fremden Hostnamen; `/api/tag/collect`
+  erzwingt die Allowlist zusätzlich serverseitig (Origin + gemeldete URL) –
+  Fremdeinbettung ist damit wirkungslos.
+- **Pixel** (GA4/GTM, Meta, TikTok, Reddit, LinkedIn): pro Site im Dashboard;
+  leere Felder fallen auf die globalen Env-Werte zurück.
 - **Gemessen** werden Seitenaufrufe inkl. SPA-Navigationen (History-API) und
   eigene Events per `window.lze("event", "name")`.
 - **First-Party-Erfassung**: Jedes Event landet zusätzlich datensparsam in der
   eigenen Tabelle `TagEvent` (Geo aus Vercel-Headern, Gerät, UTM, rotierender
   Besucher-HMAC + HMAC der First-Party-Cookie-ID `_lze_id`; keine IPs, keine
   Query-Strings). Übersicht: Dashboard → **Websites**.
-- **Conversion-APIs**: Ist `META_CAPI_ACCESS_TOKEN` bzw.
-  `TIKTOK_EVENTS_API_TOKEN` gesetzt, wird jedes Event serverseitig an Meta
-  CAPI / TikTok Events API weitergeleitet – mit derselben `event_id` wie das
+- **Conversion-APIs**: Ist für eine Site ein Meta-CAPI- bzw.
+  TikTok-Events-API-Token hinterlegt (Dashboard, oder global via
+  `META_CAPI_ACCESS_TOKEN` / `TIKTOK_EVENTS_API_TOKEN`), wird jedes Event
+  serverseitig weitergeleitet – mit derselben `event_id` wie das
   Browser-Pixel, die Anbieter deduplizieren also selbst.
 
 ## Migrationen

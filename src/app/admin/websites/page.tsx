@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { StatCard } from "@/components/admin/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,25 +8,28 @@ import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
-import { TAG_SITES } from "@/lib/tag-config";
+import { listTagSites } from "@/lib/tag-sites";
 import { formatBerlinDateTime, formatNumber } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Websites" };
 export const dynamic = "force-dynamic";
 
 /**
- * Übersicht des zentralen Tracking-Snippets (t.js): angebundene Websites,
- * Event-Zahlen, CAPI-Weiterleitungen und das Einbau-Snippet zum Kopieren.
+ * TRACK.SITE-Verwaltung: angebundene Websites mit Pixel-IDs + CAPI-Tokens
+ * (im Dashboard gepflegt, Tokens verschlüsselt), Event-Zahlen und
+ * Einbau-Snippets. Bearbeiten nur als Admin, Ansicht auch als Marketer.
  */
 export default async function WebsitesPage() {
-  await requireRole("ADMIN", "MARKETER");
+  const session = await requireRole("ADMIN", "MARKETER");
+  const isAdmin = session.role === "ADMIN";
   const env = getEnv();
 
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const [total, today, bySite, byDay, topEvents, recent, capi] = await Promise.all([
+  const [sites, total, today, bySite, byDay, topEvents, recent, capi] = await Promise.all([
+    listTagSites(),
     prisma.tagEvent.count(),
     prisma.tagEvent.count({ where: { createdAt: { gte: todayStart } } }),
     prisma.tagEvent.groupBy({
@@ -67,26 +71,44 @@ export default async function WebsitesPage() {
 
   const countBySite = new Map(bySite.map((g) => [g.siteId, g._count._all]));
 
+  const pixelSummary = (site: (typeof sites)[number]) =>
+    [
+      site.pixels.ga4 ? "GA4" : null,
+      site.pixels.gtm ? "GTM" : null,
+      site.pixels.meta ? (site.capi.metaToken ? "Meta+CAPI" : "Meta") : null,
+      site.pixels.tiktok ? (site.capi.tiktokToken ? "TikTok+API" : "TikTok") : null,
+      site.pixels.reddit ? "Reddit" : null,
+      site.pixels.linkedin ? "LinkedIn" : null,
+    ].filter(Boolean) as string[];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">Websites</h1>
-        <p className="text-sm text-zinc-500">
-          Zentrales Tracking-Snippet (t.js): ein Einbau, alle Pixel + Conversion-APIs laufen über
-          dieses System. Sites werden in <code className="font-mono">src/lib/tag-config.ts</code>{" "}
-          gepflegt.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight">Websites</h1>
+          <p className="text-sm text-zinc-500">
+            TRACK.SITE: ein Snippet pro Website, alle Pixel + Conversion-APIs laufen über dieses
+            System. Pixel-IDs und API-Tokens werden hier im Dashboard gepflegt.
+          </p>
+        </div>
+        {isAdmin ? (
+          <Link
+            href="/admin/websites/neu"
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+          >
+            + Neue Website
+          </Link>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Events gesamt" value={formatNumber(total)} />
         <StatCard label="Heute" value={formatNumber(today)} />
-        <StatCard label="Letzte 7 Tage" value={formatNumber(bySite.reduce((s, g) => s + g._count._all, 0))} />
         <StatCard
-          label="Meta CAPI (7 Tage)"
-          value={formatNumber(capi)}
-          hint={env.META_CAPI_ACCESS_TOKEN ? "weitergeleitet" : "kein Token konfiguriert"}
+          label="Letzte 7 Tage"
+          value={formatNumber(bySite.reduce((s, g) => s + g._count._all, 0))}
         />
+        <StatCard label="Meta CAPI (7 Tage)" value={formatNumber(capi)} hint="weitergeleitet" />
       </div>
 
       <Card>
@@ -100,24 +122,58 @@ export default async function WebsitesPage() {
                 <Th>Website</Th>
                 <Th>Site-ID</Th>
                 <Th>Domains</Th>
+                <Th>Pixel</Th>
+                <Th>Status</Th>
                 <Th className="text-right">Events (7 Tage)</Th>
                 <Th>Einbau-Snippet</Th>
+                {isAdmin ? <Th /> : null}
               </tr>
             </Thead>
             <tbody>
-              {TAG_SITES.map((site) => (
+              {sites.map((site) => (
                 <tr key={site.id} className="hover:bg-zinc-50/60">
                   <Td className="font-medium">{site.label}</Td>
                   <Td className="font-mono text-xs">{site.id}</Td>
-                  <Td className="text-zinc-500">{site.domains.join(", ")}</Td>
+                  <Td className="max-w-[220px] truncate text-zinc-500">
+                    {site.domains.join(", ")}
+                  </Td>
+                  <Td>
+                    <div className="flex max-w-[220px] flex-wrap gap-1">
+                      {pixelSummary(site).map((p) => (
+                        <span
+                          key={p}
+                          className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600"
+                        >
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </Td>
+                  <Td>
+                    {site.active ? (
+                      <Badge variant="success">aktiv</Badge>
+                    ) : (
+                      <Badge variant="muted">deaktiviert</Badge>
+                    )}
+                  </Td>
                   <Td className="text-right font-medium tabular-nums">
                     {formatNumber(countBySite.get(site.id) ?? 0)}
                   </Td>
                   <Td>
-                    <code className="block max-w-[360px] truncate rounded bg-zinc-100 px-2 py-1 font-mono text-[11px]">
-                      {`<script async src="${env.PUBLIC_BASE_URL}/t.js" data-site="${site.id}"></script>`}
+                    <code className="block max-w-[320px] truncate rounded bg-zinc-100 px-2 py-1 font-mono text-[11px]">
+                      {`<script async src="${env.PUBLIC_BASE_URL}/t.js?site=${site.id}" data-site="${site.id}"></script>`}
                     </code>
                   </Td>
+                  {isAdmin ? (
+                    <Td>
+                      <Link
+                        href={`/admin/websites/${site.id}`}
+                        className="text-sm font-medium text-zinc-600 underline-offset-2 hover:underline"
+                      >
+                        Bearbeiten
+                      </Link>
+                    </Td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -125,7 +181,7 @@ export default async function WebsitesPage() {
         </TableWrapper>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Events pro Tag (14 Tage)</CardTitle>
@@ -164,34 +220,6 @@ export default async function WebsitesPage() {
                 ))}
               </ul>
             )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Pixel-Konfiguration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
-              {[
-                ["GA4", env.GA4_MEASUREMENT_ID],
-                ["GTM", env.GTM_CONTAINER_ID],
-                ["Meta Pixel", env.META_PIXEL_ID],
-                ["Meta CAPI", env.META_CAPI_ACCESS_TOKEN ? "Token gesetzt" : null],
-                ["TikTok Pixel", env.TIKTOK_PIXEL_ID],
-                ["TikTok Events API", env.TIKTOK_EVENTS_API_TOKEN ? "Token gesetzt" : null],
-                ["Reddit", env.REDDIT_PIXEL_ID],
-                ["LinkedIn", env.LINKEDIN_PARTNER_ID],
-              ].map(([label, value]) => (
-                <li key={label as string} className="flex items-center justify-between gap-3">
-                  <span>{label}</span>
-                  {value ? (
-                    <Badge variant="success">aktiv</Badge>
-                  ) : (
-                    <Badge variant="muted">nicht konfiguriert</Badge>
-                  )}
-                </li>
-              ))}
-            </ul>
           </CardContent>
         </Card>
       </div>
