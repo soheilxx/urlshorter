@@ -60,14 +60,14 @@ export function decryptOrderNumber(payload: string): string | null {
 /** Verwechslungsarmes Alphabet (ohne 0/O/1/I/L). */
 const REFERENCE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
-/** Erzeugt eine Teilnahme-Referenz, z. B. "GEWINN-K7M2X9AB". */
+/** Erzeugt eine Teilnahme-Referenz, z. B. "K7M2X9AB" (8 Zeichen, ohne Präfix). */
 export function generateReferenceNumber(): string {
   const bytes = randomBytes(8);
-  let suffix = "";
+  let reference = "";
   for (let i = 0; i < 8; i++) {
-    suffix += REFERENCE_ALPHABET[(bytes[i] as number) % REFERENCE_ALPHABET.length];
+    reference += REFERENCE_ALPHABET[(bytes[i] as number) % REFERENCE_ALPHABET.length];
   }
-  return `GEWINN-${suffix}`;
+  return reference;
 }
 
 export function newEntryId(): string {

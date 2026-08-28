@@ -60,7 +60,7 @@ test.describe("Gewinnspiel-Landingpage", () => {
 
     const success = page.getByText("Deine Teilnahme wurde erfolgreich registriert.");
     await expect(success).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(/GEWINN-[2-9A-HJKMNP-Z]{8}/)).toBeVisible();
+    await expect(page.getByTestId("teilnahme-referenz")).toHaveText(/^[2-9A-HJKMNP-Z]{8}$/);
     await expect(
       page.getByText("Bitte bewahre deine Bestellbestätigung bis zum Abschluss der Verlosung auf."),
     ).toBeVisible();
@@ -100,8 +100,9 @@ test.describe("Gewinnspiel-Landingpage", () => {
     await page.getByLabel("Bestellnummer (exakt)").fill(ORDER_NUMBER);
     await page.getByRole("button", { name: "Filtern" }).click();
 
-    const row = page.getByRole("row", { name: /GEWINN-/ }).first();
-    await expect(row).toBeVisible();
+    // Nach der exakten Bestellnummern-Suche bleibt genau eine Datenzeile übrig
+    const row = page.locator("tbody tr").first();
+    await expect(row.getByText(/^[2-9A-HJKMNP-Z]{8}$/)).toBeVisible();
     await row.getByRole("link", { name: "Details" }).click();
 
     // Detailansicht: entschlüsselte Bestellnummer + Statuswechsel

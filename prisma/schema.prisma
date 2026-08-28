@@ -199,7 +199,7 @@ enum SweepstakesEntryStatus {
 model SweepstakesEntry {
   /// UUID v4 (serverseitig erzeugt)
   id              String @id
-  /// Öffentliche Teilnahme-Referenz, z. B. "GEWINN-K7M2X9Ax"
+  /// Öffentliche Teilnahme-Referenz, z. B. "K7M2X9AB" (8 Zeichen)
   referenceNumber String @unique
   /// Händler-Kennung (amazon | thalia | hugendubel | buecher_de | other)
   retailer        String

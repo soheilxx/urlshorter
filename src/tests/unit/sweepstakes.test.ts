@@ -112,10 +112,10 @@ describe("Gewinnspiel-Krypto", () => {
     expect(hashOrderNumber("ABC-123")).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("erzeugt Referenzen im Format GEWINN-XXXXXXXX", async () => {
+  it("erzeugt 8-stellige Referenzen aus dem verwechslungsarmen Alphabet", async () => {
     const { generateReferenceNumber } = await import("@/lib/sweepstakes-crypto");
     for (let i = 0; i < 20; i++) {
-      expect(generateReferenceNumber()).toMatch(/^GEWINN-[2-9A-HJKMNP-Z]{8}$/);
+      expect(generateReferenceNumber()).toMatch(/^[2-9A-HJKMNP-Z]{8}$/);
     }
   });
 

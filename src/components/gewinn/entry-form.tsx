@@ -116,7 +116,10 @@ export function EntryForm({
 
           <div className="mt-8 rounded-xl border gw-hairline bg-white/[0.04] px-5 py-4">
             <p className="text-sm text-[var(--gw-ink-mute)]">Deine Teilnahme-Referenz</p>
-            <p className="mt-1 font-mono text-xl font-semibold tracking-wide text-[var(--gw-gold-strong)]">
+            <p
+              data-testid="teilnahme-referenz"
+              className="mt-1 font-mono text-xl font-semibold tracking-wide text-[var(--gw-gold-strong)]"
+            >
               {state.referenceNumber}
             </p>
           </div>

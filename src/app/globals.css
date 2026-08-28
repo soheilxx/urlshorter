@@ -48,6 +48,8 @@ html {
 }
 
 .gewinn-theme {
+  /* Native Controls (Select-Popup, Scrollbars, Autofill) dunkel rendern */
+  color-scheme: dark;
   --gw-bg: #0d0b08;
   --gw-bg-soft: #131009;
   --gw-surface: #171310;
@@ -62,6 +64,12 @@ html {
   --gw-ink-mute: #948a76;
   background-color: var(--gw-bg);
   color: var(--gw-ink);
+}
+
+/* Fallback für Browser, die das Select-Popup trotz color-scheme hell rendern */
+.gewinn-theme select option {
+  background-color: #171310;
+  color: #f6f1e6;
 }
 
 .gw-gold-text {

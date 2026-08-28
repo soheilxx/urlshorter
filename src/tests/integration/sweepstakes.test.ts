@@ -48,7 +48,7 @@ describe("submitSweepstakesEntry", () => {
     const result = await submitSweepstakesEntry(validInput(), ctx());
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.referenceNumber).toMatch(/^GEWINN-[2-9A-HJKMNP-Z]{8}$/);
+    expect(result.referenceNumber).toMatch(/^[2-9A-HJKMNP-Z]{8}$/);
 
     const row = await prisma.sweepstakesEntry.findUnique({
       where: { referenceNumber: result.referenceNumber },

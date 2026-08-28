@@ -130,7 +130,7 @@ export default async function SweepstakesAdminPage({
             </div>
             <div>
               <Label htmlFor="f-ref">Teilnahme-Referenz</Label>
-              <Input id="f-ref" name="ref" defaultValue={filters.ref ?? ""} placeholder="GEWINN-…" />
+              <Input id="f-ref" name="ref" defaultValue={filters.ref ?? ""} placeholder="z. B. K7M2X9AB" />
             </div>
             <div>
               <Label htmlFor="f-order">Bestellnummer (exakt)</Label>
