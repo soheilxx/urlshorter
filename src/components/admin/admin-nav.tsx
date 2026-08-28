@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Gift,
   Globe2,
   LayoutDashboard,
   Link2,
@@ -26,6 +27,13 @@ const NAV_ITEMS = [
     icon: MousePointerClick,
     exact: false,
     visible: () => true,
+  },
+  {
+    href: "/admin/gewinnspiel",
+    label: "Gewinnspiel",
+    icon: Gift,
+    exact: false,
+    visible: (role: Role) => canManageUsers(role),
   },
   {
     href: "/admin/users",

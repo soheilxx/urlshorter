@@ -38,3 +38,67 @@ body {
     opacity: 0.25;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Gewinnspiel-Landingpage /gewinn – dunkles Premium-Theme
+ * (warmes Schwarz, Gold-Akzente, dezente Animationen)
+ * ------------------------------------------------------------------------- */
+html {
+  scroll-behavior: smooth;
+}
+
+.gewinn-theme {
+  --gw-bg: #0d0b08;
+  --gw-bg-soft: #131009;
+  --gw-surface: #171310;
+  --gw-surface-2: #1d1813;
+  --gw-border: rgba(214, 178, 111, 0.18);
+  --gw-border-soft: rgba(214, 178, 111, 0.1);
+  --gw-gold: #d6b26f;
+  --gw-gold-strong: #ecd096;
+  --gw-gold-deep: #a8813f;
+  --gw-ink: #f6f1e6;
+  --gw-ink-soft: #c9c0ac;
+  --gw-ink-mute: #948a76;
+  background-color: var(--gw-bg);
+  color: var(--gw-ink);
+}
+
+.gw-gold-text {
+  background: linear-gradient(105deg, #e8cd92 0%, #d6b26f 45%, #b78e4b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gw-hairline {
+  border-color: var(--gw-border);
+}
+
+@keyframes gw-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.gw-fade {
+  animation: gw-fade-up 0.7s cubic-bezier(0.2, 0.6, 0.3, 1) both;
+}
+.gw-fade-late {
+  animation: gw-fade-up 0.7s cubic-bezier(0.2, 0.6, 0.3, 1) 0.15s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .gw-fade,
+  .gw-fade-late {
+    animation: none;
+  }
+}

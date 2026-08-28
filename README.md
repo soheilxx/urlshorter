@@ -243,6 +243,35 @@ Geo-Tracking-Plattform in einem dunklen Panel:
 - Lokale Demo-Daten für die Karte: `npm run seed:demo` (nur gegen lokale
   Dev-/Test-Datenbanken lauffähig).
 
+## Gewinnspiel (/gewinn)
+
+Unter `https://lizenzzumerfolg.com/gewinn` läuft die Landingpage der
+Dubai-Verlosung für Buchkäufer (Route kollidiert nicht mit Kurzlinks – Codes
+sind exakt 4 Kleinbuchstaben). Alle Eckwerte werden zentral in
+[`src/lib/gewinnspiel-config.ts`](src/lib/gewinnspiel-config.ts) gepflegt
+(Fristen, Status, Händler, Gewinnwert, Versionen der Bedingungen, Amazon-Link).
+
+- **Teilnahmen**: Tabelle `SweepstakesEntry` – Bestellnummer als HMAC-Hash
+  (Duplikatsperre, global eindeutig) plus AES-256-GCM-verschlüsseltes Original;
+  Consent-Zeitpunkte inkl. Versionen; UTM/Referrer serverseitig; Client-Kennung
+  nur als nicht rückrechenbarer HMAC. Keine personenbezogenen Daten in Logs
+  oder Analytics.
+- **Spam-Schutz**: Honeypot (Schein-Erfolg ohne Speicherung), signiertes
+  Formular-Token (Mindest-/Höchstalter), Rate Limit pro Client-Kennung.
+- **Verwaltung**: `/admin/gewinnspiel` (nur ADMIN) mit Suche/Filtern,
+  Detailansicht (entschlüsselte Bestellnummer), Statuspflege, interner Notiz,
+  CSV-Export (Injection-geschützt, Semikolon+BOM) und DSGVO-Anonymisierung.
+- **E-Mail-Bestätigung**: vorbereitet in `src/lib/mailer.ts`, aber ohne
+  konfigurierten Dienst deaktiviert (kein simulierter Versand). Benötigt:
+  `MAIL_FROM` + `RESEND_API_KEY` oder `SMTP_URL`.
+
+Die Teilnahmebedingungen (Version in `TERMS_VERSION`) sind unter
+`/gewinn/teilnahmebedingungen` veröffentlicht; Veranstalter ist die Wiresoft
+Portal Ltd. (DIFC, Dubai). Teilnahme bis zur Gewinnerbekanntgabe möglich,
+sofern kein früherer `ENTRY_DEADLINE` gesetzt wird. Eine automatische
+Gewinnerziehung ist bewusst nicht implementiert (Ziehung erfolgt manuell,
+Status „Gewinner“ wird im Admin gepflegt).
+
 ## Migrationen
 
 ```bash

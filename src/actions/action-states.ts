@@ -64,3 +64,17 @@ export const EMPTY_USER_STATE: UserActionState = {
   error: null,
   success: null,
 };
+
+export interface SweepstakesActionState {
+  ok: boolean;
+  error: string | null;
+  fieldErrors: Record<string, string> | null;
+  referenceNumber: string | null;
+}
+
+export const EMPTY_SWEEPSTAKES_STATE: SweepstakesActionState = {
+  ok: false,
+  error: null,
+  fieldErrors: null,
+  referenceNumber: null,
+};
