@@ -3,12 +3,25 @@ import { ADMIN_EMAIL, loginAsAdmin } from "./helpers";
 
 test.describe("Authentifizierung", () => {
   test("die Startseite leitet zur Hauptseite weiter, /admin bleibt erreichbar", async ({
+    page,
     request,
   }) => {
-    const response = await request.get("/", { maxRedirects: 0 });
-    expect(response.status()).toBeGreaterThanOrEqual(301);
-    expect(response.status()).toBeLessThanOrEqual(308);
-    expect(response.headers()["location"]).toBe("https://soheil-hosseini.de");
+    // Bots erhalten weiterhin den direkten Server-Redirect (keine Pixel nötig)
+    const botResponse = await request.get("/", {
+      maxRedirects: 0,
+      headers: { "user-agent": "curl/8.5.0" },
+    });
+    expect(botResponse.status()).toBeGreaterThanOrEqual(301);
+    expect(botResponse.status()).toBeLessThanOrEqual(308);
+    expect(botResponse.headers()["location"]).toBe("https://soheil-hosseini.de");
+
+    // Menschen sehen die Tracking-Zwischenseite und werden dann weitergeleitet
+    await page.route("https://soheil-hosseini.de/**", (route) =>
+      route.fulfill({ status: 200, contentType: "text/html", body: "<h1>Hauptseite</h1>" }),
+    );
+    await page.goto("/");
+    await expect(page.getByText("Du wirst weitergeleitet")).toBeVisible();
+    await page.waitForURL("https://soheil-hosseini.de/", { timeout: 15_000 });
   });
 
   test("nicht angemeldete Besucher werden zur Login-Seite umgeleitet", async ({ page }) => {

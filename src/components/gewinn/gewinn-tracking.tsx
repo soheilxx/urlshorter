@@ -27,6 +27,8 @@ export interface GewinnTrackingConfig {
   consentMode: string;
   consentCookieName: string | null;
   consentAcceptedValue: string | null;
+  /** Seiten-Event im dataLayer (Standard: gewinnspiel_seite). */
+  pageEventName?: string;
 }
 
 function hasMarketingConsent(config: GewinnTrackingConfig): boolean {
@@ -80,7 +82,7 @@ export function GewinnTracking(config: GewinnTrackingConfig) {
         {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('consent', 'default', {ad_storage:'granted', ad_user_data:'granted', ad_personalization:'granted', analytics_storage:'granted'});
-dataLayer.push({event:'gewinnspiel_seite'});`}
+dataLayer.push({event:'${config.pageEventName ?? "gewinnspiel_seite"}'});`}
       </Script>
 
       {config.gtmContainerId ? (
