@@ -23,6 +23,7 @@ import {
   GEWINN_URL,
   getSweepstakesPhase,
   PRIZE_VALUE_LABEL,
+  TRIP_DURATION_LABEL,
   type SweepstakesPhase,
 } from "@/lib/gewinnspiel-config";
 import { createFormToken } from "@/lib/sweepstakes-crypto";
@@ -62,7 +63,7 @@ const PRIZE_ITEMS = [
   {
     icon: Hotel,
     title: "5-Sterne-Designerhotel",
-    text: "Aufenthalt in einem exklusiven Designerhotel in Dubai.",
+    text: "Fünf Tage Aufenthalt in einem exklusiven Designerhotel in Dubai.",
   },
   {
     icon: Gem,
@@ -100,7 +101,7 @@ const FAQ_ITEMS: Array<{ q: string; a: React.ReactNode }> = [
   },
   {
     q: "Was genau ist im Gewinn enthalten?",
-    a: "Hin- und Rückflug mit Emirates in der Business Class, Aufenthalt in einem exklusiven 5-Sterne-Designerhotel in einer Suite, ein Dinner für zwei Personen in einem der angesagtesten Restaurants Dubais sowie auf Wunsch ein persönliches Meet & Greet mit Soheil Hosseini. Gesamtwert: 20.000 €.",
+    a: "Eine 5-tägige Dubai-Reise: Hin- und Rückflug mit Emirates in der Business Class, Aufenthalt in einem exklusiven 5-Sterne-Designerhotel in einer Suite, ein Dinner für zwei Personen in einem der angesagtesten Restaurants Dubais sowie auf Wunsch ein persönliches Meet & Greet mit Soheil Hosseini. Gesamtwert: 20.000 €.",
   },
   {
     q: "Wann endet die Teilnahme?",
@@ -316,8 +317,8 @@ export default async function GewinnPage({
                 </a>
               </div>
               <p className="mt-3 text-sm text-[var(--gw-ink-mute)]">
-                Gesamtwert der Reise: {PRIZE_VALUE_LABEL} · Für dich und eine Begleitperson deiner
-                Wahl
+                {TRIP_DURATION_LABEL} Dubai · Gesamtwert {PRIZE_VALUE_LABEL} · Für dich und eine
+                Begleitperson deiner Wahl
               </p>
             </div>
           </div>
@@ -404,7 +405,7 @@ export default async function GewinnPage({
           <SectionHeading
             kicker="Der Gewinn"
             title="Eine exklusive Dubai-Reise für zwei Personen"
-            intro="Ein Erlebnis, das bleibt – von der Business Class bis zur Suite. Für dich und eine Begleitperson deiner Wahl."
+            intro={`Fünf Tage, die bleiben – von der Business Class bis zur Suite. Für dich und eine Begleitperson deiner Wahl.`}
           />
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {PRIZE_ITEMS.map(({ icon: Icon, title, text }) => (

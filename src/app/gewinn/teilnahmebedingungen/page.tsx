@@ -54,8 +54,9 @@ export default function TeilnahmebedingungenPage() {
           <section>
             <h2 className="text-lg font-semibold text-[var(--gw-ink)]">2. Gewinn</h2>
             <p className="mt-2">
-              Verlost wird eine Dubai-Reise für die Gewinnerin oder den Gewinner und eine frei
-              wählbare Begleitperson im Gesamtwert von {PRIZE_VALUE_LABEL}. Der Gewinn umfasst:
+              Verlost wird eine 5-tägige Dubai-Reise für die Gewinnerin oder den Gewinner und eine
+              frei wählbare Begleitperson im Gesamtwert von {PRIZE_VALUE_LABEL}. Der Gewinn
+              umfasst:
             </p>
             <ul className="mt-2 list-inside list-disc space-y-1">
               <li>Hin- und Rückflug mit Emirates in der Business Class für zwei Personen</li>

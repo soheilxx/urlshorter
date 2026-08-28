@@ -35,6 +35,9 @@ export const TIMEZONE = "Europe/Berlin";
 export const PRIZE_VALUE_EUR = 20000;
 export const PRIZE_VALUE_LABEL = "20.000 €";
 
+/** Reisedauer (Angabe von Soheil, 28.08.2026). */
+export const TRIP_DURATION_LABEL = "5 Tage";
+
 /**
  * Amazon-Produktlink: eigener Affiliate-Redirect der Wiresoft AG
  * (tag=wiresoft0c-21; Ziel: amazon.de/dp/3690662508).
@@ -76,7 +79,7 @@ export const MIN_FORM_SECONDS = 3;
 export const MAX_FORM_HOURS = 24;
 
 /** Version der Teilnahmebedingungen, die Teilnehmende bestätigen. */
-export const TERMS_VERSION = "1.0 (28.08.2026)";
+export const TERMS_VERSION = "1.1 (28.08.2026)";
 
 /** Version/Stand der Datenschutzhinweise (extern gepflegt). */
 export const PRIVACY_VERSION = "extern-2026-08";
