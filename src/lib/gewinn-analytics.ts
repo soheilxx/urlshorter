@@ -9,8 +9,10 @@ export function trackGewinnEvent(name: string): void {
     const w = window as unknown as {
       dataLayer?: Array<Record<string, unknown>>;
       fbq?: (...args: unknown[]) => void;
+      gtag?: (...args: unknown[]) => void;
     };
     w.dataLayer?.push({ event: name });
+    w.gtag?.("event", name);
     w.fbq?.("trackCustom", name);
   } catch {
     // Tracking darf niemals die Seite stören.

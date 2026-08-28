@@ -41,7 +41,12 @@ const envSchema = z.object({
   EVENT_RETENTION_DAYS: intWithDefault(90, 1, 3650),
   CRON_SECRET: optionalString,
   GTM_CONTAINER_ID: optionalString,
-  GA4_MEASUREMENT_ID: optionalString,
+  /// GA4-Property lizenzzumerfolg.com (Stream-ID 15519163707). Öffentliche
+  /// Measurement-ID als Code-Standard, per Env-Variable überschreibbar.
+  GA4_MEASUREMENT_ID: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() ? v.trim() : "G-4EK7Q83FJ6")),
   META_PIXEL_ID: optionalString,
   META_CAPI_ACCESS_TOKEN: optionalString,
   META_CAPI_TEST_EVENT_CODE: optionalString,
