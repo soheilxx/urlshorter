@@ -160,16 +160,36 @@ async function resolveCategoryForRank(
     where: { provider, providerCategoryId: categoryRank.providerCategoryId },
     include: { category: true },
   });
-  if (mapping) return { category: mapping.category, discovered: false };
+  if (mapping) {
+    // Bestseller-URL nachtragen, falls sie jetzt bekannt ist (URL-Fallback)
+    if (!mapping.providerCategoryUrl && categoryRank.bestsellerUrl) {
+      await prisma.amazonCategoryProviderMapping.update({
+        where: { id: mapping.id },
+        data: { providerCategoryUrl: categoryRank.bestsellerUrl },
+      });
+    }
+    return { category: mapping.category, discovered: false };
+  }
 
   const normalized = normalizeCategoryName(categoryRank.categoryName);
-  const byName = await prisma.amazonCategory.findFirst({
-    where: {
-      marketplace,
-      normalizedName: normalized,
-      categoryType: { in: [CATEGORY_TYPE_BROWSE_NODE, CATEGORY_TYPE_BESTSELLERS] },
-    },
-  });
+  // Exakter Name zuerst; sonst Klammerzusatz-Variante ("E-Business" passt zu
+  // "E-Business (Bücher)"), damit keine Duplikate zu den Pflichtkategorien
+  // entstehen.
+  const byName =
+    (await prisma.amazonCategory.findFirst({
+      where: {
+        marketplace,
+        normalizedName: normalized,
+        categoryType: { in: [CATEGORY_TYPE_BROWSE_NODE, CATEGORY_TYPE_BESTSELLERS] },
+      },
+    })) ??
+    (await prisma.amazonCategory.findFirst({
+      where: {
+        marketplace,
+        normalizedName: { startsWith: `${normalized} (` },
+        categoryType: { in: [CATEGORY_TYPE_BROWSE_NODE, CATEGORY_TYPE_BESTSELLERS] },
+      },
+    }));
   if (byName) {
     await prisma.amazonCategoryProviderMapping.upsert({
       where: {
@@ -182,6 +202,9 @@ async function resolveCategoryForRank(
       update: {
         providerCategoryName: categoryRank.categoryName,
         providerCategoryPath: categoryRank.categoryPath,
+        ...(categoryRank.bestsellerUrl
+          ? { providerCategoryUrl: categoryRank.bestsellerUrl }
+          : {}),
       },
       create: {
         categoryId: byName.id,
@@ -189,6 +212,7 @@ async function resolveCategoryForRank(
         providerCategoryId: categoryRank.providerCategoryId,
         providerCategoryName: categoryRank.categoryName,
         providerCategoryPath: categoryRank.categoryPath,
+        providerCategoryUrl: categoryRank.bestsellerUrl,
       },
     });
     return { category: byName, discovered: false };
@@ -216,6 +240,7 @@ async function resolveCategoryForRank(
       providerCategoryId: categoryRank.providerCategoryId,
       providerCategoryName: categoryRank.categoryName,
       providerCategoryPath: categoryRank.categoryPath,
+      providerCategoryUrl: categoryRank.bestsellerUrl,
     },
   });
   logger.info("amazon.category_discovered", {

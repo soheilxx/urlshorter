@@ -50,6 +50,8 @@ export interface NormalizedCategoryRank {
   categoryPath: string | null;
   rank: number;
   isRoot: boolean;
+  /** Bestseller-URL laut Provider (Rainforest-Link) – für den URL-Fallback. */
+  bestsellerUrl: string | null;
 }
 
 export interface NormalizedProductRanks {
