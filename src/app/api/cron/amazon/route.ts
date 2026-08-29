@@ -135,6 +135,31 @@ async function handle(request: Request): Promise<Response> {
         { headers: { "Cache-Control": "no-store" } },
       );
     }
+    // Ops-Diagnose (CRON_SECRET-geschützt, redigierte Daten):
+    // ?search=Begriff → Rainforest-Kategoriensuche, ?children=ID → Kinderliste
+    const searchTerm = url.searchParams.get("search");
+    const childrenOf = url.searchParams.get("children");
+    if (searchTerm || childrenOf !== null) {
+      const { rainforestListCategories, rainforestSearchCategories } = await import(
+        "@/lib/amazon/providers/rainforest"
+      );
+      const { safeErrorMessage } = await import("@/lib/amazon/redact");
+      try {
+        const result = searchTerm
+          ? await rainforestSearchCategories(searchTerm)
+          : await rainforestListCategories(childrenOf || null);
+        return Response.json(
+          { ok: true, categories: result.data },
+          { headers: { "Cache-Control": "no-store" } },
+        );
+      } catch (error) {
+        return Response.json(
+          { ok: false, error: safeErrorMessage(error) },
+          { status: 200, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+    }
+
     const singleJob = url.searchParams.get("job");
     if (singleJob) {
       if (!(AMAZON_JOB_TYPES as readonly string[]).includes(singleJob)) {
