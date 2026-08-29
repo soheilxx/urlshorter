@@ -578,11 +578,23 @@ async function jobResolveCategories(ctx: JobContext): Promise<JobOutcome> {
     hierarchy = { roots, children };
     return hierarchy;
   };
+  // Rainforest benennt die amazon.de-Buchkategorien englisch – Aliasse für
+  // den lokalen Abgleich der deutschen Kategorienamen.
+  const NAME_ALIASES: Record<string, string[]> = {
+    "bücher": ["books"],
+    "business & karriere": ["business & careers"],
+    "biografien & erinnerungen": ["biographies & memoirs"],
+    "präsentationen": ["presentations"],
+  };
   const nameMatches = (candidateName: string, category: { normalizedName: string }): boolean => {
     const candidate = normalizeCategoryName(candidateName);
     const target = category.normalizedName;
     const targetStripped = target.replace(/\s*\(.*\)\s*/, "").trim();
-    return candidate === target || candidate === targetStripped;
+    return (
+      candidate === target ||
+      candidate === targetStripped ||
+      (NAME_ALIASES[target] ?? NAME_ALIASES[targetStripped] ?? []).includes(candidate)
+    );
   };
 
   let resolved = 0;

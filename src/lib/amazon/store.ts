@@ -70,6 +70,23 @@ const REQUIRED_CATEGORIES: Array<{
     required: false,
     leaderboard: true,
   },
+  // Amazon.de führt KEINE eigenständige "Sachbücher"-Bestsellerliste
+  // (per Categories API verifiziert). Als nächstliegende Sachbuch-Listen
+  // werden die beiden Ober-Kategorien beobachtet, in denen das Buch rankt
+  // (Entscheidung Betreiber, 2026-08-29). Auflösung dynamisch über die
+  // Rainforest-Hierarchie (Namens-Aliasse EN↔DE in lib/amazon/jobs.ts).
+  {
+    name: "Business & Karriere",
+    type: CATEGORY_TYPE_BESTSELLERS,
+    required: false,
+    leaderboard: true,
+  },
+  {
+    name: "Biografien & Erinnerungen",
+    type: CATEGORY_TYPE_BESTSELLERS,
+    required: false,
+    leaderboard: true,
+  },
 ];
 
 export function normalizeCategoryName(name: string): string {
