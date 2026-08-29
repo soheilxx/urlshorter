@@ -5,6 +5,7 @@ import { getAmazonSettings } from "@/lib/amazon/amazon-settings";
 import { CATEGORY_TYPE_WEBSITE, PROVIDER_LABELS } from "@/lib/amazon/constants";
 import { buildEditionClickStats } from "@/lib/amazon/clicks";
 import { buildCategoryKpis, loadCanonicalSeries } from "@/lib/amazon/kpis";
+import { creatorsAwaitingEligibility } from "@/lib/amazon/provider-display";
 import { forecastQuota } from "@/lib/amazon/quota";
 import { MovementBadge, RankValue, StaleBadge } from "@/components/admin/amazon/movement-badge";
 import { RankChart, type RankChartSeries } from "@/components/admin/amazon/rank-chart";
@@ -71,7 +72,7 @@ export default async function AmazonOverviewPage() {
     );
   }
 
-  const [categories, providerStatuses, alerts, latestLeaderboard, clickStats, gapCount7d] =
+  const [categories, providerStatuses, alerts, latestLeaderboard, clickStats, gapCount7d, creatorsWaiting] =
     await Promise.all([
       prisma.amazonCategory.findMany({
         where: {
@@ -101,6 +102,7 @@ export default async function AmazonOverviewPage() {
           observedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
         },
       }),
+      creatorsAwaitingEligibility(),
     ]);
 
   const websiteCategory = categories.find((c) => c.categoryType === CATEGORY_TYPE_WEBSITE);
@@ -400,6 +402,8 @@ export default async function AmazonOverviewPage() {
                     <Badge variant="danger">Circuit offen</Badge>
                   ) : status.healthy ? (
                     <Badge variant="success">gesund</Badge>
+                  ) : status.provider === "CREATORS" && creatorsWaiting ? (
+                    <Badge variant="warning">wartet auf Amazon-Freischaltung</Badge>
                   ) : (
                     <Badge variant="warning">gestört</Badge>
                   )}

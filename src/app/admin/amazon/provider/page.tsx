@@ -6,6 +6,7 @@ import {
   PROVIDER_LABELS,
   RAINFOREST_CAPABILITIES,
 } from "@/lib/amazon/constants";
+import { creatorsAwaitingEligibility } from "@/lib/amazon/provider-display";
 import { forecastQuota } from "@/lib/amazon/quota";
 import { isCreatorsConfigured } from "@/lib/amazon/providers/creators";
 import { isRainforestConfigured } from "@/lib/amazon/providers/rainforest";
@@ -27,7 +28,7 @@ export default async function AmazonProvidersPage() {
   const settings = await getAmazonSettings();
 
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const [statuses, recentRuns, runStats, fallbackCount, activeCategories] = await Promise.all([
+  const [statuses, recentRuns, runStats, fallbackCount, activeCategories, creatorsWaiting] = await Promise.all([
     prisma.amazonProviderStatus.findMany(),
     prisma.amazonProviderRun.findMany({ orderBy: { startedAt: "desc" }, take: 25 }),
     prisma.amazonProviderRun.groupBy({
@@ -39,6 +40,7 @@ export default async function AmazonProvidersPage() {
       where: { startedAt: { gte: since24h }, fallbackFrom: { not: null } },
     }),
     prisma.amazonCategory.count({ where: { active: true, leaderboardEnabled: true } }),
+    creatorsAwaitingEligibility(),
   ]);
 
   const providers = [
@@ -119,6 +121,8 @@ export default async function AmazonProvidersPage() {
                   )}
                   {status?.healthy ? (
                     <Badge variant="success">Verbindung ok</Badge>
+                  ) : status && provider.key === "CREATORS" && creatorsWaiting ? (
+                    <Badge variant="warning">wartet auf Amazon-Freischaltung</Badge>
                   ) : status ? (
                     <Badge variant="warning">gestört</Badge>
                   ) : (
@@ -135,6 +139,15 @@ export default async function AmazonProvidersPage() {
                     </Badge>
                   ) : null}
                 </div>
+                {provider.key === "CREATORS" && creatorsWaiting ? (
+                  <p className="rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">
+                    Zugangsdaten und OAuth funktionieren. Amazon schaltet den Katalogzugriff
+                    der Creators API erst frei, wenn das Associates-Konto die
+                    Teilnahmevoraussetzungen erfüllt (u. a. ~10 qualifizierte Verkäufe in
+                    30 Tagen). Bis dahin liefert Rainforest die kanonischen Werte – die
+                    Umstellung erfolgt automatisch.
+                  </p>
+                ) : null}
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                   <dt className="text-zinc-400">Letzte erfolgreiche Abfrage</dt>
                   <dd>{status?.lastSuccessAt ? formatBerlinDateTime(status.lastSuccessAt) : "–"}</dd>

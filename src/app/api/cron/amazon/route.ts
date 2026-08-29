@@ -29,6 +29,20 @@ function isAuthorized(request: Request): boolean {
  * Sicherer Modul-Status (keine Secrets): für die kontrollierte
  * Produktionsprüfung nach dem Rollout (?summary=1).
  */
+async function buildClicksDebug(): Promise<Record<string, unknown> | null> {
+  const { buildEditionClickStats } = await import("@/lib/amazon/clicks");
+  const edition = await prisma.amazonEdition.findFirst({ orderBy: { createdAt: "asc" } });
+  if (!edition) return null;
+  const stats = await buildEditionClickStats(edition);
+  return {
+    trackedShortCode: edition.trackedShortCode,
+    shortLinks: stats.shortLinks,
+    windows: stats.windows,
+    bySource: stats.bySource,
+    byShortLink: stats.byShortLink,
+  };
+}
+
 async function buildStatusSummary(): Promise<Record<string, unknown>> {
   const [edition, categories, providerStatuses, latestCanonical, leaderboards, lastRuns] =
     await Promise.all([
@@ -132,6 +146,13 @@ async function handle(request: Request): Promise<Response> {
       const summary = await buildStatusSummary();
       return Response.json(
         { ok: true, summary },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    if (url.searchParams.get("clicks") === "1") {
+      const clicks = await buildClicksDebug();
+      return Response.json(
+        { ok: true, clicks },
         { headers: { "Cache-Control": "no-store" } },
       );
     }
