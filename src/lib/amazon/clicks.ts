@@ -22,10 +22,10 @@ export interface EditionClickStats {
 }
 
 /**
- * Kurzlinks, die zur Edition gehören: der Tracking-Code (z. B. "wulp"),
- * Amazon-Ziele mit der ASIN – und ALLE weiteren Kurzlinks, deren Ziel
- * dieselbe Ziel-URL hat (mehrere Links können auf dasselbe Buch-Ziel
- * zeigen, z. B. das Affiliate-Ziel des Buchs).
+ * Kurzlinks, die zur Edition gehören: ALLE Links mit Amazon-Ziel
+ * (amazon.*, link.amazon, amzn.eu/amzn.to – Betreiber-Vorgabe: jeder
+ * Amazon-Link zählt in die Buch-Klickwertung) sowie zusätzlich der
+ * hinterlegte Tracking-Code und alle Links mit derselben Ziel-URL.
  */
 export async function findEditionShortLinks(
   edition: Pick<AmazonEdition, "asin" | "trackedShortCode">,
@@ -34,12 +34,8 @@ export async function findEditionShortLinks(
     where: {
       OR: [
         ...(edition.trackedShortCode ? [{ code: edition.trackedShortCode }] : []),
-        {
-          destination: {
-            host: { contains: "amazon" },
-            url: { contains: edition.asin },
-          },
-        },
+        { destination: { host: { contains: "amazon" } } },
+        { destination: { host: { startsWith: "amzn" } } },
       ],
     },
     select: { id: true, code: true, name: true, destination: { select: { url: true } } },
