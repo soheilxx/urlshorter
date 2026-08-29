@@ -212,6 +212,94 @@ export async function getAttributionBreakdown(scope: GeoScope): Promise<Attribut
   return { channels, referrers };
 }
 
+export interface ProfileEntry {
+  label: string;
+  clicks: number;
+}
+
+export interface VisitorProfile {
+  devices: ProfileEntry[];
+  browsers: ProfileEntry[];
+  operatingSystems: ProfileEntry[];
+}
+
+/** Geräte-/Browser-/OS-Verteilung der Besucher (ohne Bots). */
+export async function getVisitorProfile(scope: GeoScope): Promise<VisitorProfile> {
+  const where = { isBot: false, ts: { gte: scope.from, lt: scope.to } };
+  const [devices, browsers, operatingSystems] = await Promise.all([
+    prisma.clickEvent.groupBy({
+      by: ["deviceType"],
+      _count: { _all: true },
+      where,
+      orderBy: { _count: { deviceType: "desc" } },
+    }),
+    prisma.clickEvent.groupBy({
+      by: ["browser"],
+      _count: { _all: true },
+      where,
+      orderBy: { _count: { browser: "desc" } },
+      take: 6,
+    }),
+    prisma.clickEvent.groupBy({
+      by: ["os"],
+      _count: { _all: true },
+      where,
+      orderBy: { _count: { os: "desc" } },
+      take: 6,
+    }),
+  ]);
+  const label = (v: string | null): string => v ?? "Unbekannt";
+  return {
+    devices: devices.map((d) => ({ label: label(d.deviceType), clicks: d._count._all })),
+    browsers: browsers.map((d) => ({ label: label(d.browser), clicks: d._count._all })),
+    operatingSystems: operatingSystems.map((d) => ({ label: label(d.os), clicks: d._count._all })),
+  };
+}
+
+export interface TopLink {
+  code: string;
+  linkName: string;
+  clicks: number;
+  uniques: number;
+}
+
+/** Meistgeklickte Kurzlinks im Zeitraum (inkl. Unique Visitors). */
+export async function getTopLinks(scope: GeoScope, limit = 8): Promise<TopLink[]> {
+  return prisma.$queryRaw<TopLink[]>(Prisma.sql`
+    SELECT ce."code" AS code,
+           ce."linkName" AS "linkName",
+           count(*)::int AS clicks,
+           count(DISTINCT ce."visitorHash")::int AS uniques
+    FROM "ClickEvent" ce
+    WHERE ${rangeCond(scope)}
+    GROUP BY 1, 2
+    ORDER BY 3 DESC
+    LIMIT ${limit}
+  `);
+}
+
+export interface HourActivity {
+  hour: number;
+  clicks: number;
+}
+
+/** Klicks nach Tagesstunde (Europe/Berlin) – zeigt die aktivsten Uhrzeiten. */
+export async function getHourlyActivity(scope: GeoScope): Promise<HourActivity[]> {
+  const rows = await prisma.$queryRaw<Array<{ hour: number; clicks: number }>>(Prisma.sql`
+    SELECT extract(hour FROM ce."ts" AT TIME ZONE 'Europe/Berlin')::int AS hour,
+           count(*)::int AS clicks
+    FROM "ClickEvent" ce
+    WHERE ${rangeCond(scope)}
+    GROUP BY 1
+    ORDER BY 1
+  `);
+  const byHour = new Map(rows.map((r) => [r.hour, r.clicks]));
+  return Array.from({ length: 24 }, (_, hour) => ({
+    hour,
+    clicks: byHour.get(hour) ?? 0,
+  }));
+}
+
 export interface RecentClick {
   id: string;
   ts: Date;

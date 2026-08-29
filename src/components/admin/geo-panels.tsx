@@ -4,39 +4,23 @@ import { formatBerlinTime, formatNumber } from "@/lib/utils";
 import { countryNameDe } from "@/lib/world-map";
 
 /**
- * Server-Komponenten für das dunkle Analytics-Panel.
- * Farbwerte folgen der Dark-Palette (siehe lib/channels.ts bzw. Seite).
+ * Server-Komponenten des Analytics-Tabs im hellen Dashboard-Design
+ * (weiße Cards, Zinc-Palette – wie der Rest des Adminbereichs).
  */
 
-export function DarkStatCard({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div className="rounded-xl bg-[#1a1a19] px-5 py-4 ring-1 ring-white/10">
-      <p className="text-[11px] font-medium tracking-wider text-[#898781] uppercase">{label}</p>
-      <p className="mt-1.5 text-2xl font-semibold text-white">{value}</p>
-      {hint ? <p className="mt-0.5 text-xs text-[#898781]">{hint}</p> : null}
-    </div>
-  );
-}
-
-export interface DarkBarItem {
+export interface GeoBarItem {
   label: string;
   sublabel?: string | null;
   clicks: number;
-  /** Feste Entitätsfarbe (z. B. Kanal); ohne Angabe: sequentielles Blau. */
+  /** Feste Entitätsfarbe (z. B. Kanal); ohne Angabe: Blau. */
   color?: string;
+  /** Optionaler Zusatzwert rechts, z. B. Unique Visitors. */
+  hint?: string | null;
 }
 
-export function DarkBarList({ items }: { items: DarkBarItem[] }) {
+export function GeoBarList({ items }: { items: GeoBarItem[] }) {
   if (items.length === 0) {
-    return <p className="py-6 text-center text-sm text-[#898781]">Keine Daten im Zeitraum.</p>;
+    return <p className="py-6 text-center text-sm text-zinc-400">Keine Daten im Zeitraum.</p>;
   }
   const max = Math.max(...items.map((d) => d.clicks), 1);
   return (
@@ -47,8 +31,8 @@ export function DarkBarList({ items }: { items: DarkBarItem[] }) {
             className="absolute inset-y-0 left-0 rounded-md"
             style={{
               width: `${Math.max(2, (item.clicks / max) * 100)}%`,
-              backgroundColor: item.color ?? "#3987e5",
-              opacity: item.color ? 0.28 : 0.22,
+              backgroundColor: item.color ?? "#2563eb",
+              opacity: 0.14,
             }}
             aria-hidden="true"
           />
@@ -61,13 +45,14 @@ export function DarkBarList({ items }: { items: DarkBarItem[] }) {
                   aria-hidden="true"
                 />
               ) : null}
-              <span className="truncate text-sm text-white">{item.label}</span>
+              <span className="truncate text-sm text-zinc-800">{item.label}</span>
               {item.sublabel ? (
-                <span className="shrink-0 text-xs text-[#898781]">{item.sublabel}</span>
+                <span className="shrink-0 text-xs text-zinc-400">{item.sublabel}</span>
               ) : null}
             </span>
-            <span className="text-sm font-medium text-[#c3c2b7] tabular-nums">
+            <span className="shrink-0 text-sm font-medium text-zinc-700 tabular-nums">
               {formatNumber(item.clicks)}
+              {item.hint ? <span className="ml-1 text-xs font-normal text-zinc-400">{item.hint}</span> : null}
             </span>
           </div>
         </li>
@@ -90,26 +75,29 @@ export function ChannelDot({ channel }: { channel: ChannelId }) {
 export function LiveFeed({ clicks }: { clicks: RecentClick[] }) {
   if (clicks.length === 0) {
     return (
-      <p className="py-6 text-center text-sm text-[#898781]">
+      <p className="py-6 text-center text-sm text-zinc-400">
         Noch keine Klicks erfasst – sobald Kurzlinks aufgerufen werden, erscheinen sie hier.
       </p>
     );
   }
   return (
-    <ul className="divide-y divide-white/5">
+    <ul className="divide-y divide-zinc-100">
       {clicks.map((click) => (
         <li key={click.id} className="flex items-center gap-2.5 py-2">
-          <span className="font-mono text-[11px] text-[#898781] tabular-nums">
+          <span className="font-mono text-[11px] text-zinc-400 tabular-nums">
             {formatBerlinTime(click.ts)}
           </span>
           <ChannelDot channel={click.channel} />
-          <span className="min-w-0 flex-1 truncate text-xs text-white">
+          <span className="min-w-0 flex-1 truncate text-xs text-zinc-800">
             {click.city ?? countryNameDe(click.iso2)}
             {click.city && click.iso2 ? (
-              <span className="text-[#898781]"> · {countryNameDe(click.iso2)}</span>
+              <span className="text-zinc-400"> · {countryNameDe(click.iso2)}</span>
+            ) : null}
+            {click.deviceType ? (
+              <span className="text-zinc-400"> · {click.deviceType}</span>
             ) : null}
           </span>
-          <span className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-[#c3c2b7]">
+          <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-zinc-600">
             /{click.code}
           </span>
         </li>
