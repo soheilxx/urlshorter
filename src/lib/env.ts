@@ -23,6 +23,30 @@ const optionalString = z
   .optional()
   .transform((v) => (v && v.trim().length > 0 ? v.trim() : null));
 
+const stringWithDefault = (def: string) =>
+  z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim().length > 0 ? v.trim() : def));
+
+const urlWithDefault = (def: string) =>
+  z
+    .string()
+    .optional()
+    .transform((v) => {
+      const trimmed = v?.trim().replace(/\/+$/, "");
+      return trimmed && /^https:\/\/[^\s]+$/.test(trimmed) ? trimmed : def;
+    });
+
+const boolFlag = (def: boolean) =>
+  z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (v === undefined || v.trim() === "") return def;
+      return ["true", "1", "yes", "on"].includes(v.trim().toLowerCase());
+    });
+
 const envSchema = z.object({
   DATABASE_URL: optionalString,
   PUBLIC_BASE_URL: z
@@ -76,6 +100,53 @@ const envSchema = z.object({
     }),
   BRIDGE_EXTRA_CSP_HOSTS: z.string().optional(),
   SENTRY_DSN: optionalString,
+
+  // --------------------------------------------------------------------------
+  // Modul "Amazon Buchrankings" – Secrets NUR serverseitig, niemals loggen.
+  // Alle Werte sind Standardwerte; Intervalle etc. sind zusätzlich im
+  // Dashboard (AppSetting "amazon.*") ohne Deployment änderbar.
+  // --------------------------------------------------------------------------
+  AMAZON_RANKING_ENABLED: boolFlag(false),
+  RAINFOREST_API_KEY: optionalString,
+  RAINFOREST_BASE_URL: urlWithDefault("https://api.rainforestapi.com"),
+  RAINFOREST_TIMEOUT_MS: intWithDefault(30_000, 5_000, 120_000),
+  AMAZON_CREATORS_CREDENTIAL_ID: optionalString,
+  AMAZON_CREATORS_CREDENTIAL_SECRET: optionalString,
+  /// Credential-Version bestimmt den regionalen OAuth-Endpoint
+  /// (3.1 = US/CA/MX/BR, 3.2 = UK/DE/FR/IT/ES, 3.3 = JP/IN/AU)
+  AMAZON_CREATORS_CREDENTIAL_VERSION: optionalString,
+  AMAZON_CREATORS_PARTNER_TAG: optionalString,
+  AMAZON_CREATORS_MARKETPLACE: stringWithDefault("www.amazon.de"),
+  AMAZON_CREATORS_LOCALE: stringWithDefault("de_DE"),
+  AMAZON_CREATORS_CURRENCY: stringWithDefault("EUR"),
+  /// Basis-URL der Creators API (Katalog-Operationen, POST + Bearer)
+  AMAZON_CREATORS_BASE_URL: urlWithDefault("https://creatorsapi.amazon/catalog/v1"),
+  /// OAuth-Token-Endpoint (client_credentials; je Credential-Version regional)
+  AMAZON_CREATORS_TOKEN_URL: urlWithDefault("https://api.amazon.com/auth/o2/token"),
+  AMAZON_PRIMARY_BOOK_ASIN: stringWithDefault("3690662508"),
+  AMAZON_PRIMARY_BOOK_ISBN13: stringWithDefault("9783690662505"),
+  AMAZON_RANK_DEFAULT_INTERVAL_MINUTES: intWithDefault(60, 15, 1_440),
+  AMAZON_LEADERBOARD_DEFAULT_INTERVAL_MINUTES: intWithDefault(180, 15, 10_080),
+  AMAZON_METADATA_INTERVAL_MINUTES: intWithDefault(1_440, 60, 10_080),
+  AMAZON_PROVIDER_HEALTH_INTERVAL_MINUTES: intWithDefault(15, 5, 1_440),
+  AMAZON_ACCOUNT_STATUS_INTERVAL_MINUTES: intWithDefault(360, 60, 1_440),
+  AMAZON_DIGEST_TIME: z
+    .string()
+    .optional()
+    .transform((v) => (v && /^\d{2}:\d{2}$/.test(v.trim()) ? v.trim() : "08:00")),
+  AMAZON_TIMEZONE: stringWithDefault("Europe/Berlin"),
+  AMAZON_PROVIDER_TIMEOUT_MS: intWithDefault(30_000, 5_000, 120_000),
+  AMAZON_RAW_PAYLOAD_RETENTION_DAYS: intWithDefault(30, 1, 90),
+  /// 0 = unbegrenzt aufbewahren
+  AMAZON_RANK_RETENTION_DAYS: intWithDefault(0, 0, 36_500),
+  AMAZON_RANKING_DAILY_CREDIT_BUDGET: z
+    .string()
+    .optional()
+    .transform((v) => {
+      const n = v ? Number.parseInt(v, 10) : Number.NaN;
+      return Number.isFinite(n) && n > 0 ? n : null;
+    }),
+  AMAZON_SALES_ESTIMATION_ENABLED: boolFlag(false),
 });
 
 export type AppEnv = z.infer<typeof envSchema> & {

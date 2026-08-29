@@ -305,6 +305,22 @@ zentral über dieses System gesteuert:
   serverseitig weitergeleitet – mit derselben `event_id` wie das
   Browser-Pixel, die Anbieter deduplizieren also selbst.
 
+## Amazon Buchrankings
+
+Modul „Amazon Rankings“ im Dashboard: Verkaufsränge des eigenen Buchs
+(ASIN 3690662508, „Die Lizenz zum Erfolg“) über **Amazon Creators API**
+(primär) und **Rainforest API** (Gegenprüfung, Top-25-Bestsellerlisten,
+Credits), kanonische Rangauswahl mit sichtbaren Datenlücken/Stale-Zuständen,
+historische Snapshots, Alerts, täglicher Digest, Klick-Verknüpfung und
+Exporte. Provider-Aufrufe laufen ausschließlich in Hintergrundjobs
+(`/api/cron/amazon`) – niemals im Redirect-Hot-Path.
+
+Dokumentation: [Architektur](docs/amazon-ranking-architecture.md) ·
+[Setup](docs/amazon-ranking-setup.md) ·
+[Provider](docs/amazon-ranking-providers.md) ·
+[Betrieb](docs/amazon-ranking-operations.md) ·
+[Datenmodell](docs/amazon-ranking-data-model.md)
+
 ## Migrationen
 
 ```bash

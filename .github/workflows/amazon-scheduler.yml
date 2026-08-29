@@ -1,0 +1,28 @@
+# Externer Scheduler-Pinger für das Amazon-Ranking-Modul.
+#
+# Vercel-Hobby erlaubt nur tägliche Crons – dieser Workflow stößt den
+# Tick-Endpoint alle 30 Minuten an, damit stündliche Rang-Abrufe laufen.
+#
+# Aktivierung (siehe docs/amazon-ranking-operations.md):
+#   1. Repository-VARIABLE anlegen:  AMAZON_TICK_URL = https://lizenzzumerfolg.com/api/cron/amazon
+#   2. Repository-SECRET anlegen:    CRON_SECRET     = <Wert aus Vercel>
+# Ohne die Variable bleibt der Workflow inaktiv (Job wird übersprungen).
+
+name: amazon-ranking-scheduler
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    if: ${{ vars.AMAZON_TICK_URL != '' }}
+    steps:
+      - name: Scheduler-Tick aufrufen
+        run: |
+          curl --fail --silent --show-error --max-time 290 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.AMAZON_TICK_URL }}" > /dev/null
+          echo "Tick ausgeführt."

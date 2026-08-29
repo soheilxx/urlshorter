@@ -9,6 +9,7 @@ import {
   MousePointerClick,
   Settings,
   Target,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -26,6 +27,13 @@ const NAV_ITEMS = [
     href: "/admin/clicks",
     label: "Klicks",
     icon: MousePointerClick,
+    exact: false,
+    visible: () => true,
+  },
+  {
+    href: "/admin/amazon",
+    label: "Amazon Rankings",
+    icon: TrendingUp,
     exact: false,
     visible: () => true,
   },
@@ -63,7 +71,10 @@ export function AdminNav({ role }: { role: Role }) {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Hauptnavigation" className="flex gap-1 md:flex-col">
+    <nav
+      aria-label="Hauptnavigation"
+      className="flex max-w-full gap-1 overflow-x-auto md:flex-col md:overflow-visible"
+    >
       {NAV_ITEMS.filter((item) => item.visible(role)).map((item) => {
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
         const Icon = item.icon;

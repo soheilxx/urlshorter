@@ -349,3 +349,528 @@ model LoginAttempt {
 
   @@index([identifier, ts])
 }
+
+// ============================================================================
+// Modul "Amazon Buchrankings"
+// Alle Zeitstempel UTC; Anzeige Europe/Berlin. Ränge: kleiner = besser,
+// niemals 0 – fehlende Ränge sind NULL. Secrets werden hier nie gespeichert.
+// ============================================================================
+
+/// Datenprovider einer Beobachtung.
+enum AmazonProviderKind {
+  CREATORS
+  RAINFOREST
+  MANUAL
+}
+
+/// Herkunftsstatus einer Messung. Eine fehlgeschlagene Messung wird NICHT
+/// gespeichert – CACHED/MANUAL kennzeichnen bewusst übernommene Altwerte.
+enum AmazonSourceStatus {
+  LIVE
+  PARTIAL
+  CACHED
+  MANUAL
+}
+
+/// Ergebnis eines Provider-/Job-Laufs.
+enum AmazonRunStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+  SKIPPED
+}
+
+/// Logisches Buch (unabhängig von einzelnen Ausgaben/ASINs).
+model AmazonBook {
+  id               String   @id @default(cuid())
+  title            String
+  subtitle         String?
+  author           String
+  publisher        String?
+  language         String?
+  description      String?
+  /// Edition, die in Übersichten standardmäßig gezeigt wird
+  primaryEditionId String?
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
+
+  editions AmazonEdition[]
+
+  @@index([active])
+}
+
+/// ASIN-spezifische Ausgabe eines Buchs (Taschenbuch, Kindle, Hörbuch …).
+/// Ränge werden niemals editionsübergreifend zusammengerechnet.
+model AmazonEdition {
+  id          String     @id @default(cuid())
+  bookId      String
+  book        AmazonBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  marketplace String     @default("www.amazon.de")
+  asin        String
+  parentAsin  String?
+  isbn10      String?
+  isbn13      String?
+  /// z. B. "Taschenbuch", "Kindle", "Hardcover", "Hörbuch"
+  format          String
+  publicationDate DateTime? @db.Date
+  /// Vorbestellphase (wird bei Statuswechsel per Alert gemeldet)
+  preorder        Boolean   @default(true)
+  /// Startpunkt "seit Vorbestellstart" für Bestwert-Auswertungen
+  preorderStartAt DateTime? @db.Timestamptz(3)
+
+  /// ASIN wurde über mindestens einen Provider bestätigt
+  asinValidated           Boolean             @default(false)
+  asinValidatedAt         DateTime?           @db.Timestamptz(3)
+  asinValidationProvider  AmazonProviderKind?
+
+  productUrl      String?
+  affiliateUrl    String?
+  /// Code eines vorhandenen Kurzlinks (z. B. "wulp") für die Klick-Verknüpfung
+  trackedShortCode String? @db.VarChar(4)
+
+  coverSmallUrl  String?
+  coverMediumUrl String?
+  coverLargeUrl  String?
+  coverWidth     Int?
+  coverHeight    Int?
+
+  currentPrice        Decimal? @db.Decimal(10, 2)
+  currency            String?
+  currentAvailability String?
+  currentRating       Float?
+  currentReviewCount  Int?
+
+  metadataProvider   AmazonProviderKind?
+  metadataObservedAt DateTime?           @db.Timestamptz(3)
+
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  categories        AmazonEditionCategory[]
+  rankObservations  AmazonRankObservation[]
+  canonicalSnapshots AmazonCanonicalRankSnapshot[]
+  metadataSnapshots AmazonProductMetadataSnapshot[]
+  salesEstimates    AmazonSalesEstimate[]
+  actualSalesImports AmazonActualSalesImport[]
+
+  @@unique([marketplace, asin])
+  @@index([bookId])
+  @@index([active])
+}
+
+/// Beobachtete Kategorie. categoryType:
+///   WEBSITE     – Pseudo-Kategorie für den Gesamtbuchrang (websiteSalesRank)
+///   BROWSE_NODE – Amazon Browse Node (Kategorierang des eigenen Buchs)
+///   BESTSELLERS – Rainforest-Bestsellerkategorie (Top-25-Listen)
+model AmazonCategory {
+  id             String  @id @default(cuid())
+  marketplace    String  @default("www.amazon.de")
+  canonicalName  String
+  /// kleingeschriebener Vergleichsname
+  normalizedName String
+  path           String?
+  parentId       String?
+  categoryType   String  @default("BROWSE_NODE")
+  isRoot         Boolean @default(false)
+  /// Pflichtkategorie (z. B. Sachbücher) – darf nicht deaktiviert werden
+  required       Boolean @default(false)
+  /// Automatisch aufgenommene Kategorien weiter beobachten
+  autoFollow     Boolean @default(true)
+  leaderboardEnabled Boolean @default(false)
+  leaderboardLimit   Int     @default(25)
+  /// Minuten; NULL = globales Intervall
+  refreshIntervalOverride Int?
+  active           Boolean   @default(true)
+  lastResolvedAt   DateTime? @db.Timestamptz(3)
+  /// unresolved | resolved | ambiguous | failed
+  resolutionStatus String    @default("unresolved")
+  createdAt        DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(3)
+
+  providerMappings   AmazonCategoryProviderMapping[]
+  editionCategories  AmazonEditionCategory[]
+  rankObservations   AmazonRankObservation[]
+  canonicalSnapshots AmazonCanonicalRankSnapshot[]
+  leaderboardSnapshots AmazonLeaderboardSnapshot[]
+
+  @@index([marketplace, normalizedName])
+  @@index([active])
+  @@index([categoryType])
+}
+
+/// Verknüpfung interner Kategorien mit den Provider-IDs
+/// (Amazon Browse Node ↔ Rainforest-Bestsellerkategorie).
+model AmazonCategoryProviderMapping {
+  id                       String             @id @default(cuid())
+  categoryId               String
+  category                 AmazonCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  provider                 AmazonProviderKind
+  providerCategoryId       String
+  providerCategoryName     String?
+  providerCategoryPath     String?
+  providerCategoryUrl      String?
+  parentProviderCategoryId String?
+  /// Vom Admin bestätigt (Sachbücher-Auflösung zeigt volle Pfade zur Auswahl)
+  verified   Boolean   @default(false)
+  verifiedAt DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@unique([categoryId, provider, providerCategoryId])
+  @@index([provider, providerCategoryId])
+}
+
+/// In welchen Kategorien eine Edition (jemals) gerankt wurde.
+model AmazonEditionCategory {
+  id                String              @id @default(cuid())
+  editionId         String
+  edition           AmazonEdition       @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  categoryId        String
+  category          AmazonCategory      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  discoveryProvider AmazonProviderKind?
+  autoDiscovered    Boolean             @default(false)
+  currentlyRanked   Boolean             @default(false)
+  firstSeenAt       DateTime            @default(now()) @db.Timestamptz(3)
+  lastSeenAt        DateTime            @default(now()) @db.Timestamptz(3)
+  active            Boolean             @default(true)
+
+  @@unique([editionId, categoryId])
+  @@index([categoryId])
+}
+
+/// Einzelne Rangbeobachtung eines Providers (Rohzeitreihe, getrennt je Provider).
+model AmazonRankObservation {
+  id         String             @id @default(cuid())
+  editionId  String
+  edition    AmazonEdition      @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   AmazonCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  /// Positiver Rang; NULL = Provider hat keinen Rang geliefert. Niemals 0.
+  rank              Int?
+  provider          AmazonProviderKind
+  providerPriority  Int                @default(0)
+  /// Zeitstempel laut Provider (falls geliefert) – nicht mit fetchedAt verwechseln
+  providerUpdatedAt DateTime?          @db.Timestamptz(3)
+  /// Messzeitpunkt der Zeitreihe (Bucket)
+  observedAt DateTime           @db.Timestamptz(3)
+  /// Tatsächlicher Abrufzeitpunkt
+  fetchedAt  DateTime           @db.Timestamptz(3)
+  freshnessSeconds Int?
+  sourceStatus     AmazonSourceStatus @default(LIVE)
+  canonical        Boolean            @default(false)
+  discrepancyFlag  Boolean            @default(false)
+  /// Absolute Abweichung zum jeweils anderen Provider (falls vergleichbar)
+  providerDifference Int?
+  runId       String?
+  payloadHash String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([editionId, categoryId, provider, observedAt])
+  @@index([editionId, categoryId, observedAt])
+  @@index([observedAt])
+  @@index([runId])
+}
+
+/// Kanonischer Rang pro Messzeitpunkt (Auswahl aus beiden Providern).
+model AmazonCanonicalRankSnapshot {
+  id         String         @id @default(cuid())
+  editionId  String
+  edition    AmazonEdition  @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   AmazonCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  /// NULL = Datenlücke (kein Provider und kein Vorwert)
+  canonicalRank    Int?
+  selectedProvider AmazonProviderKind?
+  /// z. B. "creators_fresh", "rainforest_fallback", "stale_last_value", "data_gap"
+  selectionReason String
+  observedAt      DateTime @db.Timestamptz(3)
+  stale           Boolean  @default(false)
+  dataGap         Boolean  @default(false)
+  amazonObservationId     String?
+  rainforestObservationId String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([editionId, categoryId, observedAt])
+  @@index([editionId, categoryId, observedAt])
+}
+
+/// Top-25-Bestsellerlisten-Snapshot einer Kategorie.
+model AmazonLeaderboardSnapshot {
+  id         String         @id @default(cuid())
+  categoryId String
+  category   AmazonCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  provider   AmazonProviderKind
+  observedAt        DateTime  @db.Timestamptz(3)
+  providerUpdatedAt DateTime? @db.Timestamptz(3)
+  fetchedAt         DateTime  @db.Timestamptz(3)
+  requestedLimit    Int       @default(25)
+  returnedCount     Int
+  complete          Boolean   @default(true)
+  partialReason     String?
+  stale             Boolean   @default(false)
+  runId             String?
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+
+  entries AmazonLeaderboardEntry[]
+
+  @@index([categoryId, observedAt])
+}
+
+/// Einzelner Eintrag eines Leaderboard-Snapshots (Reihenfolge wie geliefert).
+model AmazonLeaderboardEntry {
+  id         String                    @id @default(cuid())
+  snapshotId String
+  snapshot   AmazonLeaderboardSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  /// Position im gelieferten Ergebnis (1-basiert, Reihenfolge unverändert)
+  position Int
+  /// Bestseller-Rang laut Amazon
+  bestsellerRank Int
+  asin           String
+  /// Interne Edition, falls bekannt (eigenes Buch → Hervorhebung)
+  editionId          String?
+  titleSnapshot      String
+  subTitleSnapshot   String?
+  authorSnapshot     String?
+  formatSnapshot     String?
+  imageUrlSnapshot   String?
+  productUrlSnapshot String?
+  affiliateUrlSnapshot String?
+  priceSnapshot      Decimal? @db.Decimal(10, 2)
+  currencySnapshot   String?
+  priceRawSnapshot   String?
+  ratingSnapshot     Float?
+  reviewCountSnapshot Int?
+  preorderSnapshot   Boolean?
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([snapshotId, position])
+  @@index([asin])
+}
+
+/// Metadaten-Snapshot (Preis/Verfügbarkeit/Bewertung/Cover) je Provider.
+model AmazonProductMetadataSnapshot {
+  id        String        @id @default(cuid())
+  editionId String
+  edition   AmazonEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  provider  AmazonProviderKind
+  title     String?
+  author    String?
+  coverSmallUrl  String?
+  coverMediumUrl String?
+  coverLargeUrl  String?
+  price        Decimal? @db.Decimal(10, 2)
+  currency     String?
+  availability String?
+  rating       Float?
+  reviewCount  Int?
+  preorder     Boolean?
+  observedAt   DateTime @db.Timestamptz(3)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([editionId, observedAt])
+}
+
+/// Laufhistorie aller Provider-/Job-Ausführungen (niemals Secrets).
+model AmazonProviderRun {
+  id         String              @id @default(cuid())
+  provider   AmazonProviderKind?
+  capability String?
+  jobType    String
+  scheduledAt DateTime? @db.Timestamptz(3)
+  startedAt   DateTime  @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+  status      AmazonRunStatus @default(RUNNING)
+  attempt     Int             @default(1)
+  requestCount     Int  @default(0)
+  recordsRequested Int?
+  recordsReturned  Int?
+  creditsUsed      Int?
+  creditsRemaining Int?
+  latencyMs        Int?
+  fallbackFrom     AmazonProviderKind?
+  errorClass       String?
+  errorCode        String?
+  /// Redigierte, sichere Fehlermeldung (ohne Secrets/URLs mit Key)
+  safeErrorMessage String?
+  httpStatus       Int?
+  correlationId    String
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([jobType, startedAt])
+  @@index([provider, startedAt])
+  @@index([correlationId])
+}
+
+/// Aktueller Zustand je Provider (Health, Circuit Breaker, Quota).
+model AmazonProviderStatus {
+  provider   AmazonProviderKind @id
+  configured Boolean            @default(false)
+  enabled    Boolean            @default(true)
+  healthy    Boolean            @default(false)
+  lastSuccessAt DateTime? @db.Timestamptz(3)
+  lastFailureAt DateTime? @db.Timestamptz(3)
+  consecutiveFailures Int    @default(0)
+  /// closed | open | half_open
+  circuitBreakerState String @default("closed")
+  circuitOpenedAt     DateTime? @db.Timestamptz(3)
+  currentLatencyMs    Int?
+  /// Redigierter Quota-/Account-Status (Rainforest: Plan/Credits, nie api_key)
+  quota     Json?
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+/// Scheduler-Zustand je Hintergrundjob (verteilter Lock über lockedUntil).
+model AmazonJobState {
+  jobType         String    @id
+  enabled         Boolean   @default(true)
+  /// Minuten; NULL = Standard aus Settings/Env
+  intervalMinutes Int?
+  nextRunAt       DateTime? @db.Timestamptz(3)
+  lockedUntil     DateTime? @db.Timestamptz(3)
+  lockOwner       String?
+  lastRunAt       DateTime? @db.Timestamptz(3)
+  lastStatus      AmazonRunStatus?
+  lastRunId       String?
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+}
+
+/// Redigierte Provider-Rohantwort (Fehlersuche; Aufbewahrung max. 30 Tage).
+model AmazonRawPayload {
+  id         String             @id @default(cuid())
+  provider   AmazonProviderKind
+  capability String
+  runId      String?
+  /// Redigiert: keine api_keys, Tokens oder E-Mail-Adressen
+  payload     Json
+  payloadHash String
+  fetchedAt   DateTime @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@index([provider, capability, fetchedAt])
+}
+
+/// Konfigurierbare Alert-Regel.
+model AmazonAlertRule {
+  id         String  @id @default(cuid())
+  name       String
+  /// edition | category | provider | system
+  targetType String
+  editionId  String?
+  categoryId String?
+  /// z. B. "rank_below", "movement_positions", "movement_percent",
+  /// "new_best", "top_entry", "leaderboard_exit", "credits_below_percent",
+  /// "stale_hours", "provider_down", "price_changed", "preorder_changed"
+  metric    String
+  /// lt | lte | gt | gte | eq
+  operator  String   @default("lte")
+  threshold Decimal? @db.Decimal(12, 4)
+  /// Komma-separierte Kanäle: inapp,email
+  channels        String   @default("inapp")
+  cooldownMinutes Int      @default(360)
+  enabled         Boolean  @default(true)
+  lastTriggeredAt DateTime? @db.Timestamptz(3)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  events AmazonAlertEvent[]
+
+  @@index([enabled])
+}
+
+/// Ausgelöste Alerts (Historie, Dedupe über dedupeKey + Cooldown).
+model AmazonAlertEvent {
+  id     String           @id @default(cuid())
+  ruleId String?
+  rule   AmazonAlertRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  /// Deterministischer Schlüssel (Regel+Ziel+Schwelle) für Deduplizierung
+  dedupeKey String
+  title     String
+  message   String
+  /// info | warning | critical
+  severity  String @default("info")
+  channels  String @default("inapp")
+  triggeredAt    DateTime  @db.Timestamptz(3)
+  acknowledgedAt DateTime? @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([triggeredAt])
+  @@index([dedupeKey, triggeredAt])
+}
+
+/// Kampagnen-/Ereignis-Annotation für Charts und Korrelationen.
+model AmazonAnnotation {
+  id          String   @id @default(cuid())
+  timestamp   DateTime @db.Timestamptz(3)
+  title       String
+  description String?
+  /// campaign | press | price | other
+  type        String  @default("campaign")
+  campaign    String?
+  shortLinkId String?
+  /// manual | system
+  source    String   @default("manual")
+  createdBy String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([timestamp])
+}
+
+/// Tägliche Zusammenfassung – höchstens 1× pro Kalendertag/Zeitzone/Empfänger.
+model AmazonDigestRun {
+  id           String   @id @default(cuid())
+  calendarDate DateTime @db.Date
+  timezone     String   @default("Europe/Berlin")
+  periodStart  DateTime @db.Timestamptz(3)
+  periodEnd    DateTime @db.Timestamptz(3)
+  /// sent | failed | skipped
+  status    String
+  channel   String  @default("inapp")
+  recipient String  @default("dashboard")
+  sentAt    DateTime? @db.Timestamptz(3)
+  /// Anteil erfolgreicher Messungen im Zeitraum (0–1)
+  dataCompleteness Float?
+  summary          Json?
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([calendarDate, timezone, recipient])
+  @@index([calendarDate])
+}
+
+/// Externe Verkaufsschätzung (immer als Schätzung gekennzeichnet).
+model AmazonSalesEstimate {
+  id        String        @id @default(cuid())
+  editionId String
+  edition   AmazonEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  provider  AmazonProviderKind
+  /// z. B. "monthly"
+  estimatedPeriod String
+  estimateValue   Int?
+  estimateLow     Int?
+  estimateHigh    Int?
+  confidence      String?
+  methodology     String?
+  observedAt      DateTime @db.Timestamptz(3)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([editionId, observedAt])
+}
+
+/// Importierte ECHTE Verkaufszahlen (Verlag/Händler) – strikt getrennt von
+/// Schätzungen, werden niemals durch Schätzwerte überschrieben.
+model AmazonActualSalesImport {
+  id          String        @id @default(cuid())
+  editionId   String
+  edition     AmazonEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  periodStart DateTime @db.Date
+  periodEnd   DateTime @db.Date
+  units       Int
+  source      String
+  importedBy  String
+  importedAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([editionId, periodStart])
+}

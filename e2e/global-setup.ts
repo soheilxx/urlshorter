@@ -19,7 +19,7 @@ export default async function globalSetup(): Promise<void> {
   const prisma = new PrismaClient();
   try {
     await prisma.$executeRawUnsafe(
-      'TRUNCATE "ClickEvent", "ShortLink", "Destination", "DailyAggregate", "AuditLog", "AppSetting", "LoginAttempt", "User", "SweepstakesEntry", "TagEvent", "TagSiteConfig" CASCADE',
+      'TRUNCATE "ClickEvent", "ShortLink", "Destination", "DailyAggregate", "AuditLog", "AppSetting", "LoginAttempt", "User", "SweepstakesEntry", "TagEvent", "TagSiteConfig", "AmazonBook", "AmazonEdition", "AmazonCategory", "AmazonCategoryProviderMapping", "AmazonEditionCategory", "AmazonRankObservation", "AmazonCanonicalRankSnapshot", "AmazonLeaderboardSnapshot", "AmazonLeaderboardEntry", "AmazonProductMetadataSnapshot", "AmazonProviderRun", "AmazonProviderStatus", "AmazonJobState", "AmazonRawPayload", "AmazonAlertRule", "AmazonAlertEvent", "AmazonAnnotation", "AmazonDigestRun", "AmazonSalesEstimate", "AmazonActualSalesImport" CASCADE',
     );
   } finally {
     await prisma.$disconnect();
