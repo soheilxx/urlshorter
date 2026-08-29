@@ -116,7 +116,6 @@ export function parseCreatorsGetItems(payload: unknown): CreatorsParseResult {
         categoryPath: browseNodePath(node),
         rank: nodeRank,
         isRoot: node.isRoot === true,
-        bestsellerUrl: null,
       });
     }
     ranks.push({

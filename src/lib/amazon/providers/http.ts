@@ -1,7 +1,7 @@
 import "server-only";
 import { PROVIDER_HOST_ALLOWLIST } from "@/lib/amazon/constants";
 import { ProviderError } from "@/lib/amazon/provider-types";
-import { redactSecrets, safeErrorMessage } from "@/lib/amazon/redact";
+import { safeErrorMessage } from "@/lib/amazon/redact";
 
 /**
  * Gemeinsamer, gehärteter HTTP-Layer für Provider-Aufrufe:
@@ -31,12 +31,10 @@ export function assertAllowedHost(url: string): void {
   }
 }
 
-/** HTTP-Status klassifizieren; bodySnippet ist bereits redigiert und gekürzt. */
-export function classifyHttpStatus(status: number, bodySnippet?: string): ProviderError {
-  const detail = bodySnippet ? ` – ${bodySnippet}` : "";
+export function classifyHttpStatus(status: number): ProviderError {
   if (status === 401 || status === 403) {
     return new ProviderError({
-      message: `Authentifizierung fehlgeschlagen (HTTP ${status})${detail}.`,
+      message: `Authentifizierung fehlgeschlagen (HTTP ${status}).`,
       errorClass: "auth",
       httpStatus: status,
       retryable: false,
@@ -44,7 +42,7 @@ export function classifyHttpStatus(status: number, bodySnippet?: string): Provid
   }
   if (status === 402) {
     return new ProviderError({
-      message: `Kontingent erschöpft (HTTP 402)${detail}.`,
+      message: "Kontingent erschöpft (HTTP 402).",
       errorClass: "quota",
       httpStatus: status,
       retryable: false,
@@ -52,7 +50,7 @@ export function classifyHttpStatus(status: number, bodySnippet?: string): Provid
   }
   if (status === 404) {
     return new ProviderError({
-      message: `Ressource nicht gefunden (HTTP 404)${detail}.`,
+      message: "Ressource nicht gefunden (HTTP 404).",
       errorClass: "not_found",
       httpStatus: status,
       retryable: false,
@@ -73,7 +71,7 @@ export function classifyHttpStatus(status: number, bodySnippet?: string): Provid
     });
   }
   return new ProviderError({
-    message: `Unerwartete Antwort (HTTP ${status})${detail}.`,
+    message: `Unerwartete Antwort (HTTP ${status}).`,
     errorClass: "client",
     httpStatus: status,
     retryable: false,
@@ -133,10 +131,7 @@ export async function providerFetchJson(
   }
 
   if (!response.ok) {
-    // Redigierter Auszug der Fehlerantwort (hilft z. B. bei 400ern der
-    // Kategorien-API) – ohne Secrets, stark gekürzt.
-    const snippet = redactSecrets(text).replace(/\s+/g, " ").slice(0, 160);
-    throw classifyHttpStatus(response.status, snippet || undefined);
+    throw classifyHttpStatus(response.status);
   }
 
   let json: unknown;

@@ -173,14 +173,7 @@ export async function rainforestGetBestsellers(options: {
   try {
     const params = byCategory ?? byUrl!;
     const { json, latencyMs } = await rainforestRequest("/request", params);
-    const parsed = parseRainforestBestsellers(json, limit);
-    // Manche Kategorie-IDs (v. a. Browse-Node-IDs aus Produktantworten)
-    // liefern success + leere Liste → Fallback über die Bestseller-URL.
-    if (byCategory && byUrl && (!parsed || parsed.entries.length === 0)) {
-      const viaUrl = await rainforestRequest("/request", byUrl);
-      return wrap(viaUrl.json, latencyMs + viaUrl.latencyMs, parseRainforestBestsellers(viaUrl.json, limit));
-    }
-    return wrap(json, latencyMs, parsed);
+    return wrap(json, latencyMs, parseRainforestBestsellers(json, limit));
   } catch (error) {
     // Fallback innerhalb von Rainforest: gespeicherte Bestseller-URL
     if (byCategory && byUrl && error instanceof ProviderError && !error.retryable) {
@@ -189,25 +182,6 @@ export async function rainforestGetBestsellers(options: {
     }
     throw error;
   }
-}
-
-/**
- * Kategorienliste OHNE Suchbegriff (Wurzelkategorien bzw. Kinder von
- * parent_id). Umgeht die Suche, deren search_term-Parameter bei Umlauten
- * (z. B. "Sachbücher") mit HTTP 400 abgelehnt wird – der Abgleich erfolgt
- * dann lokal über normalisierte Namen.
- */
-export async function rainforestListCategories(
-  parentId?: string | null,
-): Promise<RainforestCallResult<NormalizedCategory[]>> {
-  const env = getEnv();
-  const params: Record<string, string> = {
-    domain: env.AMAZON_CREATORS_MARKETPLACE.replace(/^www\./, ""),
-    type: "bestsellers",
-  };
-  if (parentId) params.parent_id = parentId;
-  const { json, latencyMs } = await rainforestRequest("/categories", params);
-  return wrap(json, latencyMs, parseRainforestCategories(json));
 }
 
 /** Categories API (type=bestsellers) – u. a. Sachbücher-Auflösung. */

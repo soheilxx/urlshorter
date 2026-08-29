@@ -6,14 +6,13 @@ import { getAmazonSettings, type AmazonSettings } from "@/lib/amazon/amazon-sett
 import { AMAZON_JOB_TYPES, type AmazonJobType } from "@/lib/amazon/constants";
 import { runDailyDigest } from "@/lib/amazon/digest";
 import { forecastQuota } from "@/lib/amazon/quota";
-import { ProviderError, type NormalizedCategory } from "@/lib/amazon/provider-types";
+import { ProviderError } from "@/lib/amazon/provider-types";
 import { creatorsGetItems, getCreatorsAccessToken, isCreatorsConfigured } from "@/lib/amazon/providers/creators";
 import {
   isRainforestConfigured,
   rainforestGetAccount,
   rainforestGetBestsellers,
   rainforestGetProduct,
-  rainforestListCategories,
   rainforestSearchCategories,
 } from "@/lib/amazon/providers/rainforest";
 import { redactJson, safeErrorMessage } from "@/lib/amazon/redact";
@@ -376,13 +375,7 @@ async function jobRefreshCategoryLeaderboards(ctx: JobContext): Promise<JobOutco
   let successCount = 0;
   let failureCount = 0;
   for (const category of categories) {
-    // Bevorzugt: verifizierte Mappings, dann solche mit Bestseller-URL
-    // (Browse-Node-IDs aus Produkt-Links funktionieren nur über die URL).
-    const mappings = category.providerMappings;
-    const mapping =
-      mappings.find((m) => m.verified) ??
-      mappings.find((m) => m.providerCategoryUrl !== null) ??
-      mappings[0];
+    const mapping = category.providerMappings[0];
     if (!mapping) continue;
     const runId = await startProviderRun({
       jobType: "refresh-category-leaderboards",
@@ -546,45 +539,16 @@ async function jobResolveCategories(ctx: JobContext): Promise<JobOutcome> {
     return { status: "SKIPPED", detail: "Rainforest nicht konfiguriert." };
   }
   await ensurePrimaryBook();
-  // Aufzulösen sind Leaderboard-Kategorien OHNE nutzbares Bestseller-Mapping
-  // (Mappings ohne URL stammen aus Produkt-Links/Browse-Nodes und reichen für
-  // Top-25-Abrufe nur als URL-Fallback, sobald die URL bekannt ist).
   const categories = await prisma.amazonCategory.findMany({
     where: {
       active: true,
       leaderboardEnabled: true,
-      providerMappings: {
-        none: { provider: "RAINFOREST", providerCategoryUrl: { not: null } },
-      },
+      providerMappings: { none: { provider: "RAINFOREST" } },
     },
   });
   if (categories.length === 0) {
     return { status: "SUCCESS", detail: "Alle Leaderboard-Kategorien sind aufgelöst." };
   }
-
-  // Hierarchie-Cache innerhalb dieses Laufs (die Suche lehnt Umlaut-Begriffe
-  // wie "Sachbücher" mit HTTP 400 ab → Wurzel-/Kinderlisten + lokaler Abgleich)
-  let hierarchy: { roots: NormalizedCategory[]; children: NormalizedCategory[] } | null = null;
-  const loadHierarchy = async (): Promise<{
-    roots: NormalizedCategory[];
-    children: NormalizedCategory[];
-  }> => {
-    if (hierarchy !== null) return hierarchy;
-    const roots = (await rainforestListCategories()).data;
-    const bookRoot = roots.find((c) => /^(bücher|books)$/.test(normalizeCategoryName(c.name)));
-    const children = bookRoot
-      ? (await rainforestListCategories(bookRoot.providerCategoryId)).data
-      : [];
-    hierarchy = { roots, children };
-    return hierarchy;
-  };
-  const nameMatches = (candidateName: string, category: { normalizedName: string }): boolean => {
-    const candidate = normalizeCategoryName(candidateName);
-    const target = category.normalizedName;
-    const targetStripped = target.replace(/\s*\(.*\)\s*/, "").trim();
-    return candidate === target || candidate === targetStripped;
-  };
-
   let resolved = 0;
   let ambiguous = 0;
   for (const category of categories) {
@@ -597,46 +561,16 @@ async function jobResolveCategories(ctx: JobContext): Promise<JobOutcome> {
     try {
       // Klammerzusätze für die Suche entfernen ("E-Business (Bücher)" → "E-Business")
       const searchTerm = category.canonicalName.replace(/\s*\(.*\)\s*/, "").trim();
-      let candidates: NormalizedCategory[] = [];
-      let searchError: string | null = null;
-      let creditsUsed: number | null = null;
-      let creditsRemaining: number | null = null;
-      let latencyMs: number | null = null;
-      // Suchbegriffe mit Nicht-ASCII-Zeichen lehnt die Categories-API ab –
-      // dann direkt über die Hierarchie gehen.
-      if (/^[\x20-\x7E]+$/.test(searchTerm)) {
-        try {
-          const result = await rainforestSearchCategories(searchTerm);
-          candidates = result.data;
-          creditsUsed = result.creditsUsed;
-          creditsRemaining = result.creditsRemaining;
-          latencyMs = result.latencyMs;
-        } catch (error) {
-          searchError = safeErrorMessage(error, 120);
-        }
-      }
-      const filtered = candidates.filter(
+      const result = await rainforestSearchCategories(searchTerm);
+      const candidates = result.data.filter(
         (c) =>
           normalizeCategoryName(c.name) === normalizeCategoryName(searchTerm) ||
           normalizeCategoryName(c.name) === category.normalizedName,
       );
-      const scoped = filtered.filter((c) => c.path === null || /bücher|books/i.test(c.path));
-      let usable = scoped.length > 0 ? scoped : filtered;
-
-      // Hierarchie-Fallback: Wurzeln bzw. Kinder der Bücher-Wurzel lokal abgleichen
-      if (usable.length === 0) {
-        const loaded = await loadHierarchy();
-        usable =
-          category.categoryType === "WEBSITE"
-            ? loaded.roots.filter((c) => /^(bücher|books)$/.test(normalizeCategoryName(c.name)))
-            : loaded.children.filter((c) => nameMatches(c.name, category));
-      }
-      if (searchError && usable.length === 0) {
-        logger.warn("amazon.category_search_failed", {
-          category: category.canonicalName,
-          message: searchError,
-        });
-      }
+      const scoped = candidates.filter(
+        (c) => c.path === null || /bücher|books/i.test(c.path),
+      );
+      const usable = scoped.length > 0 ? scoped : candidates;
 
       for (const candidate of usable) {
         await prisma.amazonCategoryProviderMapping.upsert({
@@ -682,9 +616,9 @@ async function jobResolveCategories(ctx: JobContext): Promise<JobOutcome> {
         status: "SUCCESS",
         requestCount: 1,
         recordsReturned: usable.length,
-        creditsUsed,
-        creditsRemaining,
-        latencyMs,
+        creditsUsed: result.creditsUsed,
+        creditsRemaining: result.creditsRemaining,
+        latencyMs: result.latencyMs,
       });
     } catch (error) {
       await prisma.amazonCategory.update({

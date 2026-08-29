@@ -70,17 +70,12 @@ export function parseRequestInfo(payload: unknown): RainforestRequestInfo {
 
 function parsePreorder(product: Json): boolean | null {
   const buybox = obj(product.buybox_winner) ?? {};
-  if (buybox.is_preorder === true) return true;
+  if (typeof buybox.is_preorder === "boolean") return buybox.is_preorder;
   const availability = obj(buybox.availability) ?? obj(product.availability) ?? {};
   const availabilityText = str(availability.raw) ?? str(availability.type);
-  // Amazon.de formuliert Vorbestellungen u. a. als "Dieser Artikel erscheint am …"
-  if (
-    availabilityText &&
-    /vorbestell|pre.?order|noch nicht erschienen|erscheint am/i.test(availabilityText)
-  ) {
+  if (availabilityText && /vorbestell|pre.?order|noch nicht erschienen/i.test(availabilityText)) {
     return true;
   }
-  if (typeof buybox.is_preorder === "boolean") return buybox.is_preorder;
   if (availabilityText) return false;
   return null;
 }
@@ -120,9 +115,6 @@ export function parseRainforestProductRanks(payload: unknown): NormalizedProduct
       categoryPath: category.includes("›") ? category : null,
       rank: entryRank,
       isRoot: false,
-      // Browse-Node-IDs funktionieren bei type=bestsellers oft nicht direkt –
-      // die Bestseller-URL aus der Produktantwort dient als Fallback.
-      bestsellerUrl: link,
     });
   }
 
