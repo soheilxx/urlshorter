@@ -417,6 +417,13 @@ async function jobRefreshCategoryLeaderboards(ctx: JobContext): Promise<JobOutco
         fetchedAt: new Date(),
         requestedLimit: category.leaderboardLimit,
       });
+      // Eine gelieferte Liste ist der stärkste Beleg für ein korrektes Mapping
+      if (category.resolutionStatus !== "resolved") {
+        await prisma.amazonCategory.update({
+          where: { id: category.id },
+          data: { resolutionStatus: "resolved", lastResolvedAt: new Date() },
+        });
+      }
       await storeRawPayload({
         provider: "RAINFOREST",
         capability: "CATEGORY_LEADERBOARD",

@@ -21,11 +21,16 @@ export interface EditionClickStats {
   spikes: Array<{ hourIso: string; clicks: number }>;
 }
 
-/** Kurzlinks, die zur Edition gehören (Tracking-Code oder Amazon-Ziel mit ASIN). */
+/**
+ * Kurzlinks, die zur Edition gehören: der Tracking-Code (z. B. "wulp"),
+ * Amazon-Ziele mit der ASIN – und ALLE weiteren Kurzlinks, deren Ziel
+ * dieselbe Ziel-URL hat (mehrere Links können auf dasselbe Buch-Ziel
+ * zeigen, z. B. das Affiliate-Ziel des Buchs).
+ */
 export async function findEditionShortLinks(
   edition: Pick<AmazonEdition, "asin" | "trackedShortCode">,
 ): Promise<Array<{ id: string; code: string; name: string }>> {
-  return prisma.shortLink.findMany({
+  const direct = await prisma.shortLink.findMany({
     where: {
       OR: [
         ...(edition.trackedShortCode ? [{ code: edition.trackedShortCode }] : []),
@@ -37,8 +42,24 @@ export async function findEditionShortLinks(
         },
       ],
     },
-    select: { id: true, code: true, name: true },
+    select: { id: true, code: true, name: true, destination: { select: { url: true } } },
   });
+
+  // Auf alle Links mit identischer Ziel-URL erweitern (auch über mehrere
+  // Destination-Einträge mit derselben URL hinweg).
+  const targetUrls = [...new Set(direct.map((link) => link.destination.url))];
+  const sameTarget =
+    targetUrls.length > 0
+      ? await prisma.shortLink.findMany({
+          where: { destination: { url: { in: targetUrls } } },
+          select: { id: true, code: true, name: true },
+        })
+      : [];
+
+  const byId = new Map<string, { id: string; code: string; name: string }>();
+  for (const link of direct) byId.set(link.id, { id: link.id, code: link.code, name: link.name });
+  for (const link of sameTarget) byId.set(link.id, link);
+  return [...byId.values()];
 }
 
 export async function buildEditionClickStats(
