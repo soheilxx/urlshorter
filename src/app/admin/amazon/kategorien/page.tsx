@@ -90,6 +90,8 @@ export default async function AmazonCategoriesPage() {
                     <Badge variant="success">aufgelöst</Badge>
                   ) : category.resolutionStatus === "ambiguous" ? (
                     <Badge variant="warning">mehrdeutig – Auswahl nötig</Badge>
+                  ) : category.resolutionStatus === "no_leaderboard" ? (
+                    <Badge variant="warning">keine eigene Amazon-Bestsellerliste</Badge>
                   ) : category.resolutionStatus === "failed" ? (
                     <Badge variant="danger">Auflösung fehlgeschlagen</Badge>
                   ) : (

@@ -672,8 +672,15 @@ async function jobResolveCategories(ctx: JobContext): Promise<JobOutcome> {
         where: { id: category.id },
         data: {
           lastResolvedAt: new Date(),
+          // Kein Treffer trotz erfolgreicher Abfragen = Amazon bietet für
+          // diese Kategorie KEINE eigene Bestsellerliste an (§ klar anzeigen,
+          // niemals eine Ersatzliste erzeugen). Echte Fehler → catch-Zweig.
           resolutionStatus:
-            usable.length === 1 ? "resolved" : usable.length > 1 ? "ambiguous" : "failed",
+            usable.length === 1
+              ? "resolved"
+              : usable.length > 1
+                ? "ambiguous"
+                : "no_leaderboard",
         },
       });
       if (usable.length === 1) resolved += 1;
