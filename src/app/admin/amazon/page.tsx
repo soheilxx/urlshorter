@@ -144,6 +144,10 @@ export default async function AmazonOverviewPage() {
         })),
       });
     }
+    // Kategorien ohne jede Messung nicht als "Datenlücke" anzeigen –
+    // z. B. Sachbücher (keine eigene Amazon-Liste, Buch dort nie gerankt).
+    // Echte Lücken INNERHALB einer Zeitreihe bleiben sichtbar.
+    if (points.length === 0) continue;
     const withRank = points.filter((p) => p.rank !== null);
     const current = withRank[withRank.length - 1] ?? null;
     const previous = withRank[withRank.length - 2] ?? null;
