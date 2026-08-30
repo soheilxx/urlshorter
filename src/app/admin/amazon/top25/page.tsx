@@ -273,7 +273,7 @@ export default async function AmazonTop25Page({
                 : "–",
           },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border border-zinc-200 bg-white p-3">
+          <div key={stat.label} className="rounded-xl border border-zinc-200 bg-surface p-3">
             <p className="text-xs uppercase tracking-wide text-zinc-400">{stat.label}</p>
             <p className="mt-1 truncate text-sm font-semibold text-zinc-900" title={stat.value}>
               {stat.value}
@@ -360,7 +360,7 @@ function PageHeader({
             href={`/admin/amazon/top25?category=${category.id}`}
             className={
               category.id === selectedId
-                ? "rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white"
+                ? "rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white"
                 : "rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100"
             }
           >
@@ -382,7 +382,7 @@ function PageHeader({
               id="t25-snapshot"
               name="snapshot"
               defaultValue={selectedSnapshotId}
-              className="h-8 rounded-lg border border-zinc-300 bg-white px-2 text-xs"
+              className="h-8 rounded-lg border border-zinc-300 bg-surface px-2 text-xs"
             >
               {snapshots.map((snapshot) => (
                 <option key={snapshot.id} value={snapshot.id}>
@@ -399,7 +399,7 @@ function PageHeader({
               id="t25-compare"
               name="compare"
               defaultValue={compareSnapshotId ?? ""}
-              className="h-8 rounded-lg border border-zinc-300 bg-white px-2 text-xs"
+              className="h-8 rounded-lg border border-zinc-300 bg-surface px-2 text-xs"
             >
               <option value="">Direkter Vorgänger</option>
               {snapshots.map((snapshot) => (

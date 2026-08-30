@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useCssVar } from "@/components/admin/use-css-var";
 import {
   CartesianGrid,
   Line,
@@ -88,6 +89,8 @@ function Panel({
   metaByKey: Map<string, Map<number, { provider: string | null; stale: boolean }>>;
 }) {
   const data = useMemo(() => buildChartData(series, cutoff), [series, cutoff]);
+  const grid = useCssVar("--chart-grid", "#e4e4e7");
+  const tick = useCssVar("--chart-tick", "#71717a");
   if (data.length === 0) {
     return <p className="py-8 text-center text-sm text-zinc-400">Keine Messungen im Zeitraum.</p>;
   }
@@ -95,14 +98,14 @@ function Panel({
     <div className="h-64 w-full" role="img" aria-label="Ranking-Verlauf (Rang 1 oben)">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
-          <CartesianGrid stroke="#e4e4e7" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="t"
             type="number"
             scale="time"
             domain={["dataMin", "dataMax"]}
             tickFormatter={formatTime}
-            tick={{ fontSize: 10, fill: "#71717a" }}
+            tick={{ fontSize: 10, fill: tick }}
             tickLine={false}
             axisLine={false}
             minTickGap={48}
@@ -111,7 +114,7 @@ function Panel({
             reversed
             allowDecimals={false}
             domain={["auto", "auto"]}
-            tick={{ fontSize: 11, fill: "#71717a" }}
+            tick={{ fontSize: 11, fill: tick }}
             tickFormatter={(v: number) => v.toLocaleString("de-DE")}
             tickLine={false}
             axisLine={false}
@@ -120,7 +123,7 @@ function Panel({
               value: "Rang (1 = oben)",
               angle: -90,
               position: "insideLeft",
-              style: { fontSize: 10, fill: "#a1a1aa" },
+              style: { fontSize: 10, fill: tick },
             }}
           />
           <Tooltip
@@ -133,7 +136,13 @@ function Panel({
                 : "";
               return [`Rang ${Number(value).toLocaleString("de-DE")}${extra}`, name];
             }}
-            contentStyle={{ borderRadius: 8, border: "1px solid #e4e4e7", fontSize: 12 }}
+            contentStyle={{
+              borderRadius: 10,
+              border: "1px solid var(--color-zinc-200)",
+              backgroundColor: "var(--color-surface)",
+              color: "var(--color-zinc-900)",
+              fontSize: 12,
+            }}
           />
           {annotations
             .filter((a) => a.t >= cutoff)
@@ -141,9 +150,9 @@ function Panel({
               <ReferenceLine
                 key={`${a.t}-${a.title}`}
                 x={a.t}
-                stroke="#a1a1aa"
+                stroke={tick}
                 strokeDasharray="4 4"
-                label={{ value: a.title, fontSize: 9, fill: "#71717a", position: "top" }}
+                label={{ value: a.title, fontSize: 9, fill: tick, position: "top" }}
               />
             ))}
           {series.map((s) => (
@@ -228,7 +237,7 @@ export function RankChart({
               aria-pressed={range === r.key}
               className={
                 range === r.key
-                  ? "rounded-lg bg-zinc-900 px-2.5 py-1 text-xs font-medium text-white"
+                  ? "rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-white"
                   : "rounded-lg px-2.5 py-1 text-xs font-medium text-zinc-500 hover:bg-zinc-100"
               }
             >

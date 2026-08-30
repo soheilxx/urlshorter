@@ -21,7 +21,8 @@ import { formatBerlinDateTime, formatNumber } from "@/lib/utils";
 export const metadata: Metadata = { title: "Amazon Rankings" };
 export const dynamic = "force-dynamic";
 
-const CHART_COLORS = ["#18181b", "#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2"];
+/* Mitteltöne, die in hellem UND dunklem Theme lesbar bleiben. */
+const CHART_COLORS = ["#6366f1", "#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2"];
 
 /** Amazon-Rankings-Übersicht: eigenes Buch, KPIs, Hauptchart, Status. */
 export default async function AmazonOverviewPage() {
@@ -219,7 +220,7 @@ export default async function AmazonOverviewPage() {
           </Link>
           <Link
             href="/admin/amazon/top25"
-            className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-strong"
           >
             Top 25
           </Link>
@@ -502,7 +503,7 @@ export default async function AmazonOverviewPage() {
                 <ol className="space-y-1.5">
                   {latestLeaderboard.entries.map((entry) => (
                     <li key={entry.id} className="flex items-center gap-2 text-sm">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-white">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                         {entry.bestsellerRank}
                       </span>
                       <span className="truncate">{entry.titleSnapshot}</span>

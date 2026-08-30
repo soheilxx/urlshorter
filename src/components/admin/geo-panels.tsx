@@ -31,7 +31,7 @@ export function GeoBarList({ items }: { items: GeoBarItem[] }) {
             className="absolute inset-y-0 left-0 rounded-md"
             style={{
               width: `${Math.max(2, (item.clicks / max) * 100)}%`,
-              backgroundColor: item.color ?? "#2563eb",
+              backgroundColor: item.color ?? "var(--chart-accent)",
               opacity: 0.14,
             }}
             aria-hidden="true"

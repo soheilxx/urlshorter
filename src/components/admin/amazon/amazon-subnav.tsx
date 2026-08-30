@@ -20,7 +20,7 @@ export function AmazonSubNav({ role }: { role: Role }) {
   return (
     <nav
       aria-label="Amazon-Rankings-Navigation"
-      className="flex max-w-full gap-1 overflow-x-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-sm"
+      className="flex max-w-full gap-1 overflow-x-auto rounded-xl border border-zinc-200 bg-surface p-1 shadow-sm"
     >
       {ITEMS.filter((item) => !item.adminOnly || role === "ADMIN").map((item) => {
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
@@ -32,7 +32,7 @@ export function AmazonSubNav({ role }: { role: Role }) {
             className={cn(
               "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
               active
-                ? "bg-zinc-900 text-white"
+                ? "bg-primary text-white"
                 : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
             )}
           >

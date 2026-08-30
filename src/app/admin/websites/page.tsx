@@ -94,7 +94,7 @@ export default async function WebsitesPage() {
         {isAdmin ? (
           <Link
             href="/admin/websites/neu"
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-strong"
           >
             + Neue Website
           </Link>

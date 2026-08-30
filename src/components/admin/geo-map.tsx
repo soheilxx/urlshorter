@@ -63,6 +63,9 @@ export function GeoMap({
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [view, setView] = useState<ViewState>({ s: 1, x: 0, y: 0 });
   const dragRef = useRef<{ clientX: number; clientY: number; moved: boolean } | null>(null);
+  /** Aktive Pointer für Pinch-to-Zoom (Touch). */
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchRef = useRef<number | null>(null);
 
   const clampView = useCallback(
     (next: ViewState): ViewState => {
@@ -121,10 +124,33 @@ export function GeoMap({
 
   const onPointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
     (event.target as Element).setPointerCapture?.(event.pointerId);
+    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointersRef.current.size === 2) {
+      const [a, b] = [...pointersRef.current.values()];
+      pinchRef.current = Math.hypot(a!.x - b!.x, a!.y - b!.y);
+      dragRef.current = null;
+      return;
+    }
     dragRef.current = { clientX: event.clientX, clientY: event.clientY, moved: false };
   };
 
   const onPointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (pointersRef.current.has(event.pointerId)) {
+      pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+
+    // Pinch-to-Zoom mit zwei Fingern
+    if (pointersRef.current.size === 2 && pinchRef.current !== null) {
+      const [a, b] = [...pointersRef.current.values()];
+      const distance = Math.hypot(a!.x - b!.x, a!.y - b!.y);
+      const factor = distance / pinchRef.current;
+      pinchRef.current = distance;
+      const mid = toSvgUnits((a!.x + b!.x) / 2, (a!.y + b!.y) / 2);
+      if (mid) zoomAt(mid.ux, mid.uy, factor);
+      setTooltip(null);
+      return;
+    }
+
     const drag = dragRef.current;
     if (!drag) return;
     const rect = svgRef.current?.getBoundingClientRect();
@@ -140,7 +166,9 @@ export function GeoMap({
     setView((prev) => clampView({ ...prev, x: prev.x + dx, y: prev.y + dy }));
   };
 
-  const endDrag = () => {
+  const endDrag = (event?: React.PointerEvent<SVGSVGElement>) => {
+    if (event) pointersRef.current.delete(event.pointerId);
+    if (pointersRef.current.size < 2) pinchRef.current = null;
     dragRef.current = null;
   };
 
@@ -168,12 +196,18 @@ export function GeoMap({
         role="img"
         aria-label="Weltkarte der Besucherstandorte"
         className="block h-auto w-full cursor-grab overflow-hidden rounded-lg active:cursor-grabbing"
-        style={{ touchAction: "none", backgroundColor: "#f8fafc" }}
+        // Keine Scroll-Falle: bei Zoomstufe 1 scrollt die Seite normal weiter
+        // (pan-y); erst hineingezoomt übernimmt die Karte die Gesten komplett.
+        style={{
+          touchAction: view.s > 1 ? "none" : "pan-y",
+          backgroundColor: "var(--map-sea)",
+        }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
-        onPointerLeave={() => {
-          endDrag();
+        onPointerCancel={endDrag}
+        onPointerLeave={(e) => {
+          endDrag(e);
           hideTooltip();
         }}
       >
@@ -184,8 +218,8 @@ export function GeoMap({
               <path
                 key={country.iso2 ?? country.name}
                 d={country.d}
-                fill={country.fill}
-                stroke="#ffffff"
+                // style statt Attribut: löst var(--map-ramp-N) im Dark Mode auf
+                style={{ fill: country.fill, stroke: "var(--map-sea)" }}
                 strokeWidth={0.6}
                 vectorEffect="non-scaling-stroke"
                 className="transition-[filter] duration-150 hover:brightness-95"
@@ -209,7 +243,7 @@ export function GeoMap({
                   cx={marker.x}
                   cy={marker.y}
                   r={(marker.r * 2.4) / s}
-                  fill="#2563eb"
+                  style={{ fill: "var(--map-marker)" }}
                   opacity={0.12}
                 />
                 <circle
@@ -217,17 +251,18 @@ export function GeoMap({
                   cy={marker.y}
                   r={(marker.r * 2.1) / s}
                   fill="none"
-                  stroke="#3b82f6"
                   strokeWidth={1 / s}
                   className="geo-pulse"
-                  style={{ animationDelay: `${(index % 10) * 0.28}s` }}
+                  style={{
+                    stroke: "var(--map-marker-ring)",
+                    animationDelay: `${(index % 10) * 0.28}s`,
+                  }}
                 />
                 <circle
                   cx={marker.x}
                   cy={marker.y}
                   r={marker.r / s}
-                  fill="#2563eb"
-                  stroke="#ffffff"
+                  style={{ fill: "var(--map-marker)", stroke: "var(--map-marker-stroke)" }}
                   strokeWidth={1.2 / s}
                   className="cursor-pointer"
                   onMouseMove={(e) =>
@@ -251,7 +286,7 @@ export function GeoMap({
           type="button"
           onClick={() => zoomCenter(1.6)}
           aria-label="Hineinzoomen"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-zinc-700 shadow-sm transition hover:bg-zinc-50"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-surface/95 text-zinc-700 shadow-sm transition hover:bg-zinc-50"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -259,7 +294,7 @@ export function GeoMap({
           type="button"
           onClick={() => zoomCenter(1 / 1.6)}
           aria-label="Herauszoomen"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-zinc-700 shadow-sm transition hover:bg-zinc-50"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-surface/95 text-zinc-700 shadow-sm transition hover:bg-zinc-50"
         >
           <Minus className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -267,7 +302,7 @@ export function GeoMap({
           type="button"
           onClick={resetView}
           aria-label="Ansicht zurücksetzen"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white/95 text-zinc-700 shadow-sm transition hover:bg-zinc-50"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-surface/95 text-zinc-700 shadow-sm transition hover:bg-zinc-50"
         >
           <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
@@ -275,7 +310,7 @@ export function GeoMap({
 
       {tooltip ? (
         <div
-          className="pointer-events-none absolute z-10 max-w-56 -translate-x-1/2 rounded-lg border border-zinc-200 bg-white px-3 py-2 shadow-lg"
+          className="pointer-events-none absolute z-10 max-w-56 -translate-x-1/2 rounded-lg border border-zinc-200 bg-surface px-3 py-2 shadow-lg"
           style={{ left: tooltip.x, top: Math.max(0, tooltip.y - 58) }}
         >
           <p className="truncate text-xs font-medium text-zinc-900">{tooltip.title}</p>

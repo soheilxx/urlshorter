@@ -1,13 +1,161 @@
 @import "tailwindcss";
 
+/* Dark Mode als Klassenstrategie: <html class="dark"> (Cookie "theme"). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Inter (next/font, Variable --font-inter) mit System-Fallback */
+  --font-sans:
+    var(--font-inter, "Inter"), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
   --font-mono:
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* ------------------------------------------------------------------------
+   * Design-Tokens „Redesign 2.0“ (Modern Blau)
+   * surface = Kartenfläche (ersetzt bg-white im Admin), primary = Indigo.
+   * Die Dark-Werte stehen unten im .dark-Block (Ramp-Inversion).
+   * ---------------------------------------------------------------------- */
+  --color-surface: #ffffff;
+  --color-primary: #4f46e5; /* indigo-600 */
+  --color-primary-strong: #4338ca; /* hover */
+  --color-primary-soft: #eef2ff; /* Aktiv-Pills, ausgewählte Zustände */
+  --color-primary-soft-strong: #e0e7ff;
+  --color-on-primary: #ffffff;
+}
+
+:root {
+  color-scheme: light;
+  /* Chart- und Karten-Farben (Recharts/SVG beziehen sie über style/var()) */
+  --chart-accent: #4f46e5;
+  --chart-grid: #e4e4e7;
+  --chart-tick: #71717a;
+  --map-sea: #f8fafc;
+  --map-land: #e4e4e7;
+  --map-marker: #2563eb;
+  --map-marker-ring: #3b82f6;
+  --map-marker-stroke: #ffffff;
+  --map-ramp-0: #dbeafe;
+  --map-ramp-1: #bfdbfe;
+  --map-ramp-2: #93c5fd;
+  --map-ramp-3: #60a5fa;
+  --map-ramp-4: #3b82f6;
+  --map-ramp-5: #2563eb;
+  --map-ramp-6: #1d4ed8;
+  --map-ramp-7: #1e40af;
+  --map-ramp-8: #1e3a8a;
+}
+
+/* --------------------------------------------------------------------------
+ * Dark Theme: Die Zinc-Skala wird invertiert und die im Admin verwendeten
+ * Semantik-Stufen (…-50/-100/-200/-700/-800) dunkel überschrieben. Dadurch
+ * flippt das gesamte bestehende Utility-Markup ohne Klassenänderungen.
+ * „white“ bleibt bewusst weiß (Text auf Primary/Aktiv-Pills).
+ * ------------------------------------------------------------------------ */
+.dark {
+  color-scheme: dark;
+
+  --color-surface: #1b1b20;
+  --color-primary: #6366f1; /* indigo-500 – hell genug für Dark, Kontrast zu Weiß ok */
+  --color-primary-strong: #7c80f4;
+  --color-primary-soft: #23224d;
+  --color-primary-soft-strong: #2c2b60;
+  --color-on-primary: #ffffff;
+
+  /* Zinc invertiert (50 = Seitengrund dunkel … 900 = Primärtext hell) */
+  --color-zinc-50: #131317;
+  --color-zinc-100: #1e1e24;
+  --color-zinc-200: #2a2a31;
+  --color-zinc-300: #3a3a44;
+  --color-zinc-400: #70707c;
+  --color-zinc-500: #8f8f9a;
+  --color-zinc-600: #ababb5;
+  --color-zinc-700: #c6c6ce;
+  --color-zinc-800: #dededf;
+  --color-zinc-900: #f3f3f5;
+  --color-zinc-950: #ffffff;
+
+  /* Semantikfarben – verwendete Stufen dunkel gespiegelt */
+  --color-emerald-50: #0a2b20;
+  --color-emerald-100: #0e3a2b;
+  --color-emerald-700: #34d399;
+  --color-emerald-800: #6ee7b7;
+  --color-amber-50: #2e2410;
+  --color-amber-100: #3d3013;
+  --color-amber-700: #fbbf24;
+  --color-amber-800: #fcd34d;
+  --color-red-50: #331416;
+  --color-red-100: #45191c;
+  --color-red-200: #5d2226;
+  --color-red-700: #f87171;
+  --color-red-800: #fca5a5;
+  --color-blue-50: #142440;
+  --color-blue-100: #1a2f54;
+  --color-blue-700: #60a5fa;
+  --color-blue-800: #93c5fd;
+  --color-sky-50: #0f2536;
+  --color-sky-700: #7dd3fc;
+  --color-violet-50: #271840;
+  --color-violet-700: #c4b5fd;
+  --color-indigo-50: #232253;
+  --color-indigo-700: #a5b4fc;
+
+  /* Charts + Karte */
+  --chart-accent: #818cf8;
+  --chart-grid: #2c2c34;
+  --chart-tick: #8f8f9a;
+  --map-sea: #101014;
+  --map-land: #26262d;
+  --map-marker: #60a5fa;
+  --map-marker-ring: #60a5fa;
+  --map-marker-stroke: #101014;
+  --map-ramp-0: #16294a;
+  --map-ramp-1: #1b3a6b;
+  --map-ramp-2: #1e4a8f;
+  --map-ramp-3: #2563eb;
+  --map-ramp-4: #3b82f6;
+  --map-ramp-5: #60a5fa;
+  --map-ramp-6: #93c5fd;
+  --map-ramp-7: #bfdbfe;
+  --map-ramp-8: #dbeafe;
 }
 
 body {
   @apply bg-zinc-50 text-zinc-900 antialiased;
+}
+
+/* --------------------------------------------------------------------------
+ * Scroll-Affordanz für horizontal scrollende Bereiche (Tabellen, Pills):
+ * seitliche Schatten erscheinen nur, wenn dort weiterer Inhalt liegt
+ * (klassischer background-attachment-Trick, rein CSS).
+ * ------------------------------------------------------------------------ */
+.scroll-x-fade {
+  background:
+    linear-gradient(90deg, var(--color-surface) 30%, transparent) left / 32px 100%,
+    linear-gradient(270deg, var(--color-surface) 30%, transparent) right / 32px 100%,
+    radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.14), transparent) left / 12px 100%,
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.14), transparent) right / 12px 100%;
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}
+.dark .scroll-x-fade {
+  background:
+    linear-gradient(90deg, var(--color-surface) 30%, transparent) left / 32px 100%,
+    linear-gradient(270deg, var(--color-surface) 30%, transparent) right / 32px 100%,
+    radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.55), transparent) left / 12px 100%,
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.55), transparent) right / 12px 100%;
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}
+
+/* Erste Tabellenspalte fixieren (breite Tabellen auf kleinen Screens). */
+.table-sticky-first th:first-child,
+.table-sticky-first td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-color: var(--color-surface);
+  box-shadow: 1px 0 0 0 var(--color-zinc-200);
 }
 
 /* Puls-Animation der Standort-Marker auf der Analytics-Weltkarte. */

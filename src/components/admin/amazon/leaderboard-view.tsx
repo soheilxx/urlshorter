@@ -155,7 +155,7 @@ export function LeaderboardView({
             aria-pressed={mode === "grid"}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium",
-              mode === "grid" ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-zinc-800",
+              mode === "grid" ? "bg-primary text-white" : "text-zinc-500 hover:text-zinc-800",
             )}
           >
             <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" /> Grid
@@ -166,7 +166,7 @@ export function LeaderboardView({
             aria-pressed={mode === "table"}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium",
-              mode === "table" ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-zinc-800",
+              mode === "table" ? "bg-primary text-white" : "text-zinc-500 hover:text-zinc-800",
             )}
           >
             <TableIcon className="h-3.5 w-3.5" aria-hidden="true" /> Tabelle
@@ -222,17 +222,17 @@ export function LeaderboardView({
             <li
               key={entry.asin}
               className={cn(
-                "relative rounded-xl border bg-white p-3 transition-shadow hover:shadow-md",
+                "relative rounded-xl border bg-surface p-3 transition-shadow hover:shadow-md",
                 entry.isOwn
                   ? "border-zinc-900 ring-2 ring-zinc-900/10"
                   : "border-zinc-200",
               )}
             >
-              <div className="absolute -left-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-xs font-bold text-white shadow">
+              <div className="absolute -left-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white shadow">
                 {entry.bestsellerRank}
               </div>
               {entry.isOwn ? (
-                <div className="absolute -right-1.5 -top-1.5 z-10 rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-semibold text-white">
+                <div className="absolute -right-1.5 -top-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
                   Dein Buch
                 </div>
               ) : null}
@@ -305,7 +305,7 @@ export function LeaderboardView({
                   <td className="max-w-[280px] truncate py-2 pr-3">
                     {entry.title}
                     {entry.isOwn ? (
-                      <span className="ml-1.5 rounded-full bg-zinc-900 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                      <span className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">
                         Dein Buch
                       </span>
                     ) : null}

@@ -1,11 +1,41 @@
 import { cn } from "@/lib/utils";
 
-export function TableWrapper({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("overflow-x-auto", className)} {...props} />;
+/**
+ * Tabellen-Bausteine. TableWrapper scrollt horizontal mit Scroll-Fade-Kanten
+ * (CSS-Utility .scroll-x-fade in globals.css); stickyFirstColumn fixiert die
+ * erste Spalte für breite Tabellen (Klicks, Kurzlinks, Amazon-KPIs).
+ */
+
+export function TableWrapper({
+  className,
+  stickyFirstColumn = false,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & { stickyFirstColumn?: boolean }) {
+  return (
+    <div
+      className={cn(
+        "scroll-x-fade overflow-x-auto",
+        stickyFirstColumn && "table-sticky-first",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
-export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
-  return <table className={cn("w-full border-collapse text-sm", className)} {...props} />;
+export function Table({
+  className,
+  minWidth,
+  style,
+  ...props
+}: React.TableHTMLAttributes<HTMLTableElement> & { minWidth?: number }) {
+  return (
+    <table
+      className={cn("w-full border-collapse text-sm", className)}
+      style={minWidth ? { minWidth, ...style } : style}
+      {...props}
+    />
+  );
 }
 
 export function Thead({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {

@@ -166,7 +166,7 @@ export default async function AmazonBookPage({
               href={`/admin/amazon/buch?edition=${e.id}`}
               className={
                 e.id === edition.id
-                  ? "rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white"
+                  ? "rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white"
                   : "rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100"
               }
             >

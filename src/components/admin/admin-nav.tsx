@@ -17,7 +17,11 @@ import { usePathname } from "next/navigation";
 import { canManageLinks, canManageSettings, canManageUsers, type Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-/** Navigationseinträge; Sichtbarkeit pro Rolle über visible(role). */
+/**
+ * Desktop-Sidebar-Navigation (≥ md). Mobil übernimmt die Bottom-Tab-Bar
+ * (components/admin/mobile-nav.tsx). Sichtbarkeit pro Rolle über visible(role);
+ * Links ohne Berechtigung erscheinen nicht im DOM.
+ */
 const NAV_ITEMS = [
   { href: "/admin", label: "Übersicht", icon: LayoutDashboard, exact: true, visible: () => true },
   { href: "/admin/analytics", label: "Analytics", icon: Globe2, exact: false, visible: () => true },
@@ -71,10 +75,7 @@ export function AdminNav({ role }: { role: Role }) {
   const pathname = usePathname();
 
   return (
-    <nav
-      aria-label="Hauptnavigation"
-      className="flex max-w-full gap-1 overflow-x-auto md:flex-col md:overflow-visible"
-    >
+    <nav aria-label="Hauptnavigation" className="flex flex-col gap-1">
       {NAV_ITEMS.filter((item) => item.visible(role)).map((item) => {
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
         const Icon = item.icon;
@@ -84,14 +85,14 @@ export function AdminNav({ role }: { role: Role }) {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
               active
-                ? "bg-zinc-900 text-white"
-                : "text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900",
+                ? "bg-primary-soft font-semibold text-primary"
+                : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
             )}
           >
             <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span className="hidden sm:inline">{item.label}</span>
+            <span>{item.label}</span>
           </Link>
         );
       })}

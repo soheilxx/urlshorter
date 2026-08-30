@@ -10,7 +10,7 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
       <button
         type="button"
         onClick={reset}
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+        className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-strong"
       >
         Erneut versuchen
       </button>

@@ -80,7 +80,7 @@ export default async function OverviewPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-lg border border-zinc-200 bg-white p-0.5">
+          <div className="flex rounded-lg border border-zinc-200 bg-surface p-0.5">
             {RANGE_OPTIONS.map((opt) => (
               <Link
                 key={opt.key}
@@ -88,7 +88,7 @@ export default async function OverviewPage({
                 className={cn(
                   "rounded-md px-2.5 py-1.5 text-xs font-medium",
                   range.key === opt.key
-                    ? "bg-zinc-900 text-white"
+                    ? "bg-primary text-white"
                     : "text-zinc-600 hover:bg-zinc-100",
                 )}
               >
@@ -102,7 +102,7 @@ export default async function OverviewPage({
               "rounded-lg border px-3 py-2 text-xs font-medium",
               botFilter === "bot"
                 ? "border-amber-300 bg-amber-50 text-amber-800"
-                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100",
+                : "border-zinc-200 bg-surface text-zinc-600 hover:bg-zinc-100",
             )}
           >
             {botFilter === "bot" ? "Bot-Ansicht aktiv" : "Bot-Auswertung"}

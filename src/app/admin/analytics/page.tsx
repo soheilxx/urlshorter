@@ -39,19 +39,12 @@ const RANGE_OPTIONS = [
   { key: "all", label: "Gesamt" },
 ];
 
-/** Sequentielle Blau-Rampe (hell → dunkel = mehr Klicks) fürs helle Design. */
-const CHOROPLETH_RAMP = [
-  "#dbeafe",
-  "#bfdbfe",
-  "#93c5fd",
-  "#60a5fa",
-  "#3b82f6",
-  "#2563eb",
-  "#1d4ed8",
-  "#1e40af",
-  "#1e3a8a",
-];
-const LAND_WITHOUT_DATA = "#e4e4e7";
+/**
+ * Choroplethen-Füllung über Theme-Variablen (--map-ramp-0…8): passt sich dem
+ * Hell-/Dunkel-Modus an; die Auflösung übernimmt die GeoMap per style-Attribut.
+ */
+const RAMP_STEPS = 9;
+const LAND_WITHOUT_DATA = "var(--map-land)";
 
 export default async function AnalyticsPage({
   searchParams,
@@ -85,9 +78,8 @@ export default async function AnalyticsPage({
     let fill = LAND_WITHOUT_DATA;
     if (clicks > 0) {
       const t = Math.sqrt(clicks / maxCountryClicks);
-      fill = CHOROPLETH_RAMP[
-        Math.min(CHOROPLETH_RAMP.length - 1, Math.floor(t * CHOROPLETH_RAMP.length))
-      ] as string;
+      const step = Math.min(RAMP_STEPS - 1, Math.floor(t * RAMP_STEPS));
+      fill = `var(--map-ramp-${step})`;
     }
     return { iso2: shape.iso2, name: shape.name, d: shape.d, clicks, fill };
   });
@@ -156,7 +148,7 @@ export default async function AnalyticsPage({
             Europe/Berlin
           </p>
         </div>
-        <div className="flex rounded-lg border border-zinc-200 bg-white p-0.5 shadow-sm">
+        <div className="flex rounded-lg border border-zinc-200 bg-surface p-0.5 shadow-sm">
           {RANGE_OPTIONS.map((opt) => (
             <Link
               key={opt.key}
@@ -164,7 +156,7 @@ export default async function AnalyticsPage({
               className={cn(
                 "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
                 range.key === opt.key
-                  ? "bg-zinc-900 text-white"
+                  ? "bg-primary text-white"
                   : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900",
               )}
             >
