@@ -1,6 +1,8 @@
 import { Download, Eye } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FilterPanel } from "@/components/admin/filter-panel";
+import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/admin/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -82,23 +84,30 @@ export default async function SweepstakesAdminPage({
     return qs ? `/admin/gewinnspiel?${qs}` : "/admin/gewinnspiel";
   };
   const exportHref = `/api/export/sweepstakes${query.toString() ? `?${query.toString()}` : ""}`;
+  const activeFilterCount = [
+    filters.q,
+    filters.ref,
+    filters.order,
+    filters.utm,
+    filters.retailer,
+    filters.status,
+    filters.from,
+    filters.to,
+  ].filter(Boolean).length;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">Gewinnspiel</h1>
-          <p className="text-sm text-zinc-500">
-            Teilnahmen der Dubai-Verlosung (lizenzzumerfolg.com/gewinn) · nur für Admins
-          </p>
-        </div>
+      <PageHeader
+        title="Gewinnspiel"
+        description="Teilnahmen der Dubai-Verlosung (lizenzzumerfolg.com/gewinn) · nur für Admins"
+      >
         <a href={exportHref}>
           <Button variant="secondary" size="sm">
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
             CSV-Export (gefiltert)
           </Button>
         </a>
-      </div>
+      </PageHeader>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Teilnahmen gesamt" value={formatNumber(stats.total)} />
@@ -123,7 +132,8 @@ export default async function SweepstakesAdminPage({
 
       <Card>
         <CardContent className="pt-5">
-          <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <FilterPanel activeCount={activeFilterCount} defaultOpen={activeFilterCount > 0}>
+            <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Label htmlFor="f-q">Name oder E-Mail</Label>
               <Input id="f-q" name="q" defaultValue={filters.q ?? ""} placeholder="Suche …" />
@@ -183,13 +193,14 @@ export default async function SweepstakesAdminPage({
                 {formatNumber(totalFiltered)} Treffer
               </p>
             </div>
-          </form>
+            </form>
+          </FilterPanel>
         </CardContent>
       </Card>
 
       <Card>
-        <TableWrapper>
-          <Table>
+        <TableWrapper className="hidden md:block">
+          <Table minWidth={900}>
             <Thead>
               <tr>
                 <Th>Eingegangen</Th>
@@ -249,6 +260,47 @@ export default async function SweepstakesAdminPage({
             </tbody>
           </Table>
         </TableWrapper>
+
+        {/* Mobil: Karten-Liste */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {entries.length === 0 ? (
+            <li className="px-4 py-10 text-center text-sm text-zinc-400">
+              Keine Teilnahmen für die aktuelle Filterung.
+            </li>
+          ) : (
+            entries.map((entry) => (
+              <li key={entry.id}>
+                <Link href={`/admin/gewinnspiel/${entry.id}`} className="block px-4 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-zinc-900">
+                        {entry.status === "DELETED"
+                          ? "(anonymisiert)"
+                          : `${entry.firstName} ${entry.lastName}`}
+                      </p>
+                      <p className="truncate text-xs text-zinc-500">
+                        {entry.email ? maskEmail(entry.email) : "–"} ·{" "}
+                        {retailerLabel(entry.retailer, entry.retailerOther)}
+                      </p>
+                    </div>
+                    <Badge variant={STATUS_BADGES[entry.status] ?? "muted"}>
+                      {SWEEPSTAKES_STATUS_LABELS[entry.status] ?? entry.status}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-400">
+                    <span className="font-mono font-semibold text-zinc-500">
+                      {entry.referenceNumber}
+                    </span>{" "}
+                    · {formatBerlinDateTime(entry.createdAt)}
+                    {entry.utmSource ?? entry.utmCampaign
+                      ? ` · ${entry.utmSource ?? entry.utmCampaign}`
+                      : ""}
+                  </p>
+                </Link>
+              </li>
+            ))
+          )}
+        </ul>
       </Card>
 
       {totalPages > 1 ? (

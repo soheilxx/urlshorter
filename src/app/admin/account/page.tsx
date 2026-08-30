@@ -14,7 +14,7 @@ export default async function AccountPage() {
   return (
     <div className="max-w-lg space-y-6">
       <div>
-        <h1 className="text-xl font-bold tracking-tight">Mein Konto</h1>
+        <h1 className="font-display text-xl font-bold tracking-tight">Mein Konto</h1>
         <p className="text-sm text-zinc-500">
           {session.email} · Rolle: {ROLE_LABELS[session.role]}
         </p>

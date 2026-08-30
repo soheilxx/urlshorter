@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BarList } from "@/components/admin/bar-list";
 import { BucketBarChart, ClicksPerDayChart } from "@/components/admin/charts";
+import { PageHeader } from "@/components/admin/page-header";
+import { SegmentedNav } from "@/components/admin/segmented-nav";
 import { StatCard } from "@/components/admin/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireSession } from "@/lib/auth";
@@ -71,44 +73,37 @@ export default async function OverviewPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">Übersicht</h1>
-          <p className="text-sm text-zinc-500">
+      <PageHeader
+        title="Übersicht"
+        description={
+          <>
             {range.label}
             {botFilter === "bot" ? " · Nur Bot-Aufrufe" : " · Ohne Bots"} · Zeitzone Europe/Berlin
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-lg border border-zinc-200 bg-surface p-0.5">
-            {RANGE_OPTIONS.map((opt) => (
-              <Link
-                key={opt.key}
-                href={buildHref(opt.key, botFilter)}
-                className={cn(
-                  "rounded-md px-2.5 py-1.5 text-xs font-medium",
-                  range.key === opt.key
-                    ? "bg-primary text-white"
-                    : "text-zinc-600 hover:bg-zinc-100",
-                )}
-              >
-                {opt.label}
-              </Link>
-            ))}
-          </div>
-          <Link
-            href={buildHref(range.key, botFilter === "bot" ? "human" : "bot")}
-            className={cn(
-              "rounded-lg border px-3 py-2 text-xs font-medium",
-              botFilter === "bot"
-                ? "border-amber-300 bg-amber-50 text-amber-800"
-                : "border-zinc-200 bg-surface text-zinc-600 hover:bg-zinc-100",
-            )}
-          >
-            {botFilter === "bot" ? "Bot-Ansicht aktiv" : "Bot-Auswertung"}
-          </Link>
-        </div>
-      </div>
+          </>
+        }
+      >
+        <SegmentedNav
+          ariaLabel="Zeitraum wählen"
+          activeKey={range.key}
+          options={RANGE_OPTIONS.map((opt) => ({
+            key: opt.key,
+            label: opt.label,
+            href: buildHref(opt.key, botFilter),
+          }))}
+          className="max-w-full"
+        />
+        <Link
+          href={buildHref(range.key, botFilter === "bot" ? "human" : "bot")}
+          className={cn(
+            "whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-medium transition-colors",
+            botFilter === "bot"
+              ? "border-amber-300 bg-amber-50 text-amber-800"
+              : "border-zinc-200 bg-surface text-zinc-600 hover:bg-zinc-100",
+          )}
+        >
+          {botFilter === "bot" ? "Bot-Ansicht aktiv" : "Bot-Auswertung"}
+        </Link>
+      </PageHeader>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
@@ -130,13 +125,22 @@ export default async function OverviewPage({
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Klicks heute" value={formatNumber(stats.clicksToday)} />
+        <StatCard
+          label="Klicks heute"
+          value={formatNumber(stats.clicksToday)}
+          trend={
+            stats.clicksYesterday > 0
+              ? ((stats.clicksToday - stats.clicksYesterday) / stats.clicksYesterday) * 100
+              : null
+          }
+          trendLabel="gegenüber gestern"
+        />
         <StatCard label="Klicks gestern" value={formatNumber(stats.clicksYesterday)} />
         <StatCard label="Letzte 7 Tage" value={formatNumber(stats.clicksLast7Days)} />
         <StatCard label="Letzte 30 Tage" value={formatNumber(stats.clicksLast30Days)} />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           label="Ø Klicks pro Tag"
           value={formatNumber(Math.round(stats.avgClicksPerDay * 10) / 10)}

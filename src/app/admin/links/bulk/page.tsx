@@ -20,7 +20,7 @@ export default async function BulkLinksPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-bold tracking-tight">Mehrere Kurzlinks erstellen</h1>
+        <h1 className="font-display text-xl font-bold tracking-tight">Mehrere Kurzlinks erstellen</h1>
         <p className="text-sm text-zinc-500">
           Erstellt in einem Vorgang je einen Kurzlink pro Source – alle mit demselben Ziel.
         </p>

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Bricolage_Grotesque, Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -8,12 +8,20 @@ const inter = Inter({
   display: "swap",
 });
 
+/* Display-Font für Überschriften und die TRACK.SITE-Wortmarke */
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
+  weight: ["500", "600", "700"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: {
-    default: "urlshorter",
-    template: "%s · urlshorter",
+    default: "TRACK.SITE",
+    template: "%s · TRACK.SITE",
   },
-  description: "Redirect- und Tracking-System für Kurzlinks",
+  description: "Kurzlinks, Tracking und Analytics für deine Websites",
   robots: { index: false, follow: false },
 };
 
@@ -34,7 +42,7 @@ const THEME_INIT_SCRIPT = `(function(){try{var m=document.cookie.match(/(?:^|; )
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" suppressHydrationWarning className={inter.variable}>
+    <html lang="de" suppressHydrationWarning className={`${inter.variable} ${bricolage.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>

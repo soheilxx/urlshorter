@@ -8,11 +8,13 @@ import { buildCategoryKpis, loadCanonicalSeries } from "@/lib/amazon/kpis";
 import { creatorsAwaitingEligibility } from "@/lib/amazon/provider-display";
 import { forecastQuota } from "@/lib/amazon/quota";
 import { MovementBadge, RankValue, StaleBadge } from "@/components/admin/amazon/movement-badge";
+import { PageHeader } from "@/components/admin/page-header";
 import { RankChart, type RankChartSeries } from "@/components/admin/amazon/rank-chart";
 import { ManualJobForm } from "@/components/admin/amazon/amazon-forms";
 import { RankSparkline } from "@/components/admin/amazon/sparkline";
 import { StatCard } from "@/components/admin/stat-card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -40,7 +42,7 @@ export default async function AmazonOverviewPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Amazon Rankings</h1>
+          <h1 className="font-display text-xl font-bold tracking-tight">Amazon Rankings</h1>
           <p className="text-sm text-zinc-500">
             Verkaufsrang-Tracking für „Die Lizenz zum Erfolg“ über Amazon Creators API und
             Rainforest API.
@@ -202,30 +204,25 @@ export default async function AmazonOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">Amazon Rankings</h1>
-          <p className="text-sm text-zinc-500">
+      <PageHeader
+        title="Amazon Rankings"
+        description={
+          <>
             Verkaufsränge auf Amazon.de – zwei Provider, kanonische Auswahl, alle Zeiten in
             Europe/Berlin.
             {!settings.enabled ? " · Modul derzeit DEAKTIVIERT (keine automatischen Abrufe)." : ""}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/admin/amazon/buch"
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
-          >
+          </>
+        }
+      >
+        <Link href="/admin/amazon/buch">
+          <Button variant="secondary" size="sm">
             Buchdetail
-          </Link>
-          <Link
-            href="/admin/amazon/top25"
-            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-strong"
-          >
-            Top 25
-          </Link>
-        </div>
-      </div>
+          </Button>
+        </Link>
+        <Link href="/admin/amazon/top25">
+          <Button size="sm">Top 25</Button>
+        </Link>
+      </PageHeader>
 
       {/* Buchkarte + KPI-Kacheln */}
       <div className="grid gap-6 lg:grid-cols-3">

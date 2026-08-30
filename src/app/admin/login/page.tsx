@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { BrandMark, BrandWordmark } from "@/components/admin/brand";
 import { LoginForm } from "@/components/admin/login-form";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,9 +19,15 @@ export default async function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
       <div className="w-full max-w-sm">
-        <h1 className="mb-6 text-center text-lg font-bold tracking-tight text-zinc-900">
-          {getPublicHostname()}
-        </h1>
+        <div className="mb-6 flex flex-col items-center gap-2.5">
+          <BrandMark className="h-11 w-11 rounded-2xl [&>svg]:h-5 [&>svg]:w-5" />
+          <h1 className="text-center text-xl leading-tight">
+            <BrandWordmark />
+            <span className="mt-0.5 block text-xs font-normal text-zinc-400">
+              {getPublicHostname()}
+            </span>
+          </h1>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Anmeldung</CardTitle>

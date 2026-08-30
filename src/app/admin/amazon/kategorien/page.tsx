@@ -34,7 +34,7 @@ export default async function AmazonCategoriesPage() {
         <Link href="/admin/amazon" className="text-sm text-zinc-500 hover:underline">
           ← Amazon Rankings
         </Link>
-        <h1 className="mt-1 text-xl font-bold tracking-tight">Kategorien</h1>
+        <h1 className="mt-1 font-display text-xl font-bold tracking-tight">Kategorien</h1>
         <p className="text-sm text-zinc-500">
           Browse Nodes (Kategorienränge) und Rainforest-Bestsellerkategorien (Top 25) werden hier
           verbunden. Die Sachbuch-Kategorie-ID wird dynamisch über die Rainforest Categories API
@@ -97,7 +97,9 @@ export default async function AmazonCategoriesPage() {
                   ) : (
                     <Badge variant="muted">nicht aufgelöst</Badge>
                   )}
-                  <span className="ml-auto font-mono text-[11px] text-zinc-400">{category.id}</span>
+                  <span className="ml-auto hidden font-mono text-[11px] text-zinc-400 sm:inline">
+                    {category.id}
+                  </span>
                 </div>
                 {category.path ? (
                   <p className="text-xs text-zinc-500">Pfad: {category.path}</p>

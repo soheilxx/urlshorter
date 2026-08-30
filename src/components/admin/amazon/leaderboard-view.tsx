@@ -154,7 +154,7 @@ export function LeaderboardView({
             onClick={() => setMode("grid")}
             aria-pressed={mode === "grid"}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium",
+              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium sm:py-1",
               mode === "grid" ? "bg-primary text-white" : "text-zinc-500 hover:text-zinc-800",
             )}
           >
@@ -165,7 +165,7 @@ export function LeaderboardView({
             onClick={() => setMode("table")}
             aria-pressed={mode === "table"}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium",
+              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium sm:py-1",
               mode === "table" ? "bg-primary text-white" : "text-zinc-500 hover:text-zinc-800",
             )}
           >
@@ -180,7 +180,7 @@ export function LeaderboardView({
               onClick={() => setFilter(f.key)}
               aria-pressed={filter === f.key}
               className={cn(
-                "rounded-lg px-2.5 py-1 text-xs font-medium",
+                "rounded-lg px-2.5 py-2 text-xs font-medium sm:py-1",
                 filter === f.key ? "bg-zinc-200 text-zinc-900" : "text-zinc-500 hover:bg-zinc-100",
               )}
             >
@@ -194,7 +194,7 @@ export function LeaderboardView({
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Titel, Autor, ASIN …"
           aria-label="In der Liste suchen"
-          className="ml-auto w-44 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs focus:border-zinc-400 focus:outline-none"
+          className="w-full rounded-xl border border-zinc-200 bg-surface px-3 py-2 text-base focus:border-zinc-400 focus:outline-none sm:ml-auto sm:w-44 sm:rounded-lg sm:px-2.5 sm:py-1.5 sm:text-xs"
         />
         {exportBase ? (
           <div className="flex gap-1">
@@ -276,8 +276,8 @@ export function LeaderboardView({
           ))}
         </ul>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="scroll-x-fade overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-400">
                 <th className="py-2 pr-3">Rang</th>

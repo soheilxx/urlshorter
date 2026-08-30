@@ -1,7 +1,13 @@
-import { KeyRound, LinkIcon, LogOut } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
 import Link from "next/link";
 import { logoutAction } from "@/actions/auth-actions";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { BrandMark, BrandWordmark } from "@/components/admin/brand";
+import {
+  CommandPalette,
+  CommandPaletteTrigger,
+  type PaletteEntry,
+} from "@/components/admin/command-palette";
 import { MobileTabBar, type MoreNavItem } from "@/components/admin/mobile-nav";
 import { ThemeToggle } from "@/components/admin/theme-toggle";
 import { getSession } from "@/lib/auth";
@@ -43,6 +49,35 @@ function buildMoreItems(role: Role): MoreNavItem[] {
   return items;
 }
 
+/** Einträge der Befehls-Palette (Cmd/Ctrl-K), rollengefiltert. */
+function buildPaletteEntries(role: Role): PaletteEntry[] {
+  const pages: PaletteEntry[] = [
+    { href: "/admin", label: "Übersicht", group: "Seiten" },
+    { href: "/admin/analytics", label: "Analytics", group: "Seiten" },
+    { href: "/admin/links", label: "Kurzlinks", group: "Seiten" },
+    { href: "/admin/destinations", label: "Ziele", group: "Seiten" },
+    { href: "/admin/clicks", label: "Klicks", group: "Seiten" },
+    { href: "/admin/amazon", label: "Amazon Rankings", group: "Seiten" },
+    { href: "/admin/amazon/top25", label: "Amazon Top 25", group: "Seiten" },
+    { href: "/admin/account", label: "Mein Konto", group: "Seiten" },
+  ];
+  if (canManageLinks(role)) {
+    pages.push({ href: "/admin/websites", label: "Websites", group: "Seiten" });
+    pages.push({ href: "/admin/links/new", label: "Neuer Kurzlink", group: "Aktionen" });
+    pages.push({ href: "/admin/links/bulk", label: "Mehrere Links erstellen", group: "Aktionen" });
+    pages.push({ href: "/admin/destinations", label: "Neues Ziel anlegen", group: "Aktionen" });
+  }
+  if (canManageUsers(role)) {
+    pages.push({ href: "/admin/gewinnspiel", label: "Gewinnspiel", group: "Seiten" });
+    pages.push({ href: "/admin/users", label: "Benutzer", group: "Seiten" });
+  }
+  if (canManageSettings(role)) {
+    pages.push({ href: "/admin/settings", label: "Einstellungen", group: "Seiten" });
+    pages.push({ href: "/admin/amazon/einstellungen", label: "Amazon-Einstellungen", group: "Seiten" });
+  }
+  return pages;
+}
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
 
@@ -57,34 +92,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen md:flex">
       {/* Mobile Topbar */}
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200 bg-surface/95 px-4 backdrop-blur md:hidden">
-        <p className="flex items-center gap-2 text-sm font-bold tracking-tight text-zinc-900">
-          <span
-            aria-hidden="true"
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white"
-          >
-            <LinkIcon className="h-3.5 w-3.5" />
-          </span>
-          {hostname}
+        <p className="flex items-center gap-2 text-sm">
+          <BrandMark className="h-7 w-7 rounded-lg [&>svg]:h-3.5 [&>svg]:w-3.5" />
+          <BrandWordmark className="text-[15px]" />
         </p>
-        <ThemeToggle />
+        <span className="flex items-center gap-1">
+          <CommandPaletteTrigger variant="icon" />
+          <ThemeToggle />
+        </span>
       </header>
 
       {/* Desktop-Sidebar */}
       <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:border-r md:border-zinc-200 md:bg-surface md:px-4 md:py-6">
         <div className="mb-8 flex items-center gap-2.5">
-          <span
-            aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white"
-          >
-            <LinkIcon className="h-4 w-4" />
-          </span>
-          <p className="min-w-0 text-sm font-bold tracking-tight text-zinc-900">
-            <span className="block truncate">{hostname}</span>
-            <span className="mt-0.5 block text-xs font-normal text-zinc-400">
-              Kurzlink-Tracking
+          <BrandMark />
+          <p className="min-w-0 text-sm">
+            <BrandWordmark className="block truncate text-base leading-tight" />
+            <span className="mt-0.5 block truncate text-xs font-normal text-zinc-400">
+              {hostname}
             </span>
           </p>
         </div>
+        <CommandPaletteTrigger variant="field" />
         <div className="flex-1 overflow-y-auto">
           <AdminNav role={session.role} />
         </div>
@@ -138,6 +167,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         roleLabel={ROLE_LABELS[session.role]}
         logoutAction={logoutAction}
       />
+
+      <CommandPalette entries={buildPaletteEntries(session.role)} />
     </div>
   );
 }

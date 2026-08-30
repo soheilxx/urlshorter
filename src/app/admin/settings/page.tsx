@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/admin/page-header";
 import { SettingsForm } from "@/components/admin/settings-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,10 +40,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">Einstellungen</h1>
-        <p className="text-sm text-zinc-500">Anwendungskonfiguration und Systemstatus</p>
-      </div>
+      <PageHeader title="Einstellungen" description="Anwendungskonfiguration und Systemstatus" />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -60,7 +58,7 @@ export default async function SettingsPage() {
           </CardHeader>
           <CardContent>
             <dl className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Datenbank</dt>
                 <dd>
                   {dbOk ? (
@@ -70,25 +68,25 @@ export default async function SettingsPage() {
                   )}
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Google Tag Manager</dt>
                 <dd>
                   <ConfigBadge configured={Boolean(env.GTM_CONTAINER_ID)} />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Google Analytics 4 (nativ)</dt>
                 <dd>
                   <ConfigBadge configured={Boolean(env.GA4_MEASUREMENT_ID)} />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Meta Pixel</dt>
                 <dd>
                   <ConfigBadge configured={Boolean(env.META_PIXEL_ID)} />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Meta Conversions API</dt>
                 <dd>
                   <ConfigBadge
@@ -96,19 +94,19 @@ export default async function SettingsPage() {
                   />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Reddit Pixel</dt>
                 <dd>
                   <ConfigBadge configured={Boolean(env.REDDIT_PIXEL_ID)} />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">TikTok Pixel</dt>
                 <dd>
                   <ConfigBadge configured={Boolean(env.TIKTOK_PIXEL_ID)} />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">TikTok Events API</dt>
                 <dd>
                   <ConfigBadge
@@ -116,13 +114,13 @@ export default async function SettingsPage() {
                   />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">LinkedIn Insight Tag</dt>
                 <dd>
                   <ConfigBadge configured={Boolean(env.LINKEDIN_PARTNER_ID)} />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">LinkedIn Conversions API</dt>
                 <dd>
                   <ConfigBadge
@@ -132,7 +130,7 @@ export default async function SettingsPage() {
                   />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Consent-Modus</dt>
                 <dd>
                   <Badge variant={env.TRACKING_CONSENT_MODE === "required" ? "success" : "warning"}>
@@ -142,7 +140,7 @@ export default async function SettingsPage() {
                   </Badge>
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Consent-Cookie</dt>
                 <dd>
                   <ConfigBadge
@@ -152,19 +150,19 @@ export default async function SettingsPage() {
                   />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Cron-Bereinigung (CRON_SECRET)</dt>
                 <dd>
                   <ConfigBadge configured={Boolean(env.CRON_SECRET)} />
                 </dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Datenaufbewahrung (Detail-Events)</dt>
                 <dd className="font-medium">{env.EVENT_RETENTION_DAYS} Tage</dd>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                 <dt className="text-zinc-600">Erlaubte Ziel-Hosts</dt>
-                <dd className="max-w-[220px] truncate text-right font-mono text-xs">
+                <dd className="break-all font-mono text-xs sm:max-w-[220px] sm:truncate sm:text-right">
                   {env.allowedDestinationHosts.includes("*")
                     ? "Alle Hosts (nur HTTPS)"
                     : env.allowedDestinationHosts.join(", ")}

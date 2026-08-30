@@ -97,7 +97,7 @@ export default async function AmazonProvidersPage() {
         <Link href="/admin/amazon" className="text-sm text-zinc-500 hover:underline">
           ← Amazon Rankings
         </Link>
-        <h1 className="mt-1 text-xl font-bold tracking-tight">Provider</h1>
+        <h1 className="mt-1 font-display text-xl font-bold tracking-tight">Provider</h1>
         <p className="text-sm text-zinc-500">
           Amazon Creators API und Rainforest API – Status, Capabilities, Credits. Zugangsdaten
           liegen ausschließlich serverseitig in Environment-Variablen und werden nie angezeigt.
@@ -148,7 +148,7 @@ export default async function AmazonProvidersPage() {
                     Umstellung erfolgt automatisch.
                   </p>
                 ) : null}
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                <dl className="space-y-0.5 text-xs sm:grid sm:grid-cols-2 sm:gap-x-4 sm:gap-y-1.5 sm:space-y-0">
                   <dt className="text-zinc-400">Letzte erfolgreiche Abfrage</dt>
                   <dd>{status?.lastSuccessAt ? formatBerlinDateTime(status.lastSuccessAt) : "–"}</dd>
                   <dt className="text-zinc-400">Letzte fehlgeschlagene Abfrage</dt>
@@ -276,7 +276,7 @@ export default async function AmazonProvidersPage() {
           <CardTitle>Letzte Provider-Läufe</CardTitle>
         </CardHeader>
         <TableWrapper>
-          <Table>
+          <Table minWidth={760}>
             <Thead>
               <tr>
                 <Th>Start</Th>

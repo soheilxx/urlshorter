@@ -68,7 +68,7 @@ export default async function EditWebsitePage({
           ← Zurück zu Websites
         </Link>
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-bold tracking-tight">{values.label}</h1>
+          <h1 className="font-display text-xl font-bold tracking-tight">{values.label}</h1>
           {db ? (
             <Badge variant="success">Dashboard-Konfiguration</Badge>
           ) : (

@@ -55,7 +55,7 @@ export default async function AmazonSettingsPage() {
         <Link href="/admin/amazon" className="text-sm text-zinc-500 hover:underline">
           ← Amazon Rankings
         </Link>
-        <h1 className="mt-1 text-xl font-bold tracking-tight">Einstellungen</h1>
+        <h1 className="mt-1 font-display text-xl font-bold tracking-tight">Einstellungen</h1>
         <p className="text-sm text-zinc-500">
           Intervalle, Provider-Prioritäten, Digest und Alerts – ohne Deployment änderbar.
           Zeitzone für Anzeige und Berichte: {settings.timezone} (Speicherung in UTC).

@@ -6,6 +6,7 @@ import { ClicksPerDayChart } from "@/components/admin/charts";
 import { ConfirmSubmitButton } from "@/components/admin/confirm-submit-button";
 import { CopyButton } from "@/components/admin/copy-button";
 import { LinkForm } from "@/components/admin/link-form";
+import { QrCard } from "@/components/admin/qr-card";
 import { StatCard } from "@/components/admin/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,8 +56,8 @@ export default async function LinkDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start md:justify-between">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold tracking-tight">
               <code className="font-mono">/{link.code}</code>
@@ -70,7 +71,7 @@ export default async function LinkDetailPage({ params }: { params: Promise<{ id:
             )}
           </div>
           <p className="mt-1 flex items-center gap-1 text-sm text-zinc-500">
-            <span className="font-mono">{fullUrl}</span>
+            <span className="break-all font-mono">{fullUrl}</span>
             <CopyButton value={fullUrl} />
           </p>
           <p className="mt-1 text-sm text-zinc-500">
@@ -122,6 +123,15 @@ export default async function LinkDetailPage({ params }: { params: Promise<{ id:
         </CardHeader>
         <CardContent>
           <ClicksPerDayChart data={perDay} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>QR-Code</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <QrCard url={fullUrl} code={link.code} />
         </CardContent>
       </Card>
 

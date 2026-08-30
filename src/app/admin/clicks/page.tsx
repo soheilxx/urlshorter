@@ -1,6 +1,8 @@
 import { ArrowDown, ArrowUp, Download } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FilterPanel } from "@/components/admin/filter-panel";
+import { PageHeader } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -81,6 +83,33 @@ function BoolCell({ value }: { value: boolean }) {
   );
 }
 
+function Pagination({ filters, pageCount }: { filters: ClickFilters; pageCount: number }) {
+  if (pageCount <= 1) return null;
+  return (
+    <div className="flex items-center justify-between border-t border-zinc-100 px-4 py-3">
+      <p className="text-xs text-zinc-500">
+        Seite {filters.page} von {pageCount}
+      </p>
+      <div className="flex gap-2">
+        {filters.page > 1 ? (
+          <Link href={`/admin/clicks?${filtersToQuery(filters, { page: filters.page - 1 })}`}>
+            <Button variant="secondary" size="sm">
+              Zurück
+            </Button>
+          </Link>
+        ) : null}
+        {filters.page < pageCount ? (
+          <Link href={`/admin/clicks?${filtersToQuery(filters, { page: filters.page + 1 })}`}>
+            <Button variant="secondary" size="sm">
+              Weiter
+            </Button>
+          </Link>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export default async function ClicksPage({
   searchParams,
 }: {
@@ -126,244 +155,294 @@ export default async function ClicksPage({
 
   const pageCount = Math.max(1, Math.ceil(total / CLICK_PAGE_SIZE));
   const exportQuery = filtersToQuery(filters, { page: 1 });
+  const activeFilterCount =
+    [
+      filters.from,
+      filters.to,
+      filters.source,
+      filters.campaign,
+      filters.linkId,
+      filters.device,
+      filters.q,
+    ].filter(Boolean).length + (filters.bot !== "human" ? 1 : 0);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">Klicks</h1>
-          <p className="text-sm text-zinc-500">
-            {formatNumber(total)} Einträge · Zeitzone Europe/Berlin (Speicherung in UTC)
-          </p>
-        </div>
+      <PageHeader
+        title="Klicks"
+        description={`${formatNumber(total)} Einträge · Zeitzone Europe/Berlin (Speicherung in UTC)`}
+      >
         <a href={`/api/export/clicks${exportQuery ? `?${exportQuery}` : ""}`}>
           <Button variant="secondary" size="sm">
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
             CSV-Export (gefiltert)
           </Button>
         </a>
-      </div>
+      </PageHeader>
 
       <Card>
         <CardContent>
-          <form
-            method="GET"
-            action="/admin/clicks"
-            className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4"
-          >
-            <div>
-              <Label htmlFor="f-from">Von (Datum)</Label>
-              <Input id="f-from" name="from" type="date" defaultValue={filters.from ?? ""} />
-            </div>
-            <div>
-              <Label htmlFor="f-to">Bis (Datum)</Label>
-              <Input id="f-to" name="to" type="date" defaultValue={filters.to ?? ""} />
-            </div>
-            <div>
-              <Label htmlFor="f-source">Source</Label>
-              <Select id="f-source" name="source" defaultValue={filters.source ?? ""}>
-                <option value="">Alle Sources</option>
-                {sources.map((s) => (
-                  <option key={s.source} value={s.source}>
-                    {s.source}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="f-campaign">Kampagne</Label>
-              <Select id="f-campaign" name="campaign" defaultValue={filters.campaign ?? ""}>
-                <option value="">Alle Kampagnen</option>
-                {campaigns.map((c) =>
-                  c.campaign ? (
-                    <option key={c.campaign} value={c.campaign}>
-                      {c.campaign}
+          <FilterPanel activeCount={activeFilterCount} defaultOpen={activeFilterCount > 0}>
+            <form
+              method="GET"
+              action="/admin/clicks"
+              className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4"
+            >
+              <div>
+                <Label htmlFor="f-from">Von (Datum)</Label>
+                <Input id="f-from" name="from" type="date" defaultValue={filters.from ?? ""} />
+              </div>
+              <div>
+                <Label htmlFor="f-to">Bis (Datum)</Label>
+                <Input id="f-to" name="to" type="date" defaultValue={filters.to ?? ""} />
+              </div>
+              <div>
+                <Label htmlFor="f-source">Source</Label>
+                <Select id="f-source" name="source" defaultValue={filters.source ?? ""}>
+                  <option value="">Alle Sources</option>
+                  {sources.map((s) => (
+                    <option key={s.source} value={s.source}>
+                      {s.source}
                     </option>
-                  ) : null,
-                )}
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="f-link">Kurzlink</Label>
-              <Select id="f-link" name="linkId" defaultValue={filters.linkId ?? ""}>
-                <option value="">Alle Kurzlinks</option>
-                {links.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    /{l.code} – {l.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="f-bot">Bot-Filter</Label>
-              <Select id="f-bot" name="bot" defaultValue={filters.bot}>
-                <option value="human">Nur Menschen (Standard)</option>
-                <option value="bot">Nur Bots</option>
-                <option value="all">Alle</option>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="f-device">Gerätetyp</Label>
-              <Select id="f-device" name="device" defaultValue={filters.device ?? ""}>
-                <option value="">Alle Geräte</option>
-                {devices.map((d) =>
-                  d.deviceType ? (
-                    <option key={d.deviceType} value={d.deviceType}>
-                      {d.deviceType}
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="f-campaign">Kampagne</Label>
+                <Select id="f-campaign" name="campaign" defaultValue={filters.campaign ?? ""}>
+                  <option value="">Alle Kampagnen</option>
+                  {campaigns.map((c) =>
+                    c.campaign ? (
+                      <option key={c.campaign} value={c.campaign}>
+                        {c.campaign}
+                      </option>
+                    ) : null,
+                  )}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="f-link">Kurzlink</Label>
+                <Select id="f-link" name="linkId" defaultValue={filters.linkId ?? ""}>
+                  <option value="">Alle Kurzlinks</option>
+                  {links.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      /{l.code} – {l.name}
                     </option>
-                  ) : null,
-                )}
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="f-q">Suche</Label>
-              <Input
-                id="f-q"
-                name="q"
-                defaultValue={filters.q ?? ""}
-                placeholder="Code, Name, Referrer …"
-              />
-            </div>
-            <div className="flex items-end gap-2 sm:col-span-3 lg:col-span-4">
-              <Button type="submit" size="sm">
-                Filtern
-              </Button>
-              <Link href="/admin/clicks">
-                <Button type="button" variant="ghost" size="sm">
-                  Zurücksetzen
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="f-bot">Bot-Filter</Label>
+                <Select id="f-bot" name="bot" defaultValue={filters.bot}>
+                  <option value="human">Nur Menschen (Standard)</option>
+                  <option value="bot">Nur Bots</option>
+                  <option value="all">Alle</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="f-device">Gerätetyp</Label>
+                <Select id="f-device" name="device" defaultValue={filters.device ?? ""}>
+                  <option value="">Alle Geräte</option>
+                  {devices.map((d) =>
+                    d.deviceType ? (
+                      <option key={d.deviceType} value={d.deviceType}>
+                        {d.deviceType}
+                      </option>
+                    ) : null,
+                  )}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="f-q">Suche</Label>
+                <Input
+                  id="f-q"
+                  name="q"
+                  defaultValue={filters.q ?? ""}
+                  placeholder="Code, Name, Referrer …"
+                />
+              </div>
+              <div className="flex items-end gap-2 sm:col-span-3 lg:col-span-4">
+                <Button type="submit" size="sm">
+                  Filtern
                 </Button>
-              </Link>
-            </div>
-          </form>
+                <Link href="/admin/clicks">
+                  <Button type="button" variant="ghost" size="sm">
+                    Zurücksetzen
+                  </Button>
+                </Link>
+              </div>
+            </form>
+          </FilterPanel>
         </CardContent>
       </Card>
 
       <Card>
-        <TableWrapper>
-          <Table>
-            <Thead>
-              <tr>
-                <Th>
-                  <SortHeader filters={filters} column="ts">
-                    Datum / Uhrzeit
-                  </SortHeader>
-                </Th>
-                <Th>
-                  <SortHeader filters={filters} column="code">
-                    Code
-                  </SortHeader>
-                </Th>
-                <Th>Linkname</Th>
-                <Th>
-                  <SortHeader filters={filters} column="source">
-                    Source
-                  </SortHeader>
-                </Th>
-                <Th>Medium</Th>
-                <Th>
-                  <SortHeader filters={filters} column="campaign">
-                    Kampagne
-                  </SortHeader>
-                </Th>
-                <Th>Content</Th>
-                <Th>Referrer</Th>
-                <Th>Gerät</Th>
-                <Th>Browser</Th>
-                <Th>OS</Th>
-                <Th>
-                  <SortHeader filters={filters} column="country">
-                    Land
-                  </SortHeader>
-                </Th>
-                <Th>Bot</Th>
-                <Th title="Bridge-Page geladen">Bridge</Th>
-                <Th title="Tracking angestoßen">Tracking</Th>
-                <Th title="Redirect gestartet">Redirect</Th>
-              </tr>
-            </Thead>
-            <tbody>
-              {rows.length === 0 ? (
+        {/* Desktop: vollständige Tabelle (Zweitrangiges erst ab xl).
+            Steht im DOM VOR der Mobil-Liste, damit getByText(...).first()
+            in den E2E-Tests das sichtbare Desktop-Element trifft. */}
+        <div className="hidden md:block">
+          <TableWrapper stickyFirstColumn>
+            <Table minWidth={900}>
+              <Thead>
                 <tr>
-                  <Td colSpan={16} className="py-10 text-center text-zinc-400">
-                    Keine Klicks für die aktuellen Filter gefunden.
-                  </Td>
+                  <Th>
+                    <SortHeader filters={filters} column="ts">
+                      Datum / Uhrzeit
+                    </SortHeader>
+                  </Th>
+                  <Th>
+                    <SortHeader filters={filters} column="code">
+                      Code
+                    </SortHeader>
+                  </Th>
+                  <Th>Linkname</Th>
+                  <Th>
+                    <SortHeader filters={filters} column="source">
+                      Source
+                    </SortHeader>
+                  </Th>
+                  <Th className="hidden xl:table-cell">Medium</Th>
+                  <Th>
+                    <SortHeader filters={filters} column="campaign">
+                      Kampagne
+                    </SortHeader>
+                  </Th>
+                  <Th className="hidden xl:table-cell">Content</Th>
+                  <Th className="hidden xl:table-cell">Referrer</Th>
+                  <Th>Gerät</Th>
+                  <Th className="hidden xl:table-cell">Browser</Th>
+                  <Th className="hidden xl:table-cell">OS</Th>
+                  <Th>
+                    <SortHeader filters={filters} column="country">
+                      Land
+                    </SortHeader>
+                  </Th>
+                  <Th>Bot</Th>
+                  <Th title="Bridge-Page geladen">Bridge</Th>
+                  <Th title="Tracking angestoßen">Tracking</Th>
+                  <Th title="Redirect gestartet">Redirect</Th>
                 </tr>
-              ) : (
-                rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-zinc-50/60">
-                    <Td className="whitespace-nowrap tabular-nums">
-                      {formatBerlinDate(row.ts)}{" "}
-                      <span className="text-zinc-400">{formatBerlinTime(row.ts)}</span>
-                    </Td>
-                    <Td>
-                      <code className="font-mono text-xs font-semibold">/{row.code}</code>
-                    </Td>
-                    <Td className="max-w-[140px] truncate" title={row.linkName}>
-                      {row.linkName}
-                    </Td>
-                    <Td className="max-w-[120px] truncate" title={row.source}>
-                      {row.source}
-                    </Td>
-                    <Td className="max-w-[90px] truncate">{row.medium ?? "–"}</Td>
-                    <Td className="max-w-[120px] truncate" title={row.campaign ?? ""}>
-                      {row.campaign ?? "–"}
-                    </Td>
-                    <Td className="max-w-[90px] truncate">{row.content ?? "–"}</Td>
-                    <Td className="max-w-[140px] truncate" title={row.referrer ?? ""}>
-                      {row.referrer ?? "–"}
-                    </Td>
-                    <Td>{row.deviceType ?? "–"}</Td>
-                    <Td>{row.browser ?? "–"}</Td>
-                    <Td>{row.os ?? "–"}</Td>
-                    <Td>{row.country ?? "–"}</Td>
-                    <Td>
-                      {row.isBot ? (
-                        <Badge variant="warning" title={row.botReason ?? ""}>
-                          Bot
-                        </Badge>
-                      ) : (
-                        <span className="text-zinc-300">–</span>
-                      )}
-                    </Td>
-                    <Td className="text-center">
-                      <BoolCell value={row.bridgeLoaded} />
-                    </Td>
-                    <Td className="text-center">
-                      <BoolCell value={row.trackingFired} />
-                    </Td>
-                    <Td className="text-center">
-                      <BoolCell value={row.redirectStarted || row.manualClick} />
+              </Thead>
+              <tbody>
+                {rows.length === 0 ? (
+                  <tr>
+                    <Td colSpan={16} className="py-10 text-center text-zinc-400">
+                      Keine Klicks für die aktuellen Filter gefunden.
                     </Td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </Table>
-        </TableWrapper>
+                ) : (
+                  rows.map((row) => (
+                    <tr key={row.id} className="hover:bg-zinc-50/60">
+                      <Td className="whitespace-nowrap tabular-nums">
+                        {formatBerlinDate(row.ts)}{" "}
+                        <span className="text-zinc-400">{formatBerlinTime(row.ts)}</span>
+                      </Td>
+                      <Td>
+                        <code className="font-mono text-xs font-semibold">/{row.code}</code>
+                      </Td>
+                      <Td className="max-w-[140px] truncate" title={row.linkName}>
+                        {row.linkName}
+                      </Td>
+                      <Td className="max-w-[120px] truncate" title={row.source}>
+                        {row.source}
+                      </Td>
+                      <Td className="hidden max-w-[90px] truncate xl:table-cell">
+                        {row.medium ?? "–"}
+                      </Td>
+                      <Td className="max-w-[120px] truncate" title={row.campaign ?? ""}>
+                        {row.campaign ?? "–"}
+                      </Td>
+                      <Td className="hidden max-w-[90px] truncate xl:table-cell">
+                        {row.content ?? "–"}
+                      </Td>
+                      <Td
+                        className="hidden max-w-[140px] truncate xl:table-cell"
+                        title={row.referrer ?? ""}
+                      >
+                        {row.referrer ?? "–"}
+                      </Td>
+                      <Td>{row.deviceType ?? "–"}</Td>
+                      <Td className="hidden xl:table-cell">{row.browser ?? "–"}</Td>
+                      <Td className="hidden xl:table-cell">{row.os ?? "–"}</Td>
+                      <Td>{row.country ?? "–"}</Td>
+                      <Td>
+                        {row.isBot ? (
+                          <Badge variant="warning" title={row.botReason ?? ""}>
+                            Bot
+                          </Badge>
+                        ) : (
+                          <span className="text-zinc-300">–</span>
+                        )}
+                      </Td>
+                      <Td className="text-center">
+                        <BoolCell value={row.bridgeLoaded} />
+                      </Td>
+                      <Td className="text-center">
+                        <BoolCell value={row.trackingFired} />
+                      </Td>
+                      <Td className="text-center">
+                        <BoolCell value={row.redirectStarted || row.manualClick} />
+                      </Td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </Table>
+          </TableWrapper>
+        </div>
 
-        {pageCount > 1 ? (
-          <div className="flex items-center justify-between border-t border-zinc-100 px-4 py-3">
-            <p className="text-xs text-zinc-500">
-              Seite {filters.page} von {pageCount}
-            </p>
-            <div className="flex gap-2">
-              {filters.page > 1 ? (
-                <Link href={`/admin/clicks?${filtersToQuery(filters, { page: filters.page - 1 })}`}>
-                  <Button variant="secondary" size="sm">
-                    Zurück
-                  </Button>
-                </Link>
-              ) : null}
-              {filters.page < pageCount ? (
-                <Link href={`/admin/clicks?${filtersToQuery(filters, { page: filters.page + 1 })}`}>
-                  <Button variant="secondary" size="sm">
-                    Weiter
-                  </Button>
-                </Link>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
+        {/* Mobil: Ereignis-Liste */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {rows.length === 0 ? (
+            <li className="px-4 py-10 text-center text-sm text-zinc-400">
+              Keine Klicks für die aktuellen Filter gefunden.
+            </li>
+          ) : (
+            rows.map((row) => (
+              <li key={row.id} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <code className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs font-semibold">
+                      /{row.code}
+                    </code>
+                    <span className="truncate text-sm font-medium text-zinc-900">
+                      {row.linkName}
+                    </span>
+                  </span>
+                  {row.isBot ? (
+                    <Badge variant="warning" title={row.botReason ?? ""}>
+                      Bot
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-xs tabular-nums text-zinc-500">
+                  {formatBerlinDate(row.ts)} {formatBerlinTime(row.ts)}
+                  {row.country ? ` · ${row.country}` : ""}
+                  {row.deviceType ? ` · ${row.deviceType}` : ""}
+                  {row.browser ? ` · ${row.browser}` : ""}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-zinc-400">
+                  {row.source}
+                  {row.campaign ? ` · ${row.campaign}` : ""}
+                  {row.referrer ? ` · ${row.referrer}` : ""}
+                </p>
+                <p className="mt-1 flex gap-3 text-[11px] text-zinc-400">
+                  <span>
+                    Bridge <BoolCell value={row.bridgeLoaded} />
+                  </span>
+                  <span>
+                    Tracking <BoolCell value={row.trackingFired} />
+                  </span>
+                  <span>
+                    Redirect <BoolCell value={row.redirectStarted || row.manualClick} />
+                  </span>
+                </p>
+              </li>
+            ))
+          )}
+        </ul>
+
+        <Pagination filters={filters} pageCount={pageCount} />
       </Card>
     </div>
   );

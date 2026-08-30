@@ -1,8 +1,12 @@
 import { Prisma } from "@prisma/client";
+import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CopyButton } from "@/components/admin/copy-button";
+import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/admin/stat-card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
 import { requireRole } from "@/lib/auth";
@@ -83,23 +87,19 @@ export default async function WebsitesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">Websites</h1>
-          <p className="text-sm text-zinc-500">
-            TRACK.SITE: ein Snippet pro Website, alle Pixel + Conversion-APIs laufen über dieses
-            System. Pixel-IDs und API-Tokens werden hier im Dashboard gepflegt.
-          </p>
-        </div>
+      <PageHeader
+        title="Websites"
+        description="TRACK.SITE: ein Snippet pro Website, alle Pixel + Conversion-APIs laufen über dieses System. Pixel-IDs und API-Tokens werden hier im Dashboard gepflegt."
+      >
         {isAdmin ? (
-          <Link
-            href="/admin/websites/neu"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-strong"
-          >
-            + Neue Website
+          <Link href="/admin/websites/neu">
+            <Button size="sm">
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              Neue Website
+            </Button>
           </Link>
         ) : null}
-      </div>
+      </PageHeader>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Events gesamt" value={formatNumber(total)} />
@@ -115,8 +115,8 @@ export default async function WebsitesPage() {
         <CardHeader>
           <CardTitle>Angebundene Websites</CardTitle>
         </CardHeader>
-        <TableWrapper>
-          <Table>
+        <TableWrapper className="hidden md:block">
+          <Table minWidth={900}>
             <Thead>
               <tr>
                 <Th>Website</Th>
@@ -130,55 +130,116 @@ export default async function WebsitesPage() {
               </tr>
             </Thead>
             <tbody>
-              {sites.map((site) => (
-                <tr key={site.id} className="hover:bg-zinc-50/60">
-                  <Td className="font-medium">{site.label}</Td>
-                  <Td className="font-mono text-xs">{site.id}</Td>
-                  <Td className="max-w-[220px] truncate text-zinc-500">
-                    {site.domains.join(", ")}
-                  </Td>
-                  <Td>
-                    <div className="flex max-w-[220px] flex-wrap gap-1">
-                      {pixelSummary(site).map((p) => (
-                        <span
-                          key={p}
-                          className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600"
+              {sites.map((site) => {
+                const snippet = `<script async src="${env.PUBLIC_BASE_URL}/t.js?site=${site.id}" data-site="${site.id}"></script>`;
+                return (
+                  <tr key={site.id} className="hover:bg-zinc-50/60">
+                    <Td className="font-medium">{site.label}</Td>
+                    <Td className="font-mono text-xs">{site.id}</Td>
+                    <Td className="max-w-[220px] truncate text-zinc-500">
+                      {site.domains.join(", ")}
+                    </Td>
+                    <Td>
+                      <div className="flex max-w-[220px] flex-wrap gap-1">
+                        {pixelSummary(site).map((p) => (
+                          <span
+                            key={p}
+                            className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600"
+                          >
+                            {p}
+                          </span>
+                        ))}
+                      </div>
+                    </Td>
+                    <Td>
+                      {site.active ? (
+                        <Badge variant="success">aktiv</Badge>
+                      ) : (
+                        <Badge variant="muted">deaktiviert</Badge>
+                      )}
+                    </Td>
+                    <Td className="text-right font-medium tabular-nums">
+                      {formatNumber(countBySite.get(site.id) ?? 0)}
+                    </Td>
+                    <Td>
+                      <span className="inline-flex max-w-full items-center gap-1">
+                        <code className="block max-w-[280px] truncate rounded bg-zinc-100 px-2 py-1 font-mono text-[11px]">
+                          {snippet}
+                        </code>
+                        <CopyButton value={snippet} label={`Snippet für ${site.id} kopieren`} />
+                      </span>
+                    </Td>
+                    {isAdmin ? (
+                      <Td>
+                        <Link
+                          href={`/admin/websites/${site.id}`}
+                          className="text-sm font-medium text-zinc-600 underline-offset-2 hover:underline"
                         >
-                          {p}
-                        </span>
-                      ))}
-                    </div>
-                  </Td>
-                  <Td>
+                          Bearbeiten
+                        </Link>
+                      </Td>
+                    ) : null}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </TableWrapper>
+
+        {/* Mobil: Karten-Liste */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {sites.map((site) => {
+            const snippet = `<script async src="${env.PUBLIC_BASE_URL}/t.js?site=${site.id}" data-site="${site.id}"></script>`;
+            return (
+              <li key={site.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-zinc-900">{site.label}</p>
+                    <p className="truncate font-mono text-xs text-zinc-400">
+                      {site.id} · {site.domains.join(", ")}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
                     {site.active ? (
                       <Badge variant="success">aktiv</Badge>
                     ) : (
                       <Badge variant="muted">deaktiviert</Badge>
                     )}
-                  </Td>
-                  <Td className="text-right font-medium tabular-nums">
-                    {formatNumber(countBySite.get(site.id) ?? 0)}
-                  </Td>
-                  <Td>
-                    <code className="block max-w-[320px] truncate rounded bg-zinc-100 px-2 py-1 font-mono text-[11px]">
-                      {`<script async src="${env.PUBLIC_BASE_URL}/t.js?site=${site.id}" data-site="${site.id}"></script>`}
-                    </code>
-                  </Td>
-                  {isAdmin ? (
-                    <Td>
-                      <Link
-                        href={`/admin/websites/${site.id}`}
-                        className="text-sm font-medium text-zinc-600 underline-offset-2 hover:underline"
-                      >
+                    <p className="mt-1 text-sm font-semibold tabular-nums text-zinc-900">
+                      {formatNumber(countBySite.get(site.id) ?? 0)}
+                      <span className="ml-1 text-xs font-normal text-zinc-400">/ 7 Tage</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {pixelSummary(site).map((p) => (
+                    <span
+                      key={p}
+                      className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600"
+                    >
+                      {p}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-2 flex items-center gap-1">
+                  <code className="min-w-0 flex-1 truncate rounded bg-zinc-100 px-2 py-1.5 font-mono text-[11px]">
+                    {snippet}
+                  </code>
+                  <CopyButton value={snippet} label="Snippet kopieren" />
+                </div>
+                {isAdmin ? (
+                  <div className="mt-2.5">
+                    <Link href={`/admin/websites/${site.id}`}>
+                      <Button variant="secondary" size="sm" className="w-full">
                         Bearbeiten
-                      </Link>
-                    </Td>
-                  ) : null}
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </TableWrapper>
+                      </Button>
+                    </Link>
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -229,7 +290,7 @@ export default async function WebsitesPage() {
           <CardTitle>Letzte Events</CardTitle>
         </CardHeader>
         <TableWrapper>
-          <Table>
+          <Table minWidth={760}>
             <Thead>
               <tr>
                 <Th>Zeitpunkt</Th>

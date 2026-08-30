@@ -137,7 +137,7 @@ export default async function AnalyticsPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-bold tracking-tight">Analytics</h1>
+            <h1 className="font-display text-xl font-bold tracking-tight">Analytics</h1>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
               <span className="size-2 animate-pulse rounded-full bg-emerald-500" aria-hidden="true" />
               Live

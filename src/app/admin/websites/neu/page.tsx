@@ -17,7 +17,7 @@ export default async function NewWebsitePage() {
         <Link href="/admin/websites" className="text-sm text-zinc-500 hover:underline">
           ← Zurück zu Websites
         </Link>
-        <h1 className="mt-1 text-xl font-bold tracking-tight">Neue Website</h1>
+        <h1 className="mt-1 font-display text-xl font-bold tracking-tight">Neue Website</h1>
         <p className="text-sm text-zinc-500">
           Nach dem Anlegen erscheint das Einbau-Snippet in der Übersicht. Pixel-IDs und Tokens
           können jederzeit ergänzt werden – das Snippet beim Kunden bleibt unverändert.

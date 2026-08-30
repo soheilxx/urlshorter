@@ -44,7 +44,7 @@ export default async function NewLinkPage({
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-xl font-bold tracking-tight">
+        <h1 className="font-display text-xl font-bold tracking-tight">
           {duplicatedFrom ? `Kurzlink duplizieren (/${duplicatedFrom})` : "Neuer Kurzlink"}
         </h1>
         <p className="text-sm text-zinc-500">

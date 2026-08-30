@@ -72,7 +72,7 @@ export default async function AmazonTop25Page({
   if (!selectedCategory) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-bold tracking-tight">Top 25</h1>
+        <h1 className="font-display text-xl font-bold tracking-tight">Top 25</h1>
         <Card>
           <CardContent className="py-10 text-center text-sm text-zinc-400">
             Keine Top-25-Kategorie aktiviert –{" "}
@@ -351,7 +351,7 @@ function PageHeader({
         <Link href="/admin/amazon" className="text-sm text-zinc-500 hover:underline">
           ← Amazon Rankings
         </Link>
-        <h1 className="mt-1 text-xl font-bold tracking-tight">Top-25-Bestsellerlisten</h1>
+        <h1 className="mt-1 font-display text-xl font-bold tracking-tight">Top-25-Bestsellerlisten</h1>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {categories.map((category) => (
@@ -372,7 +372,7 @@ function PageHeader({
         ))}
       </div>
       {snapshots.length > 1 ? (
-        <form method="get" className="flex flex-wrap items-end gap-2 text-xs">
+        <form method="get" className="flex flex-col gap-2 text-xs sm:flex-row sm:flex-wrap sm:items-end">
           <input type="hidden" name="category" value={selectedId} />
           <div>
             <label htmlFor="t25-snapshot" className="mb-1 block font-medium text-zinc-600">
@@ -382,7 +382,7 @@ function PageHeader({
               id="t25-snapshot"
               name="snapshot"
               defaultValue={selectedSnapshotId}
-              className="h-8 rounded-lg border border-zinc-300 bg-surface px-2 text-xs"
+              className="h-11 w-full rounded-lg border border-zinc-300 bg-surface px-2 text-base sm:h-8 sm:w-auto sm:text-xs"
             >
               {snapshots.map((snapshot) => (
                 <option key={snapshot.id} value={snapshot.id}>
@@ -399,7 +399,7 @@ function PageHeader({
               id="t25-compare"
               name="compare"
               defaultValue={compareSnapshotId ?? ""}
-              className="h-8 rounded-lg border border-zinc-300 bg-surface px-2 text-xs"
+              className="h-11 w-full rounded-lg border border-zinc-300 bg-surface px-2 text-base sm:h-8 sm:w-auto sm:text-xs"
             >
               <option value="">Direkter Vorgänger</option>
               {snapshots.map((snapshot) => (
@@ -411,7 +411,7 @@ function PageHeader({
           </div>
           <button
             type="submit"
-            className="h-8 rounded-lg border border-zinc-300 px-3 font-medium text-zinc-700 hover:bg-zinc-100"
+            className="h-11 rounded-lg border border-zinc-300 px-3 font-medium text-zinc-700 hover:bg-zinc-100 sm:h-8"
           >
             Anzeigen
           </button>

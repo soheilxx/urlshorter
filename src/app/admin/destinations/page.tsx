@@ -4,6 +4,7 @@ import Link from "next/link";
 import { toggleDestinationActiveAction } from "@/actions/destination-actions";
 import { ConfirmSubmitButton } from "@/components/admin/confirm-submit-button";
 import { DestinationCreateForm } from "@/components/admin/destination-forms";
+import { PageHeader } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,16 +29,15 @@ export default async function DestinationsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">Ziele (Destinations)</h1>
-        <p className="text-sm text-zinc-500">
-          Wiederverwendbare Ziel-URLs – beliebig viele Kurzlinks können auf dasselbe Ziel verweisen.
-        </p>
-      </div>
+      <PageHeader
+        title="Ziele (Destinations)"
+        description="Wiederverwendbare Ziel-URLs – beliebig viele Kurzlinks können auf dasselbe Ziel verweisen."
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
+        {/* Mobil steht die Liste zuerst, das Formular dahinter (order-*) */}
         {canManage ? (
-          <Card className="lg:col-span-1">
+          <Card className="order-2 lg:order-none lg:col-span-1">
             <CardHeader>
               <CardTitle>Neues Ziel anlegen</CardTitle>
             </CardHeader>
@@ -47,8 +47,8 @@ export default async function DestinationsPage() {
           </Card>
         ) : null}
 
-        <Card className={canManage ? "lg:col-span-2" : "lg:col-span-3"}>
-          <TableWrapper>
+        <Card className={canManage ? "order-1 lg:order-none lg:col-span-2" : "lg:col-span-3"}>
+          <TableWrapper className="hidden md:block">
             <Table>
               <Thead>
                 <tr>
@@ -133,6 +133,64 @@ export default async function DestinationsPage() {
               </tbody>
             </Table>
           </TableWrapper>
+
+          {/* Mobil: Karten-Liste */}
+          <ul className="divide-y divide-zinc-100 md:hidden">
+            {destinations.length === 0 ? (
+              <li className="px-4 py-10 text-center text-sm text-zinc-400">
+                Noch keine Ziele angelegt.
+              </li>
+            ) : (
+              destinations.map((dest) => (
+                <li key={dest.id} className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="min-w-0 truncate text-sm font-medium text-zinc-900">
+                      {dest.name}
+                    </p>
+                    {dest.active ? (
+                      <Badge variant="success">Aktiv</Badge>
+                    ) : (
+                      <Badge variant="muted">Inaktiv</Badge>
+                    )}
+                  </div>
+                  <a
+                    href={dest.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 block break-all font-mono text-xs text-zinc-500"
+                  >
+                    {dest.url}
+                  </a>
+                  <p className="mt-1 text-xs text-zinc-400">
+                    {dest._count.shortLinks} Links · geändert {formatBerlinDate(dest.updatedAt)}
+                  </p>
+                  {canManage ? (
+                    <div className="mt-2.5 flex items-center gap-2">
+                      <Link href={`/admin/destinations/${dest.id}`} className="flex-1">
+                        <Button variant="secondary" size="sm" className="w-full">
+                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                          Bearbeiten
+                        </Button>
+                      </Link>
+                      <form action={toggleDestinationActiveAction} className="flex-1">
+                        <input type="hidden" name="id" value={dest.id} />
+                        <input type="hidden" name="active" value={dest.active ? "false" : "true"} />
+                        {dest.active ? (
+                          <ConfirmSubmitButton confirmText="Wirklich deaktivieren?" className="w-full">
+                            Deaktivieren
+                          </ConfirmSubmitButton>
+                        ) : (
+                          <Button type="submit" variant="secondary" size="sm" className="w-full">
+                            Aktivieren
+                          </Button>
+                        )}
+                      </form>
+                    </div>
+                  ) : null}
+                </li>
+              ))
+            )}
+          </ul>
         </Card>
       </div>
     </div>

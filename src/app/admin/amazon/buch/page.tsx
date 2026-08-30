@@ -47,7 +47,7 @@ export default async function AmazonBookPage({
   if (!book || book.editions.length === 0) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-bold tracking-tight">Buchdetail</h1>
+        <h1 className="font-display text-xl font-bold tracking-tight">Buchdetail</h1>
         <Card>
           <CardContent className="py-10 text-center text-sm text-zinc-400">
             Noch kein Buch angelegt –{" "}
@@ -149,12 +149,12 @@ export default async function AmazonBookPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start md:justify-between">
+        <div className="min-w-0">
           <Link href="/admin/amazon" className="text-sm text-zinc-500 hover:underline">
             ← Amazon Rankings
           </Link>
-          <h1 className="mt-1 text-xl font-bold tracking-tight">{book.title}</h1>
+          <h1 className="mt-1 font-display text-xl font-bold tracking-tight">{book.title}</h1>
           <p className="text-sm text-zinc-500">
             {book.author} · {book.publisher ?? "–"} · {book.language ?? "–"}
           </p>
@@ -175,6 +175,28 @@ export default async function AmazonBookPage({
           ))}
         </div>
       </div>
+
+      {/* Sprunganker gegen Endlos-Scroll auf Mobil */}
+      <nav
+        aria-label="Abschnitte dieser Seite"
+        className="scroll-x-fade -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
+      >
+        {[
+          { href: "#kennzahlen", label: "Kennzahlen" },
+          { href: "#dynamik", label: "Dynamik" },
+          { href: "#providervergleich", label: "Provider" },
+          { href: "#klicks", label: "Klicks" },
+          { href: "#snapshots", label: "Snapshots" },
+        ].map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-surface px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100"
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
 
       {/* Edition-Stammdaten */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -287,12 +309,12 @@ export default async function AmazonBookPage({
       </div>
 
       {/* KPI-Tabellen je Kategorie */}
-      <Card>
+      <Card id="kennzahlen" className="scroll-mt-20">
         <CardHeader>
           <CardTitle>Ranking-Kennzahlen je Kategorie</CardTitle>
         </CardHeader>
-        <TableWrapper>
-          <Table>
+        <TableWrapper stickyFirstColumn className="hidden md:block">
+          <Table minWidth={980}>
             <Thead>
               <tr>
                 <Th>Kategorie</Th>
@@ -376,10 +398,59 @@ export default async function AmazonBookPage({
             </tbody>
           </Table>
         </TableWrapper>
+
+        {/* Mobil: Kategorie-Karten statt 14-Spalten-Tabelle */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {kpis.map((kpi) => (
+            <li key={kpi.categoryId} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-medium text-zinc-800">
+                  {kpi.categoryName}
+                  {kpi.isStale ? (
+                    <span className="ml-1.5">
+                      <StaleBadge />
+                    </span>
+                  ) : null}
+                </p>
+                <MovementBadge
+                  movement={kpi.summary.movement}
+                  percent={kpi.summary.improvementPercent}
+                />
+              </div>
+              <p className="mt-1 text-lg font-bold tabular-nums text-zinc-900">
+                <RankValue rank={kpi.summary.current?.rank ?? null} />
+              </p>
+              <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <p className="uppercase text-zinc-400">24h</p>
+                  <p className="tabular-nums text-zinc-700">
+                    {kpi.windows["24h"].movement !== null
+                      ? `${kpi.windows["24h"].movement > 0 ? "+" : ""}${formatNumber(kpi.windows["24h"].movement)}`
+                      : "–"}
+                  </p>
+                </div>
+                <div>
+                  <p className="uppercase text-zinc-400">7d</p>
+                  <p className="tabular-nums text-zinc-700">
+                    {kpi.windows["7d"].movement !== null
+                      ? `${kpi.windows["7d"].movement > 0 ? "+" : ""}${formatNumber(kpi.windows["7d"].movement)}`
+                      : "–"}
+                  </p>
+                </div>
+                <div>
+                  <p className="uppercase text-zinc-400">Best</p>
+                  <p className="tabular-nums text-emerald-700">
+                    {kpi.summary.best ? formatNumber(kpi.summary.best.rank) : "–"}
+                  </p>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       </Card>
 
       {/* Weitere Kennzahlen + Schwellen */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div id="dynamik" className="grid scroll-mt-20 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Dynamik & Serien</CardTitle>
@@ -463,7 +534,7 @@ export default async function AmazonBookPage({
       </div>
 
       {/* Providervergleich */}
-      <Card>
+      <Card id="providervergleich" className="scroll-mt-20">
         <CardHeader>
           <CardTitle>Providervergleich (jüngste Messungen, 48 h)</CardTitle>
         </CardHeader>
@@ -518,13 +589,13 @@ export default async function AmazonBookPage({
       </Card>
 
       {/* Klicks + Annotationen */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div id="klicks" className="grid scroll-mt-20 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Klick-Verknüpfung</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
               {(["1h", "6h", "24h", "7d", "30d"] as const).map((key) => (
                 <div key={key}>
                   <p className="text-xs uppercase text-zinc-400">{key}</p>
@@ -642,7 +713,7 @@ export default async function AmazonBookPage({
       )}
 
       {/* Snapshot-Tabelle + Export */}
-      <Card>
+      <Card id="snapshots" className="scroll-mt-20">
         <CardHeader className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>Letzte kanonische Snapshots</CardTitle>
           <div className="flex gap-2 text-xs">

@@ -35,7 +35,7 @@ export default async function DestinationDetailPage({
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-xl font-bold tracking-tight">Ziel bearbeiten</h1>
+        <h1 className="font-display text-xl font-bold tracking-tight">Ziel bearbeiten</h1>
         <p className="text-sm text-zinc-500">
           Erstellt am {formatBerlinDate(destination.createdAt)}, zuletzt geändert am{" "}
           {formatBerlinDate(destination.updatedAt)}.
