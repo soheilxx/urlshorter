@@ -61,10 +61,17 @@ test("Admin verwaltet Website mit Pixel-IDs und Token im Dashboard", async ({
   const pageContent = await page.content();
   expect(pageContent).not.toContain("EAAe2eGeheimesToken1234");
 
-  // Löschen (mit Bestätigungsdialog) → Snippet wird deaktiviert
+  // Löschen (mit Bestätigungsdialog) → Snippet wird deaktiviert.
+  // Retry-Muster wie in flow.spec: Klicks vor Abschluss der Hydration
+  // können verloren gehen, daher bei Bedarf erneut klicken.
   page.on("dialog", (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "Website löschen" }).click();
-  await expect(page).toHaveURL(/\/admin\/websites$/, { timeout: 10_000 });
+  await expect(async () => {
+    const deleteButton = page.getByRole("button", { name: "Website löschen" });
+    if (await deleteButton.isVisible()) {
+      await deleteButton.click();
+    }
+    await expect(page).toHaveURL(/\/admin\/websites$/, { timeout: 3000 });
+  }).toPass({ timeout: 25_000 });
   const jsAfterDelete = await (await request.get(`/t.js?site=${SITE_ID}`)).text();
   expect(jsAfterDelete).toContain("unbekannte oder deaktivierte Site");
 });

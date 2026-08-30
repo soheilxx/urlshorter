@@ -321,6 +321,43 @@ Dokumentation: [Architektur](docs/amazon-ranking-architecture.md) ·
 [Betrieb](docs/amazon-ranking-operations.md) ·
 [Datenmodell](docs/amazon-ranking-data-model.md)
 
+## Design-System (TRACK.SITE)
+
+Das Admin-Dashboard folgt seit dem Redesign 2.0 einer eigenen Designsprache
+(Vorbild fast.site) unter der Wortmarke **TRACK.SITE**:
+
+- **Tokens** in `src/app/globals.css` (`@theme` + `.dark`-Block):
+  `--color-primary` = Königsblau `#1F62FF` (dunkel: `#4D82FF`),
+  `--color-surface` = Kartenfläche, `--color-primary-soft` = Aktiv-Pills.
+  Charts/Karte beziehen Farben über `--chart-*` und `--map-*`-Variablen.
+- **Dark Mode** als Klassenstrategie: Cookie `theme` = `light|dark|system`,
+  Inline-Script setzt `.dark` vor dem ersten Paint; die Zinc-Skala wird im
+  Dark-Block invertiert, dadurch flippt das gesamte Utility-Markup ohne
+  Klassenänderungen. Umschalter: `theme-toggle.tsx` (Sidebar + „Mehr“-Sheet).
+- **Schriften:** Inter (Body) und Bricolage Grotesque (Seitentitel,
+  Wortmarke) über `next/font`; Utility `font-display`.
+- **Responsive Muster:** Desktop behält echte Tabellen (`<tr>/<td>`,
+  E2E-Verträge); Mobil erhält additive Karten-Listen (`md:hidden` +
+  `hidden md:block`, Desktop-DOM steht im Markup zuerst). Breite Tabellen:
+  `TableWrapper stickyFirstColumn` + `Table minWidth` + Scroll-Fade.
+  Filterformulare stecken mobil hinter `FilterPanel` (Badge = aktive Filter).
+- **Bausteine** in `src/components/admin/`: `page-header.tsx`,
+  `segmented-nav.tsx`, `filter-panel.tsx`, `empty-state.tsx`,
+  `stat-card.tsx` (mit Delta-Chip + Sparkline-Slot), `brand.tsx`,
+  `click-sparkline.tsx`.
+- **Navigation:** Desktop-Sidebar (`admin-nav.tsx`), mobil Bottom-Tab-Bar mit
+  „Mehr“-Sheet (`mobile-nav.tsx`, rollengefiltert – verbotene Links sind nie
+  im DOM).
+- **Befehls-Palette:** Strg/Cmd-K (`command-palette.tsx`) mit Live-Suche über
+  `GET /api/search` (session-geschützt, Kurzlinks + Ziele).
+- **QR-Codes:** `qr-card.tsx` auf der Kurzlink-Detailseite (clientseitig via
+  `qrcode`, PNG-Download).
+- **PWA:** `src/app/manifest.ts` + Icons (`scripts/generate-icons.ts`),
+  bewusst ohne Service Worker.
+- **Mobile-Tests:** Playwright-Projekt „Mobile Chrome“ (Pixel-7-Viewport,
+  `e2e/mobile.spec.ts`): Tab-Bar, „Mehr“-Sheet, FilterPanel, Overflow-Checks,
+  Theme-Persistenz. Die übrigen Specs laufen nur im Desktop-Projekt.
+
 ## Migrationen
 
 ```bash

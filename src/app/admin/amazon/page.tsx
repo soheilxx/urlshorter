@@ -24,7 +24,7 @@ export const metadata: Metadata = { title: "Amazon Rankings" };
 export const dynamic = "force-dynamic";
 
 /* Mitteltöne, die in hellem UND dunklem Theme lesbar bleiben. */
-const CHART_COLORS = ["#6366f1", "#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2"];
+const CHART_COLORS = ["#1f62ff", "#7c3aed", "#16a34a", "#d97706", "#dc2626", "#0891b2", "#db2777"];
 
 /** Amazon-Rankings-Übersicht: eigenes Buch, KPIs, Hauptchart, Status. */
 export default async function AmazonOverviewPage() {

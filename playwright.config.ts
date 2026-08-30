@@ -21,14 +21,35 @@ export default defineConfig({
   workers: 1, // gemeinsame Test-Datenbank → sequenziell
   reporter: [["list"]],
   use: {
-    ...devices["Desktop Chrome"],
     baseURL: BASE_URL,
-    // Normaler Chrome-UA, damit Headless-Tests nicht als Bot klassifiziert werden
-    userAgent:
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
     permissions: ["clipboard-read", "clipboard-write"],
     trace: "retain-on-failure",
   },
+  projects: [
+    {
+      // Bestehende Specs laufen ausschließlich im Desktop-Viewport (1280 px) –
+      // dort gelten die Tabellen-/Nav-Verträge (echte <tr>, sichtbare Links).
+      name: "Desktop Chrome",
+      testIgnore: /mobile\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        // Normaler Chrome-UA, damit Headless-Tests nicht als Bot klassifiziert werden
+        userAgent:
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+      },
+    },
+    {
+      // Mobile-Suite (Pixel-7-Viewport): Tab-Bar, „Mehr“-Sheet, FilterPanel,
+      // Overflow-Checks, Theme-Persistenz.
+      name: "Mobile Chrome",
+      testMatch: /mobile\.spec\.ts/,
+      use: {
+        ...devices["Pixel 7"],
+        userAgent:
+          "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36",
+      },
+    },
+  ],
   webServer: {
     command: `npm run start -- -p ${PORT}`,
     url: `${BASE_URL}/api/health`,

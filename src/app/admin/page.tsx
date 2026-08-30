@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BarList } from "@/components/admin/bar-list";
 import { BucketBarChart, ClicksPerDayChart } from "@/components/admin/charts";
+import { ClickSparkline } from "@/components/admin/click-sparkline";
 import { PageHeader } from "@/components/admin/page-header";
 import { SegmentedNav } from "@/components/admin/segmented-nav";
 import { StatCard } from "@/components/admin/stat-card";
@@ -110,7 +111,12 @@ export default async function OverviewPage({
           label={botFilter === "bot" ? "Bot-Aufrufe (Zeitraum)" : "Menschliche Klicks"}
           value={formatNumber(botFilter === "bot" ? stats.botClicks : stats.humanClicks)}
           hint={range.label}
-        />
+        >
+          <ClickSparkline
+            points={perDay.slice(-14).map((p) => p.clicks)}
+            label="Trend der letzten 14 Tage"
+          />
+        </StatCard>
         <StatCard
           label="Unique Visitors"
           value={formatNumber(stats.uniqueVisitors)}
