@@ -199,7 +199,7 @@ export default async function AmazonBookPage({
       </nav>
 
       {/* Edition-Stammdaten */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card>
           <CardContent className="flex gap-4 pt-6">
             {edition.coverLargeUrl || edition.coverMediumUrl ? (
@@ -451,7 +451,7 @@ export default async function AmazonBookPage({
       </Card>
 
       {/* Weitere Kennzahlen + Schwellen */}
-      <div id="dynamik" className="grid scroll-mt-20 gap-6 lg:grid-cols-2">
+      <div id="dynamik" className="grid grid-cols-1 scroll-mt-20 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Dynamik & Serien</CardTitle>
@@ -631,7 +631,7 @@ export default async function AmazonBookPage({
       </Card>
 
       {/* Klicks + Annotationen */}
-      <div id="klicks" className="grid scroll-mt-20 gap-6 lg:grid-cols-2">
+      <div id="klicks" className="grid grid-cols-1 scroll-mt-20 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Klick-Verknüpfung</CardTitle>
@@ -705,7 +705,7 @@ export default async function AmazonBookPage({
 
       {/* Verkaufsschätzung + echte Verkäufe */}
       {(salesEstimates.length > 0 || actualSales.length > 0) && (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {salesEstimates.length > 0 ? (
             <Card>
               <CardHeader>

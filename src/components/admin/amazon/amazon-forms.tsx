@@ -104,7 +104,7 @@ export function AmazonSettingsForm({ values }: { values: AmazonSettingsFormValue
         Modul aktiv (Scheduler ruft Provider automatisch ab)
       </label>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="as-rank">Rang-Intervall (eigenes Buch + Kategorien)</Label>
           <IntervalSelect name="rankIntervalMinutes" id="as-rank" defaultMinutes={values.rankIntervalMinutes} />
@@ -157,7 +157,7 @@ export function AmazonSettingsForm({ values }: { values: AmazonSettingsFormValue
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex items-center gap-2 text-sm text-zinc-700">
           <input
             type="checkbox"
@@ -196,7 +196,7 @@ export function AmazonSettingsForm({ values }: { values: AmazonSettingsFormValue
         </label>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="as-digest-time">Digest-Uhrzeit (Europe/Berlin)</Label>
           <Input
@@ -359,7 +359,7 @@ export function EditionForm({
     <form ref={formRef} action={formAction} className="space-y-4">
       <StateAlerts state={state} />
       <input type="hidden" name="editionId" value={edition.id} />
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="ed-asin">ASIN</Label>
           <Input id="ed-asin" name="asin" defaultValue={edition.asin} className="font-mono" required maxLength={10} />
@@ -450,7 +450,7 @@ export function AnnotationForm() {
   return (
     <form ref={formRef} action={formAction} className="space-y-3">
       <StateAlerts state={state} />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="an-title">Titel</Label>
           <Input id="an-title" name="title" required maxLength={200} placeholder="z. B. Newsletter-Kampagne Start" />
@@ -498,7 +498,7 @@ export function AlertRuleForm({
   return (
     <form ref={formRef} action={formAction} className="space-y-3">
       <StateAlerts state={state} />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="ar-name">Name</Label>
           <Input id="ar-name" name="name" required maxLength={200} placeholder="z. B. Sachbücher Top 10" />
@@ -568,7 +568,7 @@ export function ActualSalesForm({ editionId }: { editionId: string }) {
     <form ref={formRef} action={formAction} className="space-y-3">
       <StateAlerts state={state} />
       <input type="hidden" name="editionId" value={editionId} />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="sa-start">Zeitraum von</Label>
           <Input id="sa-start" name="periodStart" type="date" required />

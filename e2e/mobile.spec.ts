@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
 import { loginAsAdmin } from "./helpers";
 
 /**
@@ -62,6 +64,73 @@ test.describe("Mobile Layout", () => {
         () => document.documentElement.scrollWidth - window.innerWidth,
       );
       expect(overflow, `Overflow auf ${path}`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test("kein horizontales Scrollen mit extremen Label-Längen", async ({ page }) => {
+    // Reproduziert den Produktions-Bug: lange Kampagnennamen mit Pipes und
+    // unzerbrechliche Referrer-URLs dürfen Karten/Raster nicht aufspreizen.
+    const prisma = new PrismaClient();
+    try {
+      const destination = await prisma.destination.upsert({
+        where: { id: "e2e-extreme-dest" },
+        update: {},
+        create: {
+          id: "e2e-extreme-dest",
+          name: "Amazon Buchseite – Die Lizenz zum Erfolg (Taschenbuch, Sonderaktion)",
+          url: "https://www.amazon.de/dp/3690662508?tag=wiresoft-21&linkCode=ogi&th=1",
+          host: "www.amazon.de",
+          active: true,
+        },
+      });
+      const link = await prisma.shortLink.upsert({
+        where: { code: "xlng" },
+        update: {},
+        create: {
+          code: "xlng",
+          name: "Max | Buchverkauf | Lizenz zum Erfolg – Ultimative Kampagnenbezeichnung",
+          source: "BH24 Newsletter Produkt Spezialaussendung",
+          medium: "email",
+          campaign: "Link zum Buch Insta Profil – Ultimative-Kampagnen-Bezeichnung-Q3-2026",
+          destinationId: destination.id,
+        },
+      });
+      await prisma.clickEvent.createMany({
+        data: Array.from({ length: 5 }, (_, i) => ({
+          id: randomUUID(),
+          shortLinkId: link.id,
+          destinationId: destination.id,
+          code: link.code,
+          linkName: link.name,
+          source: link.source,
+          medium: link.medium,
+          campaign: link.campaign,
+          ts: new Date(Date.now() - i * 60_000),
+          referrer:
+            "https://l.instagram.com/?u=https%3A%2F%2Flizenzzumerfolg.com%2Fxlng%3Futm_source%3Dinstagram%26utm_campaign%3Dultimative-kampagne&e=AT2kXanH9",
+          deviceType: "mobile",
+          browser: "Chrome",
+          os: "Android",
+          country: "DE",
+          city: "Berlin",
+          isBot: false,
+          bridgeLoaded: true,
+          trackingFired: true,
+          redirectStarted: true,
+        })),
+      });
+    } finally {
+      await prisma.$disconnect();
+    }
+
+    await loginAsAdmin(page);
+    for (const path of ["/admin", "/admin/links", "/admin/clicks", "/admin/analytics"]) {
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      );
+      expect(overflow, `Overflow auf ${path} mit extremen Labels`).toBeLessThanOrEqual(1);
     }
   });
 

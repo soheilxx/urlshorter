@@ -30,7 +30,7 @@ export function StatCard({
         {label}
       </p>
       <p className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 md:mt-1.5">
-        <span className="text-xl font-bold tabular-nums tracking-tight text-zinc-900 md:text-2xl">
+        <span className="min-w-0 break-words text-xl font-bold tabular-nums tracking-tight text-zinc-900 md:text-2xl">
           {value}
         </span>
         {showTrend ? (

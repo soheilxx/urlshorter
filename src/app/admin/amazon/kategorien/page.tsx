@@ -43,7 +43,7 @@ export default async function AmazonCategoriesPage() {
       </div>
 
       {isAdmin ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Kategorien automatisch auflösen</CardTitle>
@@ -104,7 +104,7 @@ export default async function AmazonCategoriesPage() {
                 {category.path ? (
                   <p className="text-xs text-zinc-500">Pfad: {category.path}</p>
                 ) : null}
-                <div className="grid gap-2 text-xs sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
                   <div>
                     <p className="mb-1 font-medium text-zinc-500">
                       Amazon Browse Node{creatorsMappings.length !== 1 ? "s" : ""}

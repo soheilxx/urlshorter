@@ -42,7 +42,7 @@ export function TagSiteForm({
       {state.error ? <Alert variant="error">{state.error}</Alert> : null}
       {state.success ? <Alert variant="success">{state.success}</Alert> : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="ts-id">Site-ID (Teil des Snippets)</Label>
           {mode === "edit" ? (
@@ -101,7 +101,7 @@ export function TagSiteForm({
         <p className="mb-3 text-sm font-medium text-zinc-700">
           Pixel-IDs <span className="font-normal text-zinc-400">(leer = globaler Standard)</span>
         </p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="ts-ga4">GA4 Measurement-ID</Label>
             <Input id="ts-ga4" name="ga4MeasurementId" maxLength={40} defaultValue={values.ga4MeasurementId} placeholder="G-XXXXXXXXXX" className="font-mono" />
@@ -136,7 +136,7 @@ export function TagSiteForm({
             (verschlüsselt gespeichert, nie im Klartext angezeigt)
           </span>
         </p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="ts-metatoken">Meta CAPI Access-Token</Label>
             <Input

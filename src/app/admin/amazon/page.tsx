@@ -215,7 +215,7 @@ export default async function AmazonOverviewPage() {
       />
 
       {/* Buchkarte + KPI-Kacheln */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardContent className="flex gap-4 pt-6">
             {edition.coverMediumUrl ? (
@@ -350,7 +350,7 @@ export default async function AmazonOverviewPage() {
           {categoryRows.length === 0 ? (
             <p className="text-sm text-zinc-400">Noch keine Kategorien erfasst.</p>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {categoryRows.map((row) => (
                 <li key={row.id} className="rounded-xl border border-zinc-200 p-3">
                   <div className="flex items-start justify-between gap-2">
@@ -375,7 +375,7 @@ export default async function AmazonOverviewPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Providerstatus + Credits */}
         <Card>
           <CardHeader>
@@ -458,7 +458,7 @@ export default async function AmazonOverviewPage() {
                       >
                         {alert.severity === "critical" ? "Kritisch" : alert.severity === "warning" ? "Warnung" : "Info"}
                       </Badge>
-                      <span className="truncate font-medium text-zinc-800">{alert.title}</span>
+                      <span className="min-w-0 truncate font-medium text-zinc-800">{alert.title}</span>
                     </div>
                     <p className="mt-0.5 truncate text-xs text-zinc-500">{alert.message}</p>
                     <p className="text-[11px] text-zinc-400">
@@ -493,7 +493,7 @@ export default async function AmazonOverviewPage() {
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                         {entry.bestsellerRank}
                       </span>
-                      <span className="truncate">{entry.titleSnapshot}</span>
+                      <span className="min-w-0 truncate">{entry.titleSnapshot}</span>
                       {entry.editionId ? <Badge variant="success">Dein Buch</Badge> : null}
                     </li>
                   ))}

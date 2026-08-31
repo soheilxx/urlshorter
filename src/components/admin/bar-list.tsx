@@ -27,7 +27,8 @@ export function BarList({ data }: { data: Array<{ label: string; clicks: number 
               aria-hidden="true"
             />
             <div className="relative flex items-center justify-between gap-3 px-2.5 py-1.5">
-              <span className="truncate text-sm text-zinc-800">{item.label}</span>
+              {/* min-w-0: sonst spreizt ein langes Label die ganze Karte auf */}
+              <span className="min-w-0 truncate text-sm text-zinc-800">{item.label}</span>
               <span className="flex shrink-0 items-baseline gap-1.5">
                 <span className="text-sm font-semibold tabular-nums text-zinc-700">
                   {formatNumber(item.clicks)}

@@ -188,7 +188,7 @@ export default async function ClicksPage({
             <form
               method="GET"
               action="/admin/clicks"
-              className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4"
+              className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-4"
             >
               <div>
                 <Label htmlFor="f-from">Von (Datum)</Label>
@@ -406,7 +406,7 @@ export default async function ClicksPage({
                     <code className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs font-semibold">
                       /{row.code}
                     </code>
-                    <span className="truncate text-sm font-medium text-zinc-900">
+                    <span className="min-w-0 truncate text-sm font-medium text-zinc-900">
                       {row.linkName}
                     </span>
                   </span>

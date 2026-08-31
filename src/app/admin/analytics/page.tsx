@@ -183,7 +183,7 @@ export default async function AnalyticsPage({
       </div>
 
       {/* Karte + Live-Feed */}
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle>Geo-Tracking</CardTitle>
@@ -213,7 +213,7 @@ export default async function AnalyticsPage({
       </div>
 
       {/* Besucher-Details */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Geräte</CardTitle>
@@ -259,7 +259,7 @@ export default async function AnalyticsPage({
       </div>
 
       {/* Aktivität + Top-Links */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Aktivität nach Uhrzeit</CardTitle>
@@ -289,7 +289,7 @@ export default async function AnalyticsPage({
       </div>
 
       {/* Kanäle, Länder, Städte, Referrer */}
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader>
             <CardTitle>Kanäle</CardTitle>

@@ -132,7 +132,7 @@ export default async function SweepstakesAdminPage({
 
       <Card>
         <FilterPanel activeCount={activeFilterCount} defaultOpen={activeFilterCount > 0}>
-          <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <form method="get" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Label htmlFor="f-q">Name oder E-Mail</Label>
               <Input id="f-q" name="q" defaultValue={filters.q ?? ""} placeholder="Suche …" />
@@ -325,7 +325,7 @@ export default async function SweepstakesAdminPage({
         </div>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Teilnahmen nach Händler</CardTitle>
@@ -377,7 +377,7 @@ export default async function SweepstakesAdminPage({
                 <ul className="mt-1 space-y-1">
                   {stats.duplicateEmails.map((row) => (
                     <li key={row.email} className="flex justify-between gap-3">
-                      <span className="truncate">{maskEmail(row.email)}</span>
+                      <span className="min-w-0 truncate">{maskEmail(row.email)}</span>
                       <span className="font-medium tabular-nums">{row.count}×</span>
                     </li>
                   ))}
@@ -392,7 +392,7 @@ export default async function SweepstakesAdminPage({
                 <ul className="mt-1 space-y-1">
                   {stats.suspiciousIdentifiers.map((row) => (
                     <li key={row.identifier} className="flex justify-between gap-3">
-                      <span className="truncate font-mono text-xs">{row.identifier}</span>
+                      <span className="min-w-0 truncate font-mono text-xs">{row.identifier}</span>
                       <span className="font-medium tabular-nums">{row.count}×</span>
                     </li>
                   ))}

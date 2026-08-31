@@ -87,7 +87,7 @@ export default async function AmazonSettingsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Manueller Refresh</CardTitle>
@@ -258,7 +258,7 @@ export default async function AmazonSettingsPage() {
       </Card>
 
       {edition ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Manuelle Baseline importieren</CardTitle>

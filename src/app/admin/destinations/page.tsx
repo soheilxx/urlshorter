@@ -34,7 +34,7 @@ export default async function DestinationsPage() {
         description="Wiederverwendbare Ziel-URLs – beliebig viele Kurzlinks können auf dasselbe Ziel verweisen."
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Mobil steht die Liste zuerst, das Formular dahinter (order-*) */}
         {canManage ? (
           <Card className="order-2 lg:order-none lg:col-span-1">
@@ -81,7 +81,7 @@ export default async function DestinationsPage() {
                           title={dest.url}
                           className="inline-flex max-w-full items-center gap-1 font-mono text-xs text-zinc-600 hover:text-zinc-900 hover:underline"
                         >
-                          <span className="truncate">{dest.url}</span>
+                          <span className="min-w-0 truncate">{dest.url}</span>
                           <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
                         </a>
                       </Td>

@@ -242,7 +242,7 @@ export default async function WebsitesPage() {
         </ul>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Events pro Tag (14 Tage)</CardTitle>
@@ -273,7 +273,7 @@ export default async function WebsitesPage() {
               <ul className="space-y-1.5 text-sm">
                 {topEvents.map((row) => (
                   <li key={row.eventName} className="flex justify-between gap-3">
-                    <span className="truncate font-mono text-xs">{row.eventName}</span>
+                    <span className="min-w-0 truncate font-mono text-xs">{row.eventName}</span>
                     <span className="font-medium tabular-nums">
                       {formatNumber(row._count._all)}
                     </span>

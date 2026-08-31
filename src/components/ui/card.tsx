@@ -2,8 +2,11 @@ import { cn } from "@/lib/utils";
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
+    // min-w-0: Als Grid-/Flex-Item darf die Karte immer auf ihre Spur
+    // schrumpfen – breiter Inhalt (Charts, lange Labels) kann das Raster
+    // sonst auf Mobil aufspreizen.
     <div
-      className={cn("rounded-2xl border border-zinc-200 bg-surface shadow-sm", className)}
+      className={cn("min-w-0 rounded-2xl border border-zinc-200 bg-surface shadow-sm", className)}
       {...props}
     />
   );

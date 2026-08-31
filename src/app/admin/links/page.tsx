@@ -126,7 +126,7 @@ export default async function LinksPage() {
                           title={link.destination.url}
                           className="inline-flex max-w-full items-center gap-1 text-zinc-600 hover:text-zinc-900 hover:underline"
                         >
-                          <span className="truncate">{link.destination.name}</span>
+                          <span className="min-w-0 truncate">{link.destination.name}</span>
                           <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
                         </a>
                       </Td>
@@ -244,7 +244,7 @@ export default async function LinksPage() {
                   rel="noopener noreferrer"
                   className="mt-2 flex items-center gap-1 text-xs text-zinc-500"
                 >
-                  <span className="truncate">→ {link.destination.name}</span>
+                  <span className="min-w-0 truncate">→ {link.destination.name}</span>
                   <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
                 </a>
                 <div

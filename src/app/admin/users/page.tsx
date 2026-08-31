@@ -32,7 +32,7 @@ export default async function UsersPage() {
         description="Zugänge zum Dashboard mit Rollen: Admin (alles), Marketer (Links & Ziele verwalten), Viewer (nur lesen)."
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Mobil steht die Liste zuerst, das Formular dahinter (order-*) */}
         <Card className="order-2 lg:order-none lg:col-span-1">
           <CardHeader>

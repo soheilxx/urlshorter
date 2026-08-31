@@ -45,7 +45,7 @@ export function GeoBarList({ items }: { items: GeoBarItem[] }) {
                   aria-hidden="true"
                 />
               ) : null}
-              <span className="truncate text-sm text-zinc-800">{item.label}</span>
+              <span className="min-w-0 truncate text-sm text-zinc-800">{item.label}</span>
               {item.sublabel ? (
                 <span className="shrink-0 text-xs text-zinc-400">{item.sublabel}</span>
               ) : null}

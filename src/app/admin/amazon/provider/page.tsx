@@ -104,7 +104,7 @@ export default async function AmazonProvidersPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {providers.map((provider) => {
           const status = statuses.find((s) => s.provider === provider.key);
           return (
@@ -184,7 +184,7 @@ export default async function AmazonProvidersPage() {
         <CardHeader>
           <CardTitle>Rainforest-Credits & Prognose</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 text-sm lg:grid-cols-2">
+        <CardContent className="grid grid-cols-1 gap-4 text-sm lg:grid-cols-2">
           <div className="space-y-1.5">
             {quota ? (
               <>
