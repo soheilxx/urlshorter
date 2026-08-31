@@ -71,7 +71,7 @@ export function BulkLinkForm({ destinations }: { destinations: DestinationOption
         />
       </div>
 
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Links werden erstellt …" : "Alle Kurzlinks erstellen"}
       </Button>
     </form>

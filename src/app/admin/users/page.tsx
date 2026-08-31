@@ -1,4 +1,4 @@
-import { Pencil, ShieldCheck } from "lucide-react";
+import { ChevronRight, Pencil, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/admin/page-header";
@@ -125,9 +125,12 @@ export default async function UsersPage() {
               </li>
             ) : (
               users.map((user) => (
-                <li key={user.id} className="px-4 py-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
+                <li key={user.id}>
+                  <Link
+                    href={`/admin/users/${user.id}`}
+                    className="flex items-center gap-3 px-4 py-3 active:bg-zinc-50"
+                  >
+                    <div className="min-w-0 flex-1">
                       <p className="flex items-center gap-1.5 truncate text-sm font-medium text-zinc-900">
                         {user.email}
                         {session.userId === user.id ? (
@@ -142,28 +145,23 @@ export default async function UsersPage() {
                       {user.name ? (
                         <p className="truncate text-xs text-zinc-400">{user.name}</p>
                       ) : null}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <Badge variant={ROLE_BADGE_VARIANTS[user.role as Role]}>
+                          {ROLE_LABELS[user.role as Role]}
+                        </Badge>
+                        {user.active ? (
+                          <Badge variant="success">Aktiv</Badge>
+                        ) : (
+                          <Badge variant="danger">Deaktiviert</Badge>
+                        )}
+                        <span className="text-xs text-zinc-400">
+                          Login: {user.lastLoginAt ? formatBerlinDate(user.lastLoginAt) : "–"}
+                        </span>
+                      </div>
                     </div>
-                    <Link
-                      href={`/admin/users/${user.id}`}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
-                    >
-                      <Pencil className="h-4 w-4" aria-hidden="true" />
-                      <span className="sr-only">Bearbeiten</span>
-                    </Link>
-                  </div>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <Badge variant={ROLE_BADGE_VARIANTS[user.role as Role]}>
-                      {ROLE_LABELS[user.role as Role]}
-                    </Badge>
-                    {user.active ? (
-                      <Badge variant="success">Aktiv</Badge>
-                    ) : (
-                      <Badge variant="danger">Deaktiviert</Badge>
-                    )}
-                    <span className="text-xs text-zinc-400">
-                      Login: {user.lastLoginAt ? formatBerlinDate(user.lastLoginAt) : "–"}
-                    </span>
-                  </div>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-zinc-300" aria-hidden="true" />
+                    <span className="sr-only">Bearbeiten</span>
+                  </Link>
                 </li>
               ))
             )}

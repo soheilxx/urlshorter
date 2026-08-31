@@ -1,19 +1,19 @@
 /**
- * Mini-Trendlinie für StatCards (reines SVG, Server Component):
- * letzte N Tage als Fläche + Linie in Chart-Akzentfarbe.
+ * Mini-Trendlinie für StatCards (reines SVG, Server Component): rendert in
+ * voller Kachelbreite (preserveAspectRatio none + non-scaling-stroke, damit
+ * die Linienstärke beim Strecken konstant bleibt).
  */
 export function ClickSparkline({
   points,
   label,
-  width = 88,
   height = 30,
 }: {
   points: number[];
   label: string;
-  width?: number;
   height?: number;
 }) {
   if (points.length < 2) return null;
+  const width = 100;
   const max = Math.max(...points, 1);
   const stepX = width / (points.length - 1);
   const coords = points.map((value, index) => ({
@@ -24,12 +24,12 @@ export function ClickSparkline({
   const area = `${line} L${width},${height} L0,${height} Z`;
   return (
     <svg
-      width={width}
-      height={height}
       viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
       role="img"
       aria-label={label}
-      className="overflow-visible"
+      className="block w-full"
+      style={{ height }}
     >
       <path d={area} fill="var(--chart-accent)" opacity={0.12} />
       <path
@@ -39,12 +39,7 @@ export function ClickSparkline({
         strokeWidth={1.75}
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
-      <circle
-        cx={coords[coords.length - 1]!.x}
-        cy={coords[coords.length - 1]!.y}
-        r={2.4}
-        fill="var(--chart-accent)"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );

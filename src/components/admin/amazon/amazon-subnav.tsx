@@ -5,7 +5,11 @@ import { usePathname } from "next/navigation";
 import type { Role } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-/** Unternavigation des Amazon-Ranking-Moduls (auf allen Modul-Seiten). */
+/**
+ * Unternavigation des Amazon-Ranking-Moduls: auf Mobil ein aufgeräumtes
+ * Raster (alle Bereiche gleich breit sichtbar, kein horizontales Scrollen),
+ * ab md die gewohnte Pillen-Zeile.
+ */
 const ITEMS = [
   { href: "/admin/amazon", label: "Übersicht", exact: true, adminOnly: false },
   { href: "/admin/amazon/buch", label: "Buchdetail", exact: false, adminOnly: false },
@@ -17,12 +21,13 @@ const ITEMS = [
 
 export function AmazonSubNav({ role }: { role: Role }) {
   const pathname = usePathname();
+  const items = ITEMS.filter((item) => !item.adminOnly || role === "ADMIN");
   return (
     <nav
       aria-label="Amazon-Rankings-Navigation"
-      className="flex max-w-full gap-1 overflow-x-auto rounded-xl border border-zinc-200 bg-surface p-1 shadow-sm"
+      className="grid max-w-full grid-cols-3 gap-1 rounded-xl border border-zinc-200 bg-surface p-1 shadow-sm md:flex"
     >
-      {ITEMS.filter((item) => !item.adminOnly || role === "ADMIN").map((item) => {
+      {items.map((item) => {
         const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
         return (
           <Link
@@ -30,7 +35,7 @@ export function AmazonSubNav({ role }: { role: Role }) {
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+              "truncate rounded-lg px-2 py-2 text-center text-xs font-medium transition-colors md:px-3 md:py-1.5 md:text-sm",
               active
                 ? "bg-primary text-white"
                 : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",

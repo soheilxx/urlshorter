@@ -73,13 +73,18 @@ function RoleSelect({ id, defaultValue }: { id: string; defaultValue?: Role }) {
   return (
     <div>
       <Label htmlFor={id}>Rolle</Label>
+      {/* Kurze Labels im Select (mobil wird langer Optionstext hart gekappt);
+          die Beschreibungen stehen vollständig im Hilfetext darunter. */}
       <Select id={id} name="role" defaultValue={defaultValue ?? "VIEWER"} required>
         {ALL_ROLES.map((role) => (
           <option key={role} value={role}>
-            {ROLE_LABELS[role]} – {ROLE_DESCRIPTIONS[role]}
+            {ROLE_LABELS[role]}
           </option>
         ))}
       </Select>
+      <p className="mt-1 text-xs text-zinc-400">
+        {ALL_ROLES.map((role) => `${ROLE_LABELS[role]}: ${ROLE_DESCRIPTIONS[role]}`).join(" · ")}
+      </p>
     </div>
   );
 }
@@ -116,7 +121,7 @@ export function UserCreateForm() {
         label="Initiales Passwort"
         autoComplete="new-password"
       />
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Wird angelegt …" : "Benutzer anlegen"}
       </Button>
     </form>
@@ -172,7 +177,7 @@ export function UserEditForm({
         </>
       )}
 
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Wird gespeichert …" : "Änderungen speichern"}
       </Button>
     </form>
@@ -195,7 +200,7 @@ export function UserResetPasswordForm({ userId }: { userId: string }) {
         label="Neues Passwort"
         autoComplete="new-password"
       />
-      <Button type="submit" variant="secondary" disabled={pending}>
+      <Button type="submit" variant="secondary" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Wird gesetzt …" : "Passwort neu setzen"}
       </Button>
     </form>
@@ -235,7 +240,7 @@ export function ChangeOwnPasswordForm() {
           placeholder="mind. 12 Zeichen"
         />
       </div>
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Wird geändert …" : "Passwort ändern"}
       </Button>
     </form>

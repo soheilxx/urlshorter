@@ -139,7 +139,7 @@ export function LinkForm({
         />
       </div>
 
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending
           ? "Wird gespeichert …"
           : mode === "create"

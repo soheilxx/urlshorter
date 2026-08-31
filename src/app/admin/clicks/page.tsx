@@ -5,7 +5,7 @@ import { FilterPanel } from "@/components/admin/filter-panel";
 import { PageHeader } from "@/components/admin/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input, Label, Select } from "@/components/ui/input";
 import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
 import { requireSession } from "@/lib/auth";
@@ -170,10 +170,13 @@ export default async function ClicksPage({
     <div className="space-y-6">
       <PageHeader
         title="Klicks"
-        description={`${formatNumber(total)} Einträge · Zeitzone Europe/Berlin (Speicherung in UTC)`}
+        description={`${formatNumber(total)} ${total === 1 ? "Eintrag" : "Einträge"} · Zeitzone Europe/Berlin (Speicherung in UTC)`}
       >
-        <a href={`/api/export/clicks${exportQuery ? `?${exportQuery}` : ""}`}>
-          <Button variant="secondary" size="sm">
+        <a
+          href={`/api/export/clicks${exportQuery ? `?${exportQuery}` : ""}`}
+          className="w-full md:w-auto"
+        >
+          <Button variant="secondary" size="sm" className="w-full md:w-auto">
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
             CSV-Export (gefiltert)
           </Button>
@@ -181,8 +184,7 @@ export default async function ClicksPage({
       </PageHeader>
 
       <Card>
-        <CardContent>
-          <FilterPanel activeCount={activeFilterCount} defaultOpen={activeFilterCount > 0}>
+        <FilterPanel activeCount={activeFilterCount} defaultOpen={activeFilterCount > 0}>
             <form
               method="GET"
               action="/admin/clicks"
@@ -272,8 +274,7 @@ export default async function ClicksPage({
                 </Link>
               </div>
             </form>
-          </FilterPanel>
-        </CardContent>
+        </FilterPanel>
       </Card>
 
       <Card>

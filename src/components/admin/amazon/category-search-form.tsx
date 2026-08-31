@@ -21,7 +21,7 @@ export function CategorySearchForm() {
           <Label htmlFor="cs-term">Suchbegriff (Bestsellerkategorie auf Amazon.de)</Label>
           <Input id="cs-term" name="term" required minLength={2} maxLength={100} placeholder="z. B. Wirtschaft" />
         </div>
-        <Button type="submit" disabled={pending} variant="secondary">
+        <Button type="submit" disabled={pending} variant="secondary" className="w-full sm:w-auto">
           {pending ? "Suche …" : "Suchen"}
         </Button>
       </div>

@@ -139,7 +139,7 @@ export function AmazonSettingsForm({ values }: { values: AmazonSettingsFormValue
         <div>
           <Label htmlFor="as-priority">Providerpriorität (kanonischer Rang)</Label>
           <Select name="providerPriority" id="as-priority" defaultValue={values.providerPriority}>
-            <option value="creators_first">Amazon Creators zuerst (empfohlen)</option>
+            <option value="creators_first">Amazon Creators zuerst</option>
             <option value="rainforest_first">Rainforest zuerst</option>
           </Select>
         </div>
@@ -217,7 +217,7 @@ export function AmazonSettingsForm({ values }: { values: AmazonSettingsFormValue
         </div>
       </div>
 
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Wird gespeichert …" : "Einstellungen speichern"}
       </Button>
     </form>
@@ -245,7 +245,7 @@ export function ManualJobForm({ jobs }: { jobs: Array<{ type: string; label: str
             ))}
           </Select>
         </div>
-        <Button type="submit" disabled={pending} variant="secondary">
+        <Button type="submit" disabled={pending} variant="secondary" className="w-full sm:w-auto">
           {pending ? "Läuft …" : "Jetzt ausführen"}
         </Button>
       </div>
@@ -259,7 +259,7 @@ export function TestProvidersForm() {
   return (
     <form ref={formRef} action={formAction} className="space-y-3">
       <StateAlerts state={state} />
-      <Button type="submit" disabled={pending} variant="secondary">
+      <Button type="submit" disabled={pending} variant="secondary" className="w-full sm:w-auto">
         {pending ? "Teste Verbindungen …" : "Test Connection (beide Provider)"}
       </Button>
     </form>
@@ -328,7 +328,7 @@ export function CategoryEditForm({
           aria-label={`Individuelles Intervall für ${category.canonicalName} in Minuten`}
           className="h-7 w-28 rounded-lg border border-zinc-300 px-2 text-xs"
         />
-        <Button type="submit" size="sm" variant="secondary" disabled={pending}>
+        <Button type="submit" size="sm" variant="secondary" disabled={pending} className="w-full sm:w-auto">
           {pending ? "…" : "Speichern"}
         </Button>
       </div>
@@ -397,7 +397,7 @@ export function EditionForm({
           Vorbestellphase aktiv
         </label>
       </div>
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Wird gespeichert …" : "Edition speichern"}
       </Button>
     </form>
@@ -433,7 +433,7 @@ export function BaselineImportForm({ editionId }: { editionId: string }) {
           Wird als manuelle Baseline (Quelle „manuell“) gespeichert – niemals als Live-Messung.
         </p>
       </div>
-      <Button type="submit" disabled={pending} variant="secondary">
+      <Button type="submit" disabled={pending} variant="secondary" className="w-full sm:w-auto">
         {pending ? "Importiere …" : "Baseline importieren"}
       </Button>
     </form>
@@ -477,7 +477,7 @@ export function AnnotationForm() {
         <Label htmlFor="an-desc">Beschreibung (optional)</Label>
         <Textarea id="an-desc" name="description" rows={2} maxLength={1000} />
       </div>
-      <Button type="submit" disabled={pending} variant="secondary">
+      <Button type="submit" disabled={pending} variant="secondary" className="w-full sm:w-auto">
         {pending ? "Wird angelegt …" : "Annotation anlegen"}
       </Button>
     </form>
@@ -550,7 +550,7 @@ export function AlertRuleForm({
           </Select>
         </div>
       </div>
-      <Button type="submit" disabled={pending} variant="secondary">
+      <Button type="submit" disabled={pending} variant="secondary" className="w-full sm:w-auto">
         {pending ? "Wird angelegt …" : "Alert-Regel anlegen"}
       </Button>
     </form>
@@ -589,7 +589,7 @@ export function ActualSalesForm({ editionId }: { editionId: string }) {
       <p className="text-xs text-zinc-400">
         Echte Verkaufszahlen bleiben strikt von Schätzungen getrennt und werden nie überschrieben.
       </p>
-      <Button type="submit" disabled={pending} variant="secondary">
+      <Button type="submit" disabled={pending} variant="secondary" className="w-full sm:w-auto">
         {pending ? "Importiere …" : "Verkaufszahlen importieren"}
       </Button>
     </form>

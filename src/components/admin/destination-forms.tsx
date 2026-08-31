@@ -42,7 +42,7 @@ export function DestinationCreateForm({ hostsHint }: { hostsHint: string }) {
         />
         <p className="mt-1 text-xs text-zinc-400">{hostsHint}</p>
       </div>
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Wird angelegt …" : "Ziel anlegen"}
       </Button>
     </form>
@@ -115,7 +115,7 @@ export function DestinationEditForm({
         </Alert>
       ) : null}
 
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Wird gespeichert …" : "Änderungen speichern"}
       </Button>
     </form>

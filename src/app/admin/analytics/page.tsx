@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { BucketBarChart } from "@/components/admin/charts";
 import { GeoMap, type MapCountry, type MapMarker } from "@/components/admin/geo-map";
 import { GeoBarList, LiveFeed } from "@/components/admin/geo-panels";
+import { SegmentedNav } from "@/components/admin/segmented-nav";
 import { StatCard } from "@/components/admin/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireSession } from "@/lib/auth";
@@ -18,7 +18,7 @@ import {
   getVisitorProfile,
 } from "@/lib/geo-stats";
 import { resolveRange } from "@/lib/date-range";
-import { cn, formatNumber } from "@/lib/utils";
+import { formatNumber } from "@/lib/utils";
 import {
   countryNameDe,
   getWorldCountryShapes,
@@ -148,22 +148,16 @@ export default async function AnalyticsPage({
             Europe/Berlin
           </p>
         </div>
-        <div className="flex rounded-lg border border-zinc-200 bg-surface p-0.5 shadow-sm">
-          {RANGE_OPTIONS.map((opt) => (
-            <Link
-              key={opt.key}
-              href={buildHref(opt.key)}
-              className={cn(
-                "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
-                range.key === opt.key
-                  ? "bg-primary text-white"
-                  : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900",
-              )}
-            >
-              {opt.label}
-            </Link>
-          ))}
-        </div>
+        <SegmentedNav
+          ariaLabel="Zeitraum wählen"
+          activeKey={range.key}
+          options={RANGE_OPTIONS.map((opt) => ({
+            key: opt.key,
+            label: opt.label,
+            href: buildHref(opt.key),
+          }))}
+          className="w-full md:w-auto"
+        />
       </div>
 
       {/* KPI-Kacheln */}

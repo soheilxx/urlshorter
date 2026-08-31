@@ -96,7 +96,7 @@ export default async function OverviewPage({
         <Link
           href={buildHref(range.key, botFilter === "bot" ? "human" : "bot")}
           className={cn(
-            "whitespace-nowrap rounded-xl border px-3 py-2 text-xs font-medium transition-colors",
+            "whitespace-nowrap rounded-xl border px-3 py-2 text-center text-xs font-medium transition-colors",
             botFilter === "bot"
               ? "border-amber-300 bg-amber-50 text-amber-800"
               : "border-zinc-200 bg-surface text-zinc-600 hover:bg-zinc-100",
@@ -146,7 +146,7 @@ export default async function OverviewPage({
         <StatCard label="Letzte 30 Tage" value={formatNumber(stats.clicksLast30Days)} />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatCard
           label="Ø Klicks pro Tag"
           value={formatNumber(Math.round(stats.avgClicksPerDay * 10) / 10)}
@@ -157,11 +157,13 @@ export default async function OverviewPage({
           value={formatPercent(stats.bridgeLoadedRate)}
           hint="Anteil clientseitig bestätigter Aufrufe"
         />
-        <StatCard
-          label="Tracking angestoßen"
-          value={formatPercent(stats.trackingFiredRate)}
-          hint="Anteil mit ausgelösten Pixel-Events"
-        />
+        <div className="col-span-2 lg:col-span-1">
+          <StatCard
+            label="Tracking angestoßen"
+            value={formatPercent(stats.trackingFiredRate)}
+            hint="Anteil mit ausgelösten Pixel-Events"
+          />
+        </div>
       </div>
 
       <Card>

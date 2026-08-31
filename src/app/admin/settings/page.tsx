@@ -177,8 +177,8 @@ export default async function SettingsPage() {
         <CardHeader>
           <CardTitle>Audit-Log (letzte 30 Einträge)</CardTitle>
         </CardHeader>
-        <TableWrapper>
-          <Table>
+        <TableWrapper className="hidden md:block">
+          <Table minWidth={640}>
             <Thead>
               <tr>
                 <Th>Zeitpunkt</Th>
@@ -216,6 +216,28 @@ export default async function SettingsPage() {
             </tbody>
           </Table>
         </TableWrapper>
+
+        {/* Mobil: Log-Liste */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {auditEntries.length === 0 ? (
+            <li className="px-4 py-8 text-center text-sm text-zinc-400">Noch keine Einträge.</li>
+          ) : (
+            auditEntries.map((entry) => (
+              <li key={entry.id} className="px-4 py-3">
+                <p className="break-all font-mono text-xs font-semibold text-zinc-800">
+                  {entry.action}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-zinc-500">
+                  {entry.actor} · {entry.entityType}
+                  {entry.entityId ? ` · ${entry.entityId.slice(0, 12)}` : ""}
+                </p>
+                <p className="mt-0.5 text-xs tabular-nums text-zinc-400">
+                  {formatBerlinDateTime(entry.ts)}
+                </p>
+              </li>
+            ))
+          )}
+        </ul>
       </Card>
     </div>
   );

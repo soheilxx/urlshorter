@@ -51,7 +51,7 @@ export default async function AmazonCategoriesPage() {
             <CardContent>
               <ManualJobForm
                 jobs={[
-                  { type: "resolve-amazon-categories", label: "Rainforest-Kategorien auflösen (Sachbücher etc.)" },
+                  { type: "resolve-amazon-categories", label: "Rainforest-Kategorien auflösen" },
                   { type: "refresh-category-leaderboards", label: "Top-25-Listen jetzt abrufen" },
                 ]}
               />

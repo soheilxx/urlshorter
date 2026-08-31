@@ -92,8 +92,8 @@ export default async function WebsitesPage() {
         description="TRACK.SITE: ein Snippet pro Website, alle Pixel + Conversion-APIs laufen über dieses System. Pixel-IDs und API-Tokens werden hier im Dashboard gepflegt."
       >
         {isAdmin ? (
-          <Link href="/admin/websites/neu">
-            <Button size="sm">
+          <Link href="/admin/websites/neu" className="w-full md:w-auto">
+            <Button size="sm" className="w-full md:w-auto">
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               Neue Website
             </Button>
@@ -289,7 +289,7 @@ export default async function WebsitesPage() {
         <CardHeader>
           <CardTitle>Letzte Events</CardTitle>
         </CardHeader>
-        <TableWrapper>
+        <TableWrapper className="hidden md:block">
           <Table minWidth={760}>
             <Thead>
               <tr>
@@ -342,6 +342,44 @@ export default async function WebsitesPage() {
             </tbody>
           </Table>
         </TableWrapper>
+
+        {/* Mobil: Ereignis-Liste */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {recent.length === 0 ? (
+            <li className="px-4 py-10 text-center text-sm text-zinc-400">
+              Noch keine Events – Snippet auf einer Website einbauen und aufrufen.
+            </li>
+          ) : (
+            recent.map((event) => (
+              <li key={event.id} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate font-mono text-sm font-medium text-zinc-800">
+                    {event.eventName}
+                  </span>
+                  {event.metaForwardedAt || event.tiktokForwardedAt ? (
+                    <Badge variant="success">
+                      {[
+                        event.metaForwardedAt ? "Meta" : null,
+                        event.tiktokForwardedAt ? "TikTok" : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" + ")}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="mt-0.5 truncate text-xs text-zinc-500">
+                  {event.siteId}
+                  {event.path ? ` · ${event.path}` : ""}
+                </p>
+                <p className="mt-0.5 text-xs text-zinc-400">
+                  {formatBerlinDateTime(event.createdAt)}
+                  {event.country ? ` · ${event.country}` : ""}
+                  {event.utmSource ? ` · ${event.utmSource}` : ""}
+                </p>
+              </li>
+            ))
+          )}
+        </ul>
       </Card>
     </div>
   );

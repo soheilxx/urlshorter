@@ -176,10 +176,10 @@ export default async function AmazonBookPage({
         </div>
       </div>
 
-      {/* Sprunganker gegen Endlos-Scroll auf Mobil */}
+      {/* Sprunganker gegen Endlos-Scroll auf Mobil (umbruchend, kein Scrollen) */}
       <nav
         aria-label="Abschnitte dieser Seite"
-        className="scroll-x-fade -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
+        className="flex flex-wrap gap-1.5"
       >
         {[
           { href: "#kennzahlen", label: "Kennzahlen" },
@@ -203,7 +203,7 @@ export default async function AmazonBookPage({
         <Card>
           <CardContent className="flex gap-4 pt-6">
             {edition.coverLargeUrl || edition.coverMediumUrl ? (
-              <div className="relative h-52 w-32 shrink-0 overflow-hidden rounded-lg bg-zinc-100 shadow">
+              <div className="relative h-36 w-24 shrink-0 overflow-hidden rounded-lg bg-zinc-100 shadow md:h-52 md:w-32">
                 <Image
                   src={(edition.coverLargeUrl ?? edition.coverMediumUrl)!}
                   alt={`Buchcover: ${book.title}`}
@@ -214,7 +214,7 @@ export default async function AmazonBookPage({
                 />
               </div>
             ) : (
-              <div className="flex h-52 w-32 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-center text-xs text-zinc-400">
+              <div className="flex h-36 w-24 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-center text-xs text-zinc-400 md:h-52 md:w-32">
                 Kein Cover
               </div>
             )}
@@ -226,7 +226,8 @@ export default async function AmazonBookPage({
               <div>
                 <dt className="text-xs text-zinc-400">ISBN-13 / ISBN-10</dt>
                 <dd className="font-mono text-xs">
-                  {edition.isbn13 ?? "–"} / {edition.isbn10 ?? "–"}
+                  <span className="block">{edition.isbn13 ?? "–"}</span>
+                  <span className="block">{edition.isbn10 ?? "–"}</span>
                 </dd>
               </div>
               <div>
@@ -536,9 +537,9 @@ export default async function AmazonBookPage({
       {/* Providervergleich */}
       <Card id="providervergleich" className="scroll-mt-20">
         <CardHeader>
-          <CardTitle>Providervergleich (jüngste Messungen, 48 h)</CardTitle>
+          <CardTitle>Providervergleich (jüngste Messungen, 48 h)</CardTitle>
         </CardHeader>
-        <TableWrapper>
+        <TableWrapper className="hidden md:block">
           <Table>
             <Thead>
               <tr>
@@ -580,6 +581,47 @@ export default async function AmazonBookPage({
             </tbody>
           </Table>
         </TableWrapper>
+
+        {/* Mobil: Vergleichs-Liste */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {comparison.size === 0 ? (
+            <li className="px-4 py-8 text-center text-sm text-zinc-400">
+              Noch keine Beobachtungen in den letzten 48 Stunden.
+            </li>
+          ) : (
+            [...comparison.values()].map((row) => (
+              <li key={row.name} className="px-4 py-3">
+                <p className="text-sm font-medium text-zinc-800">{row.name}</p>
+                <div className="mt-1.5 grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <p className="uppercase text-zinc-400">Creators</p>
+                    <p className="tabular-nums text-zinc-700">
+                      <RankValue rank={row.creators} />
+                    </p>
+                  </div>
+                  <div>
+                    <p className="uppercase text-zinc-400">Rainforest</p>
+                    <p className="tabular-nums text-zinc-700">
+                      <RankValue rank={row.rainforest} />
+                    </p>
+                  </div>
+                  <div>
+                    <p className="uppercase text-zinc-400">Abweichung</p>
+                    <p className="tabular-nums">
+                      {row.difference !== null ? (
+                        <span className={row.difference > 0 ? "text-amber-600" : "text-zinc-400"}>
+                          {formatNumber(row.difference)}
+                        </span>
+                      ) : (
+                        "–"
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            ))
+          )}
+        </ul>
         <CardContent className="border-t border-zinc-100">
           <p className="text-xs text-zinc-400">
             Provider aktualisieren zeitversetzt – eine Abweichung ist ein
@@ -716,28 +758,28 @@ export default async function AmazonBookPage({
       <Card id="snapshots" className="scroll-mt-20">
         <CardHeader className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>Letzte kanonische Snapshots</CardTitle>
-          <div className="flex gap-2 text-xs">
+          <div className="flex flex-wrap gap-2 text-xs">
             {[
               { href: "/api/export/amazon?type=ranks&format=csv", label: "CSV-Export" },
               { href: "/api/export/amazon?type=ranks&format=json", label: "JSON-Export" },
               {
                 href: "/api/export/amazon?type=observations&format=csv",
-                label: "Provider-Rohdaten (CSV)",
+                label: "Rohdaten (CSV)",
               },
             ].map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 prefetch={false}
-                className="rounded-lg border border-zinc-200 px-2.5 py-1.5 font-medium text-zinc-600 hover:bg-zinc-50"
+                className="whitespace-nowrap rounded-lg border border-zinc-200 px-2.5 py-1.5 font-medium text-zinc-600 hover:bg-zinc-50"
               >
                 {item.label}
               </Link>
             ))}
           </div>
         </CardHeader>
-        <TableWrapper>
-          <Table>
+        <TableWrapper className="hidden md:block">
+          <Table minWidth={720}>
             <Thead>
               <tr>
                 <Th>Zeitpunkt</Th>
@@ -786,6 +828,41 @@ export default async function AmazonBookPage({
             </tbody>
           </Table>
         </TableWrapper>
+
+        {/* Mobil: Snapshot-Liste */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {canonicalSnapshots.length === 0 ? (
+            <li className="px-4 py-8 text-center text-sm text-zinc-400">Noch keine Snapshots.</li>
+          ) : (
+            canonicalSnapshots.map((snapshot) => (
+              <li key={snapshot.id} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-sm font-medium text-zinc-800">
+                    {snapshot.category.canonicalName}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className="text-sm font-semibold tabular-nums text-zinc-900">
+                      <RankValue rank={snapshot.canonicalRank} />
+                    </span>
+                    {snapshot.dataGap ? (
+                      <Badge variant="warning">Datenlücke</Badge>
+                    ) : snapshot.stale ? (
+                      <Badge variant="warning">stale</Badge>
+                    ) : (
+                      <Badge variant="success">live</Badge>
+                    )}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-zinc-400">
+                  {formatBerlinDateTime(snapshot.observedAt)}
+                  {snapshot.selectedProvider
+                    ? ` · ${PROVIDER_LABELS[snapshot.selectedProvider]}`
+                    : ""}
+                </p>
+              </li>
+            ))
+          )}
+        </ul>
       </Card>
     </div>
   );

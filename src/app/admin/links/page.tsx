@@ -52,19 +52,19 @@ export default async function LinksPage() {
         description={`${links.length} Links · Codes sind nach Erstellung unveränderlich`}
       >
         {canManage ? (
-          <>
+          <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-auto">
             <Link href="/admin/links/bulk">
-              <Button variant="secondary" size="sm">
+              <Button variant="secondary" size="sm" className="w-full md:w-auto">
                 Mehrere Links erstellen
               </Button>
             </Link>
             <Link href="/admin/links/new">
-              <Button size="sm">
+              <Button size="sm" className="w-full md:w-auto">
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 Neuer Kurzlink
               </Button>
             </Link>
-          </>
+          </div>
         ) : null}
       </PageHeader>
 
@@ -247,33 +247,48 @@ export default async function LinksPage() {
                   <span className="truncate">→ {link.destination.name}</span>
                   <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
                 </a>
-                <div className="mt-3 flex items-center gap-2 border-t border-zinc-100 pt-3">
-                  <Link href={`/admin/links/${link.id}`} className="flex-1">
-                    <Button variant="secondary" size="sm" className="w-full">
-                      <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
+                <div
+                  className={`mt-3 grid gap-2 border-t border-zinc-100 pt-3 ${canManage ? "grid-cols-3" : "grid-cols-1"}`}
+                >
+                  <Link href={`/admin/links/${link.id}`} className="min-w-0">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full gap-1 px-1 text-xs"
+                    >
+                      <BarChart3 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                       Statistik
                     </Button>
                   </Link>
                   {canManage ? (
                     <>
-                      <Link href={`/admin/links/new?from=${link.id}`} className="flex-1">
-                        <Button variant="secondary" size="sm" className="w-full">
-                          <CopyIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                      <Link href={`/admin/links/new?from=${link.id}`} className="min-w-0">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="w-full gap-1 px-1 text-xs"
+                        >
+                          <CopyIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                           Duplizieren
                         </Button>
                       </Link>
-                      <form action={toggleShortLinkActiveAction} className="flex-1">
+                      <form action={toggleShortLinkActiveAction} className="min-w-0">
                         <input type="hidden" name="id" value={link.id} />
                         <input type="hidden" name="active" value={link.active ? "false" : "true"} />
                         {link.active ? (
                           <ConfirmSubmitButton
-                            confirmText="Wirklich deaktivieren?"
-                            className="w-full"
+                            confirmText="Sicher?"
+                            className="w-full px-1 text-xs"
                           >
                             Deaktivieren
                           </ConfirmSubmitButton>
                         ) : (
-                          <Button type="submit" variant="secondary" size="sm" className="w-full">
+                          <Button
+                            type="submit"
+                            variant="secondary"
+                            size="sm"
+                            className="w-full px-1 text-xs"
+                          >
                             Aktivieren
                           </Button>
                         )}

@@ -165,19 +165,19 @@ export default async function DestinationsPage() {
                     {dest._count.shortLinks} Links · geändert {formatBerlinDate(dest.updatedAt)}
                   </p>
                   {canManage ? (
-                    <div className="mt-2.5 flex items-center gap-2">
-                      <Link href={`/admin/destinations/${dest.id}`} className="flex-1">
+                    <div className="mt-2.5 grid grid-cols-2 gap-2">
+                      <Link href={`/admin/destinations/${dest.id}`} className="min-w-0">
                         <Button variant="secondary" size="sm" className="w-full">
-                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                          Bearbeiten
+                          <Pencil className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                          <span className="truncate">Bearbeiten</span>
                         </Button>
                       </Link>
-                      <form action={toggleDestinationActiveAction} className="flex-1">
+                      <form action={toggleDestinationActiveAction} className="min-w-0">
                         <input type="hidden" name="id" value={dest.id} />
                         <input type="hidden" name="active" value={dest.active ? "false" : "true"} />
                         {dest.active ? (
-                          <ConfirmSubmitButton confirmText="Wirklich deaktivieren?" className="w-full">
-                            Deaktivieren
+                          <ConfirmSubmitButton confirmText="Sicher?" className="w-full">
+                            <span className="truncate">Deaktivieren</span>
                           </ConfirmSubmitButton>
                         ) : (
                           <Button type="submit" variant="secondary" size="sm" className="w-full">

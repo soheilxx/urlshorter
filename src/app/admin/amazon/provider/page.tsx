@@ -275,7 +275,7 @@ export default async function AmazonProvidersPage() {
         <CardHeader>
           <CardTitle>Letzte Provider-Läufe</CardTitle>
         </CardHeader>
-        <TableWrapper>
+        <TableWrapper className="hidden md:block">
           <Table minWidth={760}>
             <Thead>
               <tr>
@@ -335,6 +335,45 @@ export default async function AmazonProvidersPage() {
             </tbody>
           </Table>
         </TableWrapper>
+
+        {/* Mobil: Lauf-Liste */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {recentRuns.length === 0 ? (
+            <li className="px-4 py-8 text-center text-sm text-zinc-400">Noch keine Läufe.</li>
+          ) : (
+            recentRuns.map((run) => (
+              <li key={run.id} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate font-mono text-xs font-semibold text-zinc-800">
+                    {run.jobType}
+                  </span>
+                  <Badge
+                    variant={
+                      run.status === "SUCCESS"
+                        ? "success"
+                        : run.status === "PARTIAL"
+                          ? "warning"
+                          : run.status === "FAILED"
+                            ? "danger"
+                            : "muted"
+                    }
+                  >
+                    {run.status}
+                  </Badge>
+                </div>
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  {formatBerlinDateTime(run.startedAt)}
+                  {run.provider ? ` · ${PROVIDER_LABELS[run.provider]}` : ""}
+                  {run.latencyMs !== null ? ` · ${run.latencyMs} ms` : ""}
+                  {run.creditsUsed !== null ? ` · ${run.creditsUsed} Credits` : ""}
+                </p>
+                {run.safeErrorMessage ? (
+                  <p className="mt-0.5 truncate text-xs text-red-700">{run.safeErrorMessage}</p>
+                ) : null}
+              </li>
+            ))
+          )}
+        </ul>
       </Card>
     </div>
   );

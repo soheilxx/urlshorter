@@ -149,11 +149,11 @@ test.describe("Kompletter Ablauf: Ziel → Link → Klick → Statistik", () => 
 
     // Standardfilter (nur Menschen): genau 1 Klick aus dem vorherigen Test
     await page.goto(`/admin/clicks?q=${shortCode}`);
-    await expect(page.getByText("1 Einträge")).toBeVisible();
+    await expect(page.getByText("1 Eintrag", { exact: false })).toBeVisible();
 
     // Bot-Filter: der Bot-Aufruf ist separat sichtbar
     await page.goto(`/admin/clicks?q=${shortCode}&bot=bot`);
-    await expect(page.getByText("1 Einträge")).toBeVisible();
+    await expect(page.getByText("1 Eintrag", { exact: false })).toBeVisible();
     await expect(page.getByText("Bot", { exact: true }).first()).toBeVisible();
   });
 

@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   Link2,
   LogOut,
+  MoreHorizontal,
   MonitorSmartphone,
   MousePointerClick,
   Settings,
@@ -93,12 +94,12 @@ export function MobileTabBar({
 
   return (
     <>
-      {/* Bottom-Tab-Bar */}
+      {/* Bottom-Tab-Bar: aktiver Tab mit Soft-Pille hinter dem Icon */}
       <nav
         aria-label="Hauptnavigation (mobil)"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.12)] backdrop-blur md:hidden"
       >
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-5 px-1 pt-1.5 pb-1">
           {MAIN_TABS.map((tab) => {
             const Icon = ICONS[tab.icon]!;
             const active = isActive(tab.href, tab.exact);
@@ -107,13 +108,24 @@ export function MobileTabBar({
                 key={tab.href}
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
-                  active ? "text-primary" : "text-zinc-500 hover:text-zinc-800",
-                )}
+                className="flex min-h-13 flex-col items-center justify-center gap-0.5"
               >
-                <Icon className="h-5 w-5" aria-hidden="true" strokeWidth={active ? 2.4 : 2} />
-                {tab.label}
+                <span
+                  className={cn(
+                    "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
+                    active ? "bg-primary-soft text-primary" : "text-zinc-500",
+                  )}
+                >
+                  <Icon className="h-5 w-5" aria-hidden="true" strokeWidth={active ? 2.4 : 2} />
+                </span>
+                <span
+                  className={cn(
+                    "text-[10px] leading-tight transition-colors",
+                    active ? "font-semibold text-primary" : "font-medium text-zinc-500",
+                  )}
+                >
+                  {tab.label}
+                </span>
               </Link>
             );
           })}
@@ -122,17 +134,30 @@ export function MobileTabBar({
             onClick={() => setSheetOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={sheetOpen}
-            className={cn(
-              "flex min-h-14 flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
-              moreActive || sheetOpen ? "text-primary" : "text-zinc-500 hover:text-zinc-800",
-            )}
+            className="flex min-h-13 flex-col items-center justify-center gap-0.5"
           >
-            <LayoutGrid
-              className="h-5 w-5"
-              aria-hidden="true"
-              strokeWidth={moreActive || sheetOpen ? 2.4 : 2}
-            />
-            Mehr
+            <span
+              className={cn(
+                "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
+                moreActive || sheetOpen ? "bg-primary-soft text-primary" : "text-zinc-500",
+              )}
+            >
+              <MoreHorizontal
+                className="h-5 w-5"
+                aria-hidden="true"
+                strokeWidth={moreActive || sheetOpen ? 2.4 : 2}
+              />
+            </span>
+            <span
+              className={cn(
+                "text-[10px] leading-tight transition-colors",
+                moreActive || sheetOpen
+                  ? "font-semibold text-primary"
+                  : "font-medium text-zinc-500",
+              )}
+            >
+              Mehr
+            </span>
           </button>
         </div>
       </nav>
@@ -152,8 +177,10 @@ export function MobileTabBar({
             className="absolute inset-0 bg-black/40"
           />
           <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-zinc-200 bg-surface p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-2xl">
+            {/* Grabber als Sheet-Affordanz */}
+            <div aria-hidden="true" className="mx-auto mb-3 h-1 w-9 rounded-full bg-zinc-300" />
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-semibold text-zinc-900">Mehr</p>
+              <p className="text-base font-semibold text-zinc-900">Mehr</p>
               <button
                 type="button"
                 onClick={() => setSheetOpen(false)}
@@ -205,7 +232,9 @@ export function MobileTabBar({
                     {roleLabel}
                   </p>
                 </div>
-                <ThemeToggle />
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200">
+                  <ThemeToggle />
+                </span>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Link

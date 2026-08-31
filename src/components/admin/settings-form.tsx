@@ -39,7 +39,7 @@ export function SettingsForm({ currentDelayMs }: { currentDelayMs: number }) {
         </p>
       </div>
 
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Wird gespeichert …" : "Speichern"}
       </Button>
     </form>

@@ -101,8 +101,8 @@ export default async function SweepstakesAdminPage({
         title="Gewinnspiel"
         description="Teilnahmen der Dubai-Verlosung (lizenzzumerfolg.com/gewinn) · nur für Admins"
       >
-        <a href={exportHref}>
-          <Button variant="secondary" size="sm">
+        <a href={exportHref} className="w-full md:w-auto">
+          <Button variant="secondary" size="sm" className="w-full md:w-auto">
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
             CSV-Export (gefiltert)
           </Button>
@@ -131,9 +131,8 @@ export default async function SweepstakesAdminPage({
       </div>
 
       <Card>
-        <CardContent className="pt-5">
-          <FilterPanel activeCount={activeFilterCount} defaultOpen={activeFilterCount > 0}>
-            <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <FilterPanel activeCount={activeFilterCount} defaultOpen={activeFilterCount > 0}>
+          <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Label htmlFor="f-q">Name oder E-Mail</Label>
               <Input id="f-q" name="q" defaultValue={filters.q ?? ""} placeholder="Suche …" />
@@ -193,9 +192,8 @@ export default async function SweepstakesAdminPage({
                 {formatNumber(totalFiltered)} Treffer
               </p>
             </div>
-            </form>
-          </FilterPanel>
-        </CardContent>
+          </form>
+        </FilterPanel>
       </Card>
 
       <Card>

@@ -163,7 +163,7 @@ export function BucketBarChart({ data, title }: { data: BucketPoint[]; title: st
   return (
     <div className="h-56 w-full" role="img" aria-label={`Diagramm: ${title}`}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+        <BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: -16 }}>
           <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="label"
@@ -172,6 +172,7 @@ export function BucketBarChart({ data, title }: { data: BucketPoint[]; title: st
             axisLine={false}
             interval="preserveStartEnd"
             minTickGap={12}
+            padding={{ left: 6, right: 6 }}
           />
           <YAxis
             tick={{ fontSize: 11, fill: colors.tick }}

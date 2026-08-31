@@ -32,11 +32,25 @@ export function ConfirmSubmitButton({
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <Button type="submit" variant="danger" size={size} {...props}>
+    // Mobil untereinander (schmale Karten-Spalten sprengen sonst die Seite),
+    // ab sm nebeneinander wie bisher in den Desktop-Tabellen.
+    <span className="flex w-full max-w-full flex-col gap-1.5 sm:w-auto sm:flex-row sm:items-center">
+      <Button
+        type="submit"
+        variant="danger"
+        size={size}
+        {...props}
+        className={`w-full sm:w-auto ${props.className ?? ""}`}
+      >
         {confirmText}
       </Button>
-      <Button type="button" variant="ghost" size={size} onClick={() => setConfirming(false)}>
+      <Button
+        type="button"
+        variant="ghost"
+        size={size}
+        onClick={() => setConfirming(false)}
+        className="w-full sm:w-auto"
+      >
         Abbrechen
       </Button>
     </span>

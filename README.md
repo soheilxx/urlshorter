@@ -347,7 +347,11 @@ Das Admin-Dashboard folgt seit dem Redesign 2.0 einer eigenen Designsprache
   `click-sparkline.tsx`.
 - **Navigation:** Desktop-Sidebar (`admin-nav.tsx`), mobil Bottom-Tab-Bar mit
   „Mehr“-Sheet (`mobile-nav.tsx`, rollengefiltert – verbotene Links sind nie
-  im DOM).
+  im DOM). Pillen-Menüs (SegmentedNav, Amazon-Subnav, Sprunganker) brechen
+  auf Mobil um bzw. rastern – es gibt bewusst KEINE horizontal scrollenden
+  Menüleisten.
+- **PWA-Install-Banner:** `pwa-install-banner.tsx` (wegklickbar,
+  localStorage-merken; Chrome: `beforeinstallprompt`, iOS: Teilen-Anleitung).
 - **Befehls-Palette:** Strg/Cmd-K (`command-palette.tsx`) mit Live-Suche über
   `GET /api/search` (session-geschützt, Kurzlinks + Ziele).
 - **QR-Codes:** `qr-card.tsx` auf der Kurzlink-Detailseite (clientseitig via

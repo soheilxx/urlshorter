@@ -19,7 +19,7 @@ export function MovementBadge({
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20",
+          "inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20",
           className,
         )}
       >
@@ -31,13 +31,13 @@ export function MovementBadge({
   }
   const pctText =
     percent !== null && percent !== undefined
-      ? ` (${percent > 0 ? "+" : ""}${percent.toLocaleString("de-DE", { maximumFractionDigits: 1 })} %)`
+      ? ` (${percent > 0 ? "+" : ""}${percent.toLocaleString("de-DE", { maximumFractionDigits: 1 })} %)`
       : "";
   if (movement > 0) {
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20",
+          "inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20",
           className,
         )}
       >
@@ -52,7 +52,7 @@ export function MovementBadge({
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20",
+          "inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20",
           className,
         )}
       >
@@ -81,7 +81,7 @@ export function MovementBadge({
 /** Badge für veraltete Werte (letzter bekannter Stand). */
 export function StaleBadge({ ageLabel }: { ageLabel?: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
       <Clock className="h-3 w-3" aria-hidden="true" />
       Letzter bekannter Stand{ageLabel ? ` · ${ageLabel}` : ""}
     </span>

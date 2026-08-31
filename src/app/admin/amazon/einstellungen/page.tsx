@@ -110,7 +110,7 @@ export default async function AmazonSettingsPage() {
           <CardHeader>
             <CardTitle>Scheduler-Status</CardTitle>
           </CardHeader>
-          <TableWrapper>
+          <TableWrapper className="hidden md:block">
             <Table>
               <Thead>
                 <tr>
@@ -153,6 +153,42 @@ export default async function AmazonSettingsPage() {
               </tbody>
             </Table>
           </TableWrapper>
+
+          {/* Mobil: Job-Liste */}
+          <ul className="divide-y divide-zinc-100 md:hidden">
+            {AMAZON_JOB_TYPES.map((type) => {
+              const state = jobStates.find((s) => s.jobType === type);
+              return (
+                <li key={type} className="flex items-center justify-between gap-2 px-4 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-zinc-800">{JOB_LABELS[type] ?? type}</p>
+                    <p className="text-xs text-zinc-400">
+                      {state?.nextRunAt
+                        ? formatBerlinDateTime(state.nextRunAt)
+                        : "beim nächsten Tick"}
+                    </p>
+                  </div>
+                  {state?.lastStatus ? (
+                    <Badge
+                      variant={
+                        state.lastStatus === "SUCCESS"
+                          ? "success"
+                          : state.lastStatus === "PARTIAL"
+                            ? "warning"
+                            : state.lastStatus === "FAILED"
+                              ? "danger"
+                              : "muted"
+                      }
+                    >
+                      {state.lastStatus}
+                    </Badge>
+                  ) : (
+                    <span className="shrink-0 text-xs text-zinc-400">nie gelaufen</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </Card>
       </div>
 
@@ -255,8 +291,8 @@ export default async function AmazonSettingsPage() {
         <CardHeader>
           <CardTitle>Digest-Historie</CardTitle>
         </CardHeader>
-        <TableWrapper>
-          <Table>
+        <TableWrapper className="hidden md:block">
+          <Table minWidth={560}>
             <Thead>
               <tr>
                 <Th>Kalendertag</Th>
@@ -297,6 +333,43 @@ export default async function AmazonSettingsPage() {
             </tbody>
           </Table>
         </TableWrapper>
+
+        {/* Mobil: Digest-Liste */}
+        <ul className="divide-y divide-zinc-100 md:hidden">
+          {digests.length === 0 ? (
+            <li className="px-4 py-8 text-center text-sm text-zinc-400">
+              Noch kein Digest gelaufen (Standard: erster Lauf ab {settings.digestTime} Uhr).
+            </li>
+          ) : (
+            digests.map((digest) => (
+              <li key={digest.id} className="flex items-center justify-between gap-2 px-4 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-sm tabular-nums text-zinc-800">
+                    {digest.calendarDate.toISOString().slice(0, 10)}
+                  </p>
+                  <p className="truncate text-xs text-zinc-400">
+                    {digest.recipient}
+                    {digest.sentAt ? ` · ${formatBerlinDateTime(digest.sentAt)}` : ""}
+                    {digest.dataCompleteness !== null
+                      ? ` · ${Math.round(digest.dataCompleteness * 100)} %`
+                      : ""}
+                  </p>
+                </div>
+                <Badge
+                  variant={
+                    digest.status === "sent"
+                      ? "success"
+                      : digest.status === "failed"
+                        ? "danger"
+                        : "muted"
+                  }
+                >
+                  {digest.status}
+                </Badge>
+              </li>
+            ))
+          )}
+        </ul>
       </Card>
     </div>
   );

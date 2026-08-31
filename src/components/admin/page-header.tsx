@@ -29,7 +29,9 @@ export function PageHeader({
         {description ? <p className="mt-0.5 text-sm text-zinc-500">{description}</p> : null}
       </div>
       {children ? (
-        <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:justify-end">
+        // Mobil: Aktionen gestapelt in voller Breite (einheitliche „Kästen“),
+        // ab md kompakt rechtsbündig.
+        <div className="flex w-full flex-col gap-2 *:w-full md:w-auto md:shrink-0 md:flex-row md:flex-wrap md:items-center md:justify-end md:*:w-auto">
           {children}
         </div>
       ) : null}

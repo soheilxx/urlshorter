@@ -147,32 +147,60 @@ export function LeaderboardView({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex rounded-lg border border-zinc-200 p-0.5" role="group" aria-label="Ansicht">
-          <button
-            type="button"
-            onClick={() => setMode("grid")}
-            aria-pressed={mode === "grid"}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium sm:py-1",
-              mode === "grid" ? "bg-primary text-white" : "text-zinc-500 hover:text-zinc-800",
-            )}
+      {/* Toolbar in festen Zeilen: (1) Ansicht + Exporte, (2) Filter-Raster,
+          (3) Suche – mobil ruhig und ohne verwaiste Einzel-Pills. */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="flex rounded-lg border border-zinc-200 p-0.5"
+            role="group"
+            aria-label="Ansicht"
           >
-            <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" /> Grid
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("table")}
-            aria-pressed={mode === "table"}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium sm:py-1",
-              mode === "table" ? "bg-primary text-white" : "text-zinc-500 hover:text-zinc-800",
-            )}
-          >
-            <TableIcon className="h-3.5 w-3.5" aria-hidden="true" /> Tabelle
-          </button>
+            <button
+              type="button"
+              onClick={() => setMode("grid")}
+              aria-pressed={mode === "grid"}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium sm:py-1",
+                mode === "grid" ? "bg-primary text-white" : "text-zinc-500 hover:text-zinc-800",
+              )}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" /> Grid
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("table")}
+              aria-pressed={mode === "table"}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-medium sm:py-1",
+                mode === "table" ? "bg-primary text-white" : "text-zinc-500 hover:text-zinc-800",
+              )}
+            >
+              <TableIcon className="h-3.5 w-3.5" aria-hidden="true" /> Tabelle
+            </button>
+          </div>
+          {exportBase ? (
+            <div className="ml-auto flex gap-1">
+              <a
+                href={`${exportBase}&format=csv`}
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 sm:px-2.5 sm:py-1.5"
+              >
+                CSV
+              </a>
+              <a
+                href={`${exportBase}&format=json`}
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 sm:px-2.5 sm:py-1.5"
+              >
+                JSON
+              </a>
+            </div>
+          ) : null}
         </div>
-        <div className="flex flex-wrap gap-1" role="group" aria-label="Filter">
+        <div
+          className="grid grid-cols-3 gap-1 sm:flex sm:flex-wrap"
+          role="group"
+          aria-label="Filter"
+        >
           {filterButtons.map((f) => (
             <button
               key={f.key}
@@ -180,7 +208,7 @@ export function LeaderboardView({
               onClick={() => setFilter(f.key)}
               aria-pressed={filter === f.key}
               className={cn(
-                "rounded-lg px-2.5 py-2 text-xs font-medium sm:py-1",
+                "truncate rounded-lg px-2 py-2 text-center text-xs font-medium sm:px-2.5 sm:py-1",
                 filter === f.key ? "bg-zinc-200 text-zinc-900" : "text-zinc-500 hover:bg-zinc-100",
               )}
             >
@@ -194,24 +222,8 @@ export function LeaderboardView({
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Titel, Autor, ASIN …"
           aria-label="In der Liste suchen"
-          className="w-full rounded-xl border border-zinc-200 bg-surface px-3 py-2 text-base focus:border-zinc-400 focus:outline-none sm:ml-auto sm:w-44 sm:rounded-lg sm:px-2.5 sm:py-1.5 sm:text-xs"
+          className="w-full rounded-xl border border-zinc-200 bg-surface px-3 py-2 text-base focus:border-zinc-400 focus:outline-none sm:w-64 sm:rounded-lg sm:px-2.5 sm:py-1.5 sm:text-xs"
         />
-        {exportBase ? (
-          <div className="flex gap-1">
-            <a
-              href={`${exportBase}&format=csv`}
-              className="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
-            >
-              CSV
-            </a>
-            <a
-              href={`${exportBase}&format=json`}
-              className="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
-            >
-              JSON
-            </a>
-          </div>
-        ) : null}
       </div>
 
       {filtered.length === 0 ? (
@@ -228,11 +240,11 @@ export function LeaderboardView({
                   : "border-zinc-200",
               )}
             >
-              <div className="absolute -left-1.5 -top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white shadow">
+              <div className="absolute left-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white shadow">
                 {entry.bestsellerRank}
               </div>
               {entry.isOwn ? (
-                <div className="absolute -right-1.5 -top-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
+                <div className="absolute right-1.5 top-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white shadow">
                   Dein Buch
                 </div>
               ) : null}

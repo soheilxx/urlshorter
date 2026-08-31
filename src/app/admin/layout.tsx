@@ -9,6 +9,7 @@ import {
   type PaletteEntry,
 } from "@/components/admin/command-palette";
 import { MobileTabBar, type MoreNavItem } from "@/components/admin/mobile-nav";
+import { PwaInstallBanner } from "@/components/admin/pwa-install-banner";
 import { ThemeToggle } from "@/components/admin/theme-toggle";
 import { getSession } from "@/lib/auth";
 import { getPublicHostname } from "@/lib/env";
@@ -157,7 +158,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
 
       {/* Inhalt (mobil mit Platz für die Tab-Bar) */}
-      <main className="min-w-0 flex-1 px-4 py-5 pb-24 md:px-8 md:py-8 md:pb-8">
+      {/* overflow-x-clip: einzelne ausreißende Elemente können die Seite
+          nie mehr horizontal verschieben (Schutznetz zusätzlich zu den
+          responsiven Fixes der Inhalte). */}
+      <main className="min-w-0 flex-1 overflow-x-clip px-4 py-5 pb-24 md:px-8 md:py-8 md:pb-8">
         <div className="mx-auto max-w-screen-2xl">{children}</div>
       </main>
 
@@ -169,6 +173,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       />
 
       <CommandPalette entries={buildPaletteEntries(session.role)} />
+      <PwaInstallBanner />
     </div>
   );
 }
