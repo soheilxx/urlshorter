@@ -28,7 +28,7 @@ const html = `<!doctype html><html><body style="margin:0">
       Business ohne Plan, Ausreden oder Kompromisse
     </div>
     <div style="margin-top:20px;font-size:24px;color:#f6f1e6;">Das Buch von Soheil Hosseini</div>
-    <div style="margin-top:14px;font-size:20px;color:#948a76;">Mit Song &amp; Musikvideo · Jetzt vorbestellen</div>
+    <div style="margin-top:14px;font-size:20px;color:#948a76;">Mit Song &amp; Musikvideo · Jetzt das Buch sichern</div>
   </div>
   <img src="${cover}" style="position:absolute;right:90px;top:75px;width:300px;height:480px;
        object-fit:cover;border-radius:6px 14px 14px 6px;transform:rotate(4deg);

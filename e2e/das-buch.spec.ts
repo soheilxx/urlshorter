@@ -26,16 +26,23 @@ test("Seite rendert Buch, Autor, Fakten und Amazon-CTAs", async ({ page }) => {
     page.getByText("Business ohne Plan, Ausreden oder Kompromisse").first(),
   ).toBeVisible();
   await expect(page.getByText("erscheint am 06.10.2026").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "David gegen Goliath" })).toBeVisible();
   await expect(
     page.getByRole("img", { name: /Buchcover: Die Lizenz zum Erfolg/ }),
   ).toBeVisible();
   await expect(page.getByRole("img", { name: /Soheil Hosseini, Autor/ })).toBeVisible();
 
-  // Alle Kauf-CTAs zeigen exakt auf den Affiliate-Redirect
-  const amazonLinks = page.getByRole("link", { name: /Amazon vorbestellen/ });
+  // Alle Kauf-CTAs („… sichern“) zeigen exakt auf den Affiliate-Redirect
+  const amazonLinks = page.getByRole("link", { name: /sichern/ });
   await expect(amazonLinks).toHaveCount(3);
   for (const link of await amazonLinks.all()) {
     await expect(link).toHaveAttribute("href", AMAZON_URL);
+  }
+
+  // Vertrauensleiste: Buchhandels-Namen sichtbar
+  await expect(page.getByText("Erhältlich bei")).toBeVisible();
+  for (const name of ["Thalia", "Hugendubel", "bücher.de"]) {
+    await expect(page.getByText(name, { exact: true })).toBeVisible();
   }
 
   // Rechtslinks (Ads-Compliance) + Amazon-Partner-Hinweis

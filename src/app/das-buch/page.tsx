@@ -26,6 +26,7 @@ import {
   AMAZON_PRODUCT_URL,
   CONTACT_EMAIL,
   PRIZE_VALUE_LABEL,
+  RETAILERS,
   TRIP_DURATION_LABEL,
 } from "@/lib/gewinnspiel-config";
 
@@ -41,14 +42,14 @@ export const metadata: Metadata = {
   // absolute: entkommt dem "%s · TRACK.SITE"-Template des Root-Layouts
   title: { absolute: "Die Lizenz zum Erfolg – Das Buch von Soheil Hosseini" },
   description:
-    "„Die Lizenz zum Erfolg – Business ohne Plan, Ausreden oder Kompromisse“ von Soheil Hosseini. Taschenbuch, erscheint am 06.10.2026. Jetzt Musikvideo ansehen und bei Amazon vorbestellen.",
+    "„Die Lizenz zum Erfolg – Business ohne Plan, Ausreden oder Kompromisse“ von Soheil Hosseini: eine David-gegen-Goliath-Geschichte. Jetzt Musikvideo ansehen und das Buch bei Amazon sichern.",
   alternates: { canonical: BUCH_URL },
   // PFLICHT: Das Root-Layout setzt noindex – Ads-Landingpage ist indexierbar.
   robots: { index: true, follow: true },
   openGraph: {
     title: "Die Lizenz zum Erfolg – Das Buch von Soheil Hosseini",
     description:
-      "Taschenbuch, erscheint am 06.10.2026 – mit eigenem Song und Musikvideo. Jetzt bei Amazon vorbestellen.",
+      "Eine David-gegen-Goliath-Geschichte – mit eigenem Song und Musikvideo. Jetzt das Buch bei Amazon sichern.",
     url: BUCH_URL,
     siteName: "Die Lizenz zum Erfolg",
     locale: "de_DE",
@@ -198,9 +199,9 @@ export default async function DasBuchPage({
               <p className="mt-4 text-xl font-medium text-[var(--gw-ink)]">{BUCH_UNTERTITEL}.</p>
               <p className="mt-4 max-w-xl text-lg leading-relaxed text-[var(--gw-ink-soft)]">
                 Das neue Buch von{" "}
-                <strong className="font-semibold text-[var(--gw-ink)]">{BUCH_AUTOR}</strong> –
-                jetzt als {BUCH_FORMAT_LABEL} vorbestellbar. Und wenn du wissen willst, worum es
-                geht: Das Musikvideo zum Buch bringt es auf den Punkt.
+                <strong className="font-semibold text-[var(--gw-ink)]">{BUCH_AUTOR}</strong> – die
+                David-gegen-Goliath-Geschichte eines Außenseiters, der sich nicht geschlagen
+                gibt. Das Musikvideo bringt sie auf den Punkt.
               </p>
             </div>
 
@@ -247,7 +248,7 @@ export default async function DasBuchPage({
                   data-gw-event="buch_amazon_klick"
                   className={GOLD_CTA}
                 >
-                  Jetzt bei Amazon vorbestellen
+                  Jetzt Buch bei Amazon sichern
                 </a>
                 <a
                   href="#musikvideo"
@@ -257,6 +258,26 @@ export default async function DasBuchPage({
                   <Music2 className="h-3.5 w-3.5" aria-hidden="true" />
                   Musikvideo ansehen
                 </a>
+              </div>
+
+              {/* Vertrauenssiegel: das Buch gibt es im gesamten Buchhandel */}
+              <div className="mt-9 border-t gw-hairline pt-6">
+                <p className="text-[11px] font-semibold tracking-[0.2em] text-[var(--gw-ink-mute)] uppercase">
+                  Erhältlich bei
+                </p>
+                <ul className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-2">
+                  {RETAILERS.filter((r) => r.id !== "other").map((retailer) => (
+                    <li
+                      key={retailer.id}
+                      className="rounded-lg border gw-hairline bg-white/[0.03] px-3.5 py-1.5 text-sm font-semibold tracking-wide text-[var(--gw-ink-soft)]"
+                    >
+                      {retailer.label}
+                    </li>
+                  ))}
+                  <li className="pl-1 text-sm text-[var(--gw-ink-mute)]">
+                    … und im Buchhandel vor Ort
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
@@ -308,21 +329,26 @@ export default async function DasBuchPage({
         <section className="relative">
           <div className="mx-auto max-w-5xl px-5 py-16 sm:px-8 lg:py-20">
             <SectionHeading
-              kicker="Das Buch"
-              title="Business ohne Plan, Ausreden oder Kompromisse"
-              intro="In „Die Lizenz zum Erfolg“ erzählt Soheil Hosseini seine Geschichte und die Idee dahinter."
+              kicker="Die Geschichte"
+              title="David gegen Goliath"
+              intro="Business ohne Plan, Ausreden oder Kompromisse – die Geschichte hinter „Die Lizenz zum Erfolg“."
             />
             <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
               <div className="space-y-4 text-lg leading-relaxed text-[var(--gw-ink-soft)]">
                 <p>
-                  „{BUCH_TITEL}“ erscheint am {BUCH_ERSCHEINT_LABEL} als {BUCH_FORMAT_LABEL} im{" "}
-                  {BUCH_VERLAG} – und ist ab sofort bei Amazon vorbestellbar. Wer vorbestellt,
-                  hält das Buch am Erscheinungstag als einer der Ersten in den Händen.
+                  Auf der einen Seite: die Giganten einer Branche – mit großen Budgets, großen
+                  Namen und besten Beziehungen. Auf der anderen: ein Einzelner mit nichts als
+                  einer Idee und der Entscheidung, sie durchzuziehen.
                 </p>
                 <p>
-                  Einen ersten Eindruck gibt dir der Song zum Buch: Musikvideo und Track tragen
-                  denselben Titel wie das Buch und transportieren seine Botschaft – schau oben
-                  rein, bevor du bestellst.
+                  „{BUCH_TITEL}“ ist die David-gegen-Goliath-Geschichte von {BUCH_AUTOR}: der Weg
+                  eines Außenseiters, der sich weigert aufzugeben – ohne Plan&nbsp;B, ohne
+                  Ausreden, ohne Kompromisse. Mit jedem Rückschlag, jeder Ohrfeige des Marktes
+                  und dem Moment, in dem sich das Blatt wendet.
+                </p>
+                <p>
+                  Wie es ausgeht? Das erzählt dir das Buch. Den Vorgeschmack liefert der Song –
+                  danach willst du die ganze Geschichte.
                 </p>
                 <a
                   href={AMAZON_PRODUCT_URL}
@@ -331,7 +357,7 @@ export default async function DasBuchPage({
                   data-gw-event="buch_amazon_klick"
                   className={SECONDARY_CTA}
                 >
-                  Bei Amazon vorbestellen
+                  Buch bei Amazon sichern
                   <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                 </a>
               </div>
@@ -484,8 +510,8 @@ export default async function DasBuchPage({
               Sichere dir <span className="gw-gold-text">dein Exemplar</span>.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-[var(--gw-ink-soft)]">
-              „{BUCH_TITEL}“ erscheint am {BUCH_ERSCHEINT_LABEL} – jetzt vorbestellen und am
-              Erscheinungstag dabei sein.
+              „{BUCH_TITEL}“ erscheint am {BUCH_ERSCHEINT_LABEL}. Sichere dir dein Exemplar jetzt
+              – und gehöre zu den Ersten, die die ganze Geschichte kennen.
             </p>
             <a
               href={AMAZON_PRODUCT_URL}
@@ -494,7 +520,7 @@ export default async function DasBuchPage({
               data-gw-event="buch_amazon_klick"
               className={`${GOLD_CTA} mt-8 px-8`}
             >
-              Jetzt bei Amazon vorbestellen
+              Jetzt mein Exemplar sichern
             </a>
             <p className="mt-4 text-sm text-[var(--gw-ink-mute)]">
               {BUCH_FORMAT_LABEL} · {BUCH_PREIS_LABEL} · {BUCH_VERLAG}
