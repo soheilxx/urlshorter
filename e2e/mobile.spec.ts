@@ -134,6 +134,30 @@ test.describe("Mobile Layout", () => {
     }
   });
 
+  test("Buch-Landingpage ohne horizontales Scrollen (auch nach Video-Start)", async ({
+    page,
+  }) => {
+    // Externe Embeds stubben – kein Internet nötig, keine Flakes
+    const stub = { status: 200, contentType: "text/html", body: "<html></html>" };
+    await page.route("**/*youtube-nocookie.com/**", (route) => route.fulfill(stub));
+    await page.route("**/*open.spotify.com/**", (route) => route.fulfill(stub));
+
+    await page.goto("/das-buch");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const before = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(before, "Overflow auf /das-buch").toBeLessThanOrEqual(1);
+
+    // iframes sind klassische Overflow-Quellen → nach dem Facade-Klick erneut messen
+    await page.getByRole("button", { name: /Video abspielen/ }).click();
+    await expect(page.locator('iframe[title^="Musikvideo"]')).toBeVisible();
+    const after = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(after, "Overflow auf /das-buch nach Video-Start").toBeLessThanOrEqual(1);
+  });
+
   test("FilterPanel auf der Klicks-Seite klappt auf", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto("/admin/clicks");

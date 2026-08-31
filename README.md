@@ -305,6 +305,31 @@ zentral über dieses System gesteuert:
   serverseitig weitergeleitet – mit derselben `event_id` wie das
   Browser-Pixel, die Anbieter deduplizieren also selbst.
 
+## Buch-Landingpage (/das-buch)
+
+Öffentliche Ads-Zielseite (web.de/gmx.de Display-Ads) für „Die Lizenz zum
+Erfolg“ im Design der Gewinnspiel-Seite (`gewinn-theme`):
+
+- **Route `/das-buch`** – bewusst kein 4-Kleinbuchstaben-Pfad (kollidiert
+  sonst mit dem Shortcode-Routing `[code]`). Indexierbar
+  (`robots index` überschreibt das globale noindex), Canonical + eigenes
+  OG-Bild (`public/das-buch/og.png`, Generator `scripts/generate-buch-og.ts`).
+- **Eckwerte** zentral in `src/lib/buch-config.ts` (Titel, Untertitel, Preis,
+  Verlag, Erscheinungstermin, YouTube-/Spotify-IDs); der Amazon-Kauflink
+  kommt weiterhin aus `gewinnspiel-config.ts` (`AMAZON_PRODUCT_URL`).
+- **Musikvideo** als Click-to-Load-Facade (`components/buch/youtube-facade.tsx`,
+  lokales Poster `public/das-buch/video-poster.jpg`; erst der Klick lädt das
+  `youtube-nocookie`-Embed mit Autoplay). **Spotify** als lazy iframe
+  (`components/buch/spotify-embed.tsx`).
+- **Tracking** wie `/gewinn` (`GewinnTracking`, Betreiber-Entscheidung ohne
+  Consent-Gate, `pageEventName="buch_seite"`); Klick-Events:
+  `buch_amazon_klick`, `buch_video_play`, `buch_spotify_klick`,
+  `buch_gewinnspiel_klick`. UTM-Parameter der Anzeige werden an den
+  `/gewinn`-Link weitergereicht.
+- **Gewinnspiel** erscheint bewusst nur als sekundärer Teaser mit Link auf
+  `/gewinn`. E2E: `e2e/das-buch.spec.ts` + Overflow-Check in
+  `e2e/mobile.spec.ts` (Embeds werden gestubbt).
+
 ## Amazon Buchrankings
 
 Modul „Amazon Rankings“ im Dashboard: Verkaufsränge des eigenen Buchs
