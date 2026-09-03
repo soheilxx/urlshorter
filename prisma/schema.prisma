@@ -259,6 +259,63 @@ model SweepstakesEntry {
   @@index([submissionIdentifier, createdAt])
 }
 
+/// Gutscheincode der Newsletter-Aktion (50 % Wiresoft-Shop). Codes werden
+/// im Dashboard importiert und pro Buchbestellung genau einmal vergeben.
+model VoucherCode {
+  id         String   @id
+  code       String   @unique
+  /// Import-Charge (frei benannt, z. B. Dateiname/Datum)
+  batch      String?
+  importedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  redemption VoucherRedemption?
+
+  @@index([importedAt])
+}
+
+/// Einlösung/Ausstellung eines Gutscheins gegen eine Buchbestellung.
+/// Datensparsam wie SweepstakesEntry: Bestellnummer nur gehasht + verschlüsselt.
+model VoucherRedemption {
+  id            String      @id
+  voucherCodeId String      @unique
+  voucherCode   VoucherCode @relation(fields: [voucherCodeId], references: [id])
+
+  /// Händler-Kennung (amazon | thalia | hugendubel | buecher_de | other)
+  retailer      String
+  retailerOther String?
+
+  /// HMAC der normalisierten Bestellnummer – eine Bestellung = ein Gutschein
+  orderNumberHash      String @unique
+  orderNumberEncrypted String
+  /// HMAC der normalisierten E-Mail: erlaubt die erneute Anzeige des eigenen
+  /// Codes (Code wird nicht per E-Mail versendet)
+  emailHash String
+
+  firstName String
+  lastName  String
+  email     String
+
+  acceptedTermsAt DateTime @db.Timestamptz(3)
+  termsVersion    String
+
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  utmTerm     String?
+  referrer    String?
+  landingHost String?
+
+  /// Nicht rückrechenbarer HMAC-Hash (IP + User-Agent) für Rate Limiting
+  submissionIdentifier String?
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@index([email])
+  @@index([submissionIdentifier, createdAt])
+}
+
 /// Event aus dem zentralen Tracking-Snippet (t.js) einer angebundenen Website.
 /// Datensparsam: keine IPs, keine Query-Strings (außer extrahierter UTM),
 /// Besucher nur als rotierender HMAC bzw. HMAC der First-Party-Cookie-ID.

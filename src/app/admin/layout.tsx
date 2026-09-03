@@ -42,6 +42,7 @@ function buildMoreItems(role: Role): MoreNavItem[] {
   }
   if (canManageUsers(role)) {
     items.push({ href: "/admin/gewinnspiel", label: "Gewinnspiel", icon: "gewinnspiel" });
+    items.push({ href: "/admin/gutscheine", label: "Gutscheine", icon: "gutscheine" });
     items.push({ href: "/admin/users", label: "Benutzer", icon: "users" });
   }
   if (canManageSettings(role)) {
@@ -70,6 +71,7 @@ function buildPaletteEntries(role: Role): PaletteEntry[] {
   }
   if (canManageUsers(role)) {
     pages.push({ href: "/admin/gewinnspiel", label: "Gewinnspiel", group: "Seiten" });
+    pages.push({ href: "/admin/gutscheine", label: "Gutscheine", group: "Seiten" });
     pages.push({ href: "/admin/users", label: "Benutzer", group: "Seiten" });
   }
   if (canManageSettings(role)) {

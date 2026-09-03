@@ -31,6 +31,13 @@ export function hashOrderNumber(normalizedOrderNumber: string): string {
     .digest("hex");
 }
 
+/** Nicht rückrechenbarer Hash der normalisierten E-Mail (Gutschein-Wiedervorlage). */
+export function hashEmailForVoucher(normalizedEmail: string): string {
+  return createHmac("sha256", deriveKey("voucher-email-hash-v1"))
+    .update(normalizedEmail, "utf8")
+    .digest("hex");
+}
+
 /** AES-256-GCM: "v1:<iv>:<tag>:<ciphertext>" (alles base64). */
 export function encryptOrderNumber(plaintext: string): string {
   const key = deriveKey("order-encrypt-v1");

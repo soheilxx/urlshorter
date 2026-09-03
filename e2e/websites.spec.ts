@@ -70,8 +70,9 @@ test("Admin verwaltet Website mit Pixel-IDs und Token im Dashboard", async ({
     if (await deleteButton.isVisible()) {
       await deleteButton.click();
     }
-    await expect(page).toHaveURL(/\/admin\/websites$/, { timeout: 3000 });
+    // Maßgeblich ist das Ergebnis (Snippet deaktiviert), nicht die
+    // Client-Navigation – deren Antwort kann der Router verwerfen (README).
+    const js = await (await request.get(`/t.js?site=${SITE_ID}`)).text();
+    expect(js).toContain("unbekannte oder deaktivierte Site");
   }).toPass({ timeout: 25_000 });
-  const jsAfterDelete = await (await request.get(`/t.js?site=${SITE_ID}`)).text();
-  expect(jsAfterDelete).toContain("unbekannte oder deaktivierte Site");
 });

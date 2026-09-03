@@ -9,6 +9,7 @@ import {
   MousePointerClick,
   Settings,
   Target,
+  Ticket,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -52,6 +53,13 @@ const NAV_ITEMS = [
     href: "/admin/gewinnspiel",
     label: "Gewinnspiel",
     icon: Gift,
+    exact: false,
+    visible: (role: Role) => canManageUsers(role),
+  },
+  {
+    href: "/admin/gutscheine",
+    label: "Gutscheine",
+    icon: Ticket,
     exact: false,
     visible: (role: Role) => canManageUsers(role),
   },

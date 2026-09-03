@@ -156,6 +156,14 @@ test.describe("Mobile Layout", () => {
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
     expect(after, "Overflow auf /das-buch nach Video-Start").toBeLessThanOrEqual(1);
+
+    // Gutschein-Variante (Formular + Schritte)
+    await page.goto("/gutschein");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const gutschein = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(gutschein, "Overflow auf /gutschein").toBeLessThanOrEqual(1);
   });
 
   test("FilterPanel auf der Klicks-Seite klappt auf", async ({ page }) => {

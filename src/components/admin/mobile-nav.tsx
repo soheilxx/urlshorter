@@ -13,6 +13,7 @@ import {
   MousePointerClick,
   Settings,
   Target,
+  Ticket,
   TrendingUp,
   Users,
   X,
@@ -40,6 +41,7 @@ const ICONS: Record<string, LucideIcon> = {
   clicks: MousePointerClick,
   websites: MonitorSmartphone,
   gewinnspiel: Gift,
+  gutscheine: Ticket,
   users: Users,
   settings: Settings,
 };

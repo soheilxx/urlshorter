@@ -78,3 +78,33 @@ export const EMPTY_SWEEPSTAKES_STATE: SweepstakesActionState = {
   fieldErrors: null,
   referenceNumber: null,
 };
+
+export interface VoucherActionState {
+  ok: boolean;
+  error: string | null;
+  fieldErrors: Record<string, string> | null;
+  /** Ausgestellter Gutscheincode (nur bei ok). */
+  code: string | null;
+  /** true, wenn der Code für diese Bestellung bereits früher ausgestellt wurde. */
+  alreadyIssued: boolean;
+}
+
+export const EMPTY_VOUCHER_STATE: VoucherActionState = {
+  ok: false,
+  error: null,
+  fieldErrors: null,
+  code: null,
+  alreadyIssued: false,
+};
+
+export interface VoucherImportState {
+  ok: boolean;
+  error: string | null;
+  success: string | null;
+}
+
+export const EMPTY_VOUCHER_IMPORT_STATE: VoucherImportState = {
+  ok: false,
+  error: null,
+  success: null,
+};

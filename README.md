@@ -330,6 +330,32 @@ Erfolg“ im Design der Gewinnspiel-Seite (`gewinn-theme`):
   `/gewinn`. E2E: `e2e/das-buch.spec.ts` + Overflow-Check in
   `e2e/mobile.spec.ts` (Embeds werden gestubbt).
 
+## Gutscheinaktion (/gutschein)
+
+Zielseite des Newsletters: dieselbe Buch-Landingpage (gemeinsame Komponente
+`src/components/buch/buch-landing-page.tsx`, Variante `gutschein`) plus
+Gutschein-Aktion – jede registrierte Buchbestellung erhält sofort einen
+50-%-Code für den Wiresoft Software Shop.
+
+- **Codes** werden im Dashboard (**Gutscheine**, nur ADMIN) importiert: CSV mit
+  Spalte `code` (Shop-Export) oder ein Code pro Zeile; Duplikate werden
+  übersprungen. Modelle `VoucherCode` / `VoucherRedemption`.
+- **Vergabe** (`src/lib/gutschein.ts`): atomar per Transaktion mit
+  `FOR UPDATE SKIP LOCKED` – jede Bestellung genau ein Code, kein Code doppelt.
+  Bestellnummer nur gehasht + verschlüsselt (wie Gewinnspiel); dieselbe
+  Bestellnummer + E-Mail zeigt den Code erneut (er wird nicht per E-Mail
+  versendet), andere E-Mail → Ablehnung. Bot-Schutz: Honeypot, Zeit-Token,
+  Rate Limit.
+- **Formular** (`components/buch/gutschein-form.tsx`): Bestätigungsfenster mit
+  Code, Kopieren-Button und dem Hinweis, dass der Code nicht per E-Mail kommt.
+  Sind keine Codes mehr verfügbar, zeigt die Seite „Alle Gutscheine sind
+  vergeben“.
+- **Dashboard**: Ausgestellt/Verfügbar/Heute/7 Tage, Herkunft (UTM), Händler,
+  Liste der Ausstellungen (E-Mail maskiert), Anonymisierung, CSV-Export
+  (`GET /api/export/gutscheine`). Warnung bei weniger als 100 Rest-Codes.
+- Eckwerte in `src/lib/gutschein-config.ts` (Shop-Name/-URL, Rabatt,
+  Bedingungen, Bedingungen-Version).
+
 ## Amazon Buchrankings
 
 Modul „Amazon Rankings“ im Dashboard: Verkaufsränge des eigenen Buchs
