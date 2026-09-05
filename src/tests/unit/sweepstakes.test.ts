@@ -1,5 +1,10 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { getSweepstakesPhase } from "@/lib/gewinnspiel-config";
+import {
+  getSweepstakesPhase,
+  SECONDARY_PRIZES_COUNT,
+  SECONDARY_PRIZES_TOTAL_EUR,
+  SECONDARY_PRIZES_TOTAL_LABEL,
+} from "@/lib/gewinnspiel-config";
 import {
   csvCell,
   maskEmail,
@@ -134,12 +139,25 @@ describe("Gewinnspiel-Krypto", () => {
   });
 });
 
+describe("Zusatzgewinne (SECONDARY_PRIZES)", () => {
+  it("ergibt 100 Gutscheine im Gesamtwert von 13.500 € – Label und Summe stimmen überein", () => {
+    expect(SECONDARY_PRIZES_COUNT).toBe(100);
+    expect(SECONDARY_PRIZES_TOTAL_EUR).toBe(13_500);
+    expect(SECONDARY_PRIZES_TOTAL_LABEL).toBe("13.500 €");
+  });
+});
+
 describe("getSweepstakesPhase", () => {
   it("ist vor der Gewinnerbekanntgabe offen", () => {
     expect(getSweepstakesPhase(new Date("2026-09-01T12:00:00+02:00"))).toBe("open");
   });
-  it("gilt ab der Gewinnerbekanntgabe als announced", () => {
-    expect(getSweepstakesPhase(new Date("2026-10-06T00:00:01+02:00"))).toBe("announced");
+  it("ist bis zum Registrierungsschluss 11.10.2026 23:59 Uhr offen und danach geschlossen", () => {
+    expect(getSweepstakesPhase(new Date("2026-10-11T23:59:00+02:00"))).toBe("open");
+    expect(getSweepstakesPhase(new Date("2026-10-12T00:00:00+02:00"))).toBe("closed");
+    expect(getSweepstakesPhase(new Date("2026-10-12T11:59:59+02:00"))).toBe("closed");
+  });
+  it("gilt ab der Gewinnerbekanntgabe 12.10.2026 12 Uhr als announced", () => {
+    expect(getSweepstakesPhase(new Date("2026-10-12T12:00:00+02:00"))).toBe("announced");
     expect(getSweepstakesPhase(new Date("2026-11-01T00:00:00+01:00"))).toBe("announced");
   });
 });

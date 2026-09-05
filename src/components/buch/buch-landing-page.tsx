@@ -33,6 +33,8 @@ import {
   AMAZON_PRODUCT_URL,
   CONTACT_EMAIL,
   PRIZE_VALUE_LABEL,
+  SECONDARY_PRIZE_SHOP_NAME,
+  SECONDARY_PRIZES_COUNT,
   RETAILERS,
   TRIP_DURATION_LABEL,
 } from "@/lib/gewinnspiel-config";
@@ -583,7 +585,8 @@ export async function BuchLandingPage({
               <p className="mx-auto mt-3 max-w-xl text-[var(--gw-ink-soft)]">
                 Wer das Buch bestellt und die Bestellung registriert, nimmt an der Verlosung
                 einer {TRIP_DURATION_LABEL}-Reise nach Dubai für zwei Personen im Wert von{" "}
-                {PRIZE_VALUE_LABEL} teil.
+                {PRIZE_VALUE_LABEL} teil – außerdem werden {SECONDARY_PRIZES_COUNT} Wertgutscheine
+                für den {SECONDARY_PRIZE_SHOP_NAME} verlost.
               </p>
               <Link
                 href={gewinnHref}

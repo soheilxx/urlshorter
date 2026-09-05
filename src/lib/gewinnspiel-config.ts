@@ -4,9 +4,9 @@
  * hier – nirgendwo sonst im Code hart verdrahtet.
  *
  * Veranstalter-Daten stammen aus dem veröffentlichten Impressum von
- * soheil-hosseini.de (Wiresoft AG). Ohne gesetzten ENTRY_DEADLINE ist die
- * Teilnahme bis zur Gewinnerbekanntgabe möglich – so auch in den
- * Teilnahmebedingungen formuliert.
+ * soheil-hosseini.de (Wiresoft AG). Registrierungsschluss (ENTRY_DEADLINE) und
+ * Gewinnerbekanntgabe (ANNOUNCEMENT_DATE) sind Vorgaben von Soheil (05.09.2026)
+ * und stehen identisch in den Teilnahmebedingungen.
  */
 
 export type SweepstakesPhase = "scheduled" | "open" | "closed" | "announced";
@@ -18,16 +18,17 @@ export const SWEEPSTAKES_MODE: "auto" | SweepstakesPhase = "auto";
 export const ENTRY_START: Date | null = null;
 
 /**
- * Optionaler früherer Teilnahmeschluss. Solange null, ist die Teilnahme bis
- * zur Gewinnerbekanntgabe (ANNOUNCEMENT_DATE) möglich – exakt so in den
- * Teilnahmebedingungen geregelt. Bei Bedarf setzen, z. B.:
- * new Date("2026-10-01T23:59:59+02:00")
+ * Registrierungsschluss (Europe/Berlin). Danach ist die Seite in Phase "closed",
+ * bis zur Gewinnerbekanntgabe. null = Registrierung bis zur Bekanntgabe möglich.
  */
-export const ENTRY_DEADLINE: Date | null = null;
+export const ENTRY_DEADLINE: Date | null = new Date("2026-10-11T23:59:59+02:00");
+export const ENTRY_DEADLINE_LABEL = "11.10.2026, 23:59 Uhr";
 
-/** Gewinnerbekanntgabe (fix vorgegeben). */
-export const ANNOUNCEMENT_DATE = new Date("2026-10-06T00:00:00+02:00");
-export const ANNOUNCEMENT_DATE_LABEL = "06.10.2026";
+/** Gewinnerbekanntgabe (fix vorgegeben): 12.10.2026 um 12 Uhr. */
+export const ANNOUNCEMENT_DATE = new Date("2026-10-12T12:00:00+02:00");
+export const ANNOUNCEMENT_DATE_LABEL = "12.10.2026";
+export const ANNOUNCEMENT_TIME_LABEL = "12 Uhr";
+export const ANNOUNCEMENT_DATETIME_LABEL = `${ANNOUNCEMENT_DATE_LABEL} um ${ANNOUNCEMENT_TIME_LABEL}`;
 
 export const TIMEZONE = "Europe/Berlin";
 
@@ -37,6 +38,30 @@ export const PRIZE_VALUE_LABEL = "20.000 €";
 
 /** Reisedauer (Angabe von Soheil, 28.08.2026). */
 export const TRIP_DURATION_LABEL = "5 Tage";
+
+/**
+ * Weitere Gewinne neben dem Hauptgewinn (Vorgabe von Soheil, 05.09.2026):
+ * Wertgutscheine für den Wiresoft Software Shop, einlösbar auf das gesamte
+ * Sortiment (z. B. Windows 11 Pro, Microsoft Office). Hauptgewinn bleibt die Reise.
+ */
+export const SECONDARY_PRIZES = [
+  { count: 10, valueEur: 500, valueLabel: "500 €" },
+  { count: 40, valueEur: 150, valueLabel: "150 €" },
+  { count: 50, valueEur: 50, valueLabel: "50 €" },
+] as const;
+export const SECONDARY_PRIZES_COUNT = SECONDARY_PRIZES.reduce((sum, p) => sum + p.count, 0);
+export const SECONDARY_PRIZES_TOTAL_EUR = SECONDARY_PRIZES.reduce(
+  (sum, p) => sum + p.count * p.valueEur,
+  0,
+);
+export const SECONDARY_PRIZES_TOTAL_LABEL = `${new Intl.NumberFormat("de-DE").format(SECONDARY_PRIZES_TOTAL_EUR)} €`;
+/** Shop-Angaben zentral in gutschein-config (importiert nichts → kein Zyklus). */
+export {
+  GUTSCHEIN_SHOP_NAME as SECONDARY_PRIZE_SHOP_NAME,
+  GUTSCHEIN_SHOP_URL as SECONDARY_PRIZE_SHOP_URL,
+} from "@/lib/gutschein-config";
+/** Geschütztes Leerzeichen in „z. B.“, damit die Abkürzung nie am Zeilenende bricht. */
+export const SECONDARY_PRIZE_EXAMPLES_LABEL = "z. B. Windows 11 Pro oder Microsoft Office";
 
 /**
  * Amazon-Produktlink: eigener Affiliate-Redirect der Wiresoft AG
@@ -79,7 +104,7 @@ export const MIN_FORM_SECONDS = 3;
 export const MAX_FORM_HOURS = 24;
 
 /** Version der Teilnahmebedingungen, die Teilnehmende bestätigen. */
-export const TERMS_VERSION = "1.1 (28.08.2026)";
+export const TERMS_VERSION = "1.2 (05.09.2026)";
 
 /** Version/Stand der Datenschutzhinweise (extern gepflegt). */
 export const PRIVACY_VERSION = "extern-2026-08";

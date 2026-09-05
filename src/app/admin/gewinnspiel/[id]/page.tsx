@@ -67,7 +67,7 @@ export default async function SweepstakesEntryPage({
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Kaufdaten</CardTitle>
+              <CardTitle>Bestelldaten</CardTitle>
             </CardHeader>
             <CardContent>
               <dl className="divide-y divide-zinc-100">

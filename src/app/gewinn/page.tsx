@@ -21,11 +21,18 @@ import { createBookConversionConfig } from "@/lib/book-conversion-context";
 import { createRedditTrackingConfig } from "@/lib/reddit-context";
 import {
   AMAZON_PRODUCT_URL,
-  ANNOUNCEMENT_DATE_LABEL,
+  ANNOUNCEMENT_DATETIME_LABEL,
+  ENTRY_DEADLINE_LABEL,
   CONTACT_EMAIL,
   GEWINN_URL,
   getSweepstakesPhase,
   PRIZE_VALUE_LABEL,
+  SECONDARY_PRIZE_EXAMPLES_LABEL,
+  SECONDARY_PRIZE_SHOP_NAME,
+  SECONDARY_PRIZE_SHOP_URL,
+  SECONDARY_PRIZES,
+  SECONDARY_PRIZES_COUNT,
+  SECONDARY_PRIZES_TOTAL_LABEL,
   TRIP_DURATION_LABEL,
   type SweepstakesPhase,
 } from "@/lib/gewinnspiel-config";
@@ -36,20 +43,20 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: { absolute: "Dubai-Reise gewinnen | Die Lizenz zum Erfolg" },
   description:
-    "Buchbestellung registrieren und an der Verlosung einer exklusiven Dubai-Reise für zwei Personen im Wert von 20.000 € teilnehmen.",
+    "Buchbestellung registrieren und an der Verlosung einer exklusiven Dubai-Reise für zwei Personen im Wert von 20.000 € sowie 100 Wertgutscheinen für den Wiresoft Software Shop teilnehmen.",
   alternates: { canonical: GEWINN_URL },
   robots: { index: true, follow: true },
   openGraph: {
     title: "Dubai-Reise gewinnen | Die Lizenz zum Erfolg",
     description:
-      "Registriere deine Bestellung von „Die Lizenz zum Erfolg“ und sichere dir die Chance auf eine exklusive 5-tägige Dubai-Reise für zwei Personen im Wert von 20.000 €.",
+      "Registriere deine Bestellung von „Die Lizenz zum Erfolg“ und sichere dir die Chance auf eine exklusive 5-tägige Dubai-Reise für zwei Personen im Wert von 20.000 € – dazu 100 Wertgutscheine für den Wiresoft Software Shop.",
     url: GEWINN_URL,
     siteName: "Die Lizenz zum Erfolg",
     locale: "de_DE",
     type: "website",
     images: [
       {
-        url: `${GEWINN_URL}/og.png`,
+        url: `${GEWINN_URL}/og-v2.png`,
         width: 1200,
         height: 630,
         alt: "Gewinne 5 Tage Dubai für zwei – Gewinnspiel zum Buch „Die Lizenz zum Erfolg“",
@@ -60,8 +67,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Dubai-Reise gewinnen | Die Lizenz zum Erfolg",
     description:
-      "Buchbestellung registrieren und die Chance auf eine exklusive 5-tägige Dubai-Reise für zwei Personen im Wert von 20.000 € sichern.",
-    images: [`${GEWINN_URL}/og.png`],
+      "Buchbestellung registrieren und die Chance auf eine exklusive 5-tägige Dubai-Reise für zwei Personen im Wert von 20.000 € sichern – dazu 100 Wertgutscheine für den Wiresoft Software Shop.",
+    images: [`${GEWINN_URL}/og-v2.png`],
   },
 };
 
@@ -96,14 +103,14 @@ const PRIZE_ITEMS = [
 const FAQ_ITEMS: Array<{ q: string; a: React.ReactNode }> = [
   {
     q: "Wer darf am Gewinnspiel teilnehmen?",
-    a: "Teilnehmen können Personen ab 18 Jahren mit Wohnsitz in Deutschland, Österreich oder der Schweiz, die „Die Lizenz zum Erfolg“ gekauft und ihre Bestellung auf dieser Seite registriert haben. Details regeln die Teilnahmebedingungen.",
+    a: "Teilnehmen können Personen ab 18 Jahren mit Wohnsitz in Deutschland, Österreich oder der Schweiz, die „Die Lizenz zum Erfolg“ bestellt und ihre Bestellung auf dieser Seite registriert haben. Details regeln die Teilnahmebedingungen.",
   },
   {
     q: "Welche Bestellnummer muss ich eintragen?",
-    a: "Die Bestell- bzw. Auftragsnummer aus deiner Bestellbestätigung des Händlers, bei dem du das Buch gekauft hast – bei Amazon z. B. eine Nummer im Format 306-1234567-1234567.",
+    a: "Die Bestell- bzw. Auftragsnummer aus deiner Bestellbestätigung des Händlers, bei dem du das Buch bestellt hast – bei Amazon z. B. eine Nummer im Format 306-1234567-1234567.",
   },
   {
-    q: "Bei welchen Händlern darf das Buch gekauft werden?",
+    q: "Bei welchen Händlern darf das Buch bestellt werden?",
     a: "Bei Amazon, Thalia, Hugendubel, bücher.de sowie jedem anderen Händler, der das Buch führt – wähle dafür im Formular „Anderer Händler“ und trage den Namen ein.",
   },
   {
@@ -111,16 +118,20 @@ const FAQ_ITEMS: Array<{ q: string; a: React.ReactNode }> = [
     a: "Ja. Die Reise gilt für die Gewinnerin oder den Gewinner und eine frei wählbare Begleitperson.",
   },
   {
-    q: "Was genau ist im Gewinn enthalten?",
+    q: "Was genau ist im Hauptgewinn enthalten?",
     a: "Eine 5-tägige Dubai-Reise: Hin- und Rückflug mit Emirates in der Business Class, Aufenthalt in einem exklusiven 5-Sterne-Designerhotel in einer Suite, ein Dinner für zwei Personen in einem der angesagtesten Restaurants Dubais sowie auf Wunsch ein persönliches Meet & Greet mit Soheil Hosseini. Gesamtwert: 20.000 €.",
   },
   {
+    q: "Welche weiteren Gewinne gibt es?",
+    a: `Neben der Dubai-Reise verlosen wir ${SECONDARY_PRIZES_COUNT} Wertgutscheine für den ${SECONDARY_PRIZE_SHOP_NAME} im Gesamtwert von ${SECONDARY_PRIZES_TOTAL_LABEL}: ${SECONDARY_PRIZES.map((p) => `${p.count} × ${p.valueLabel}`).join(", ")}. Die Gutscheine gelten für das gesamte Sortiment – ${SECONDARY_PRIZE_EXAMPLES_LABEL}. Pro Person wird höchstens ein Gewinn vergeben.`,
+  },
+  {
     q: "Wann endet die Teilnahme?",
-    a: `Die Teilnahme ist bis zur Gewinnerbekanntgabe am ${ANNOUNCEMENT_DATE_LABEL} möglich. Ein etwaiger früherer Teilnahmeschluss würde rechtzeitig auf dieser Seite veröffentlicht.`,
+    a: `Registrierungsschluss ist der ${ENTRY_DEADLINE_LABEL}. Später eingehende Registrierungen nehmen nicht mehr an der Verlosung teil.`,
   },
   {
     q: "Wann erfolgt die Gewinnerbekanntgabe?",
-    a: `Die Gewinnerbekanntgabe erfolgt am ${ANNOUNCEMENT_DATE_LABEL}.`,
+    a: `Die Gewinnerbekanntgabe erfolgt am ${ANNOUNCEMENT_DATETIME_LABEL}.`,
   },
   {
     q: "Wie wird die Gewinnerin oder der Gewinner informiert?",
@@ -128,7 +139,7 @@ const FAQ_ITEMS: Array<{ q: string; a: React.ReactNode }> = [
   },
   {
     q: "Muss ich die Bestellbestätigung aufbewahren?",
-    a: "Ja, bitte bewahre sie bis zum Abschluss der Verlosung auf – sie dient als Nachweis deines Kaufs.",
+    a: "Ja, bitte bewahre sie bis zum Abschluss der Verlosung auf – sie dient als Nachweis deiner Bestellung.",
   },
   {
     q: "Was passiert mit meinen persönlichen Daten?",
@@ -136,11 +147,11 @@ const FAQ_ITEMS: Array<{ q: string; a: React.ReactNode }> = [
   },
   {
     q: "Ist eine Barauszahlung des Gewinns möglich?",
-    a: "Nein, eine Barauszahlung oder ein Umtausch des Gewinns ist ausgeschlossen.",
+    a: "Nein, eine Barauszahlung oder ein Umtausch der Gewinne ist ausgeschlossen.",
   },
   {
     q: "Kann der Gewinn übertragen werden?",
-    a: "Der Gewinn ist nicht auf Dritte übertragbar – deine Begleitperson wählst du aber völlig frei.",
+    a: "Die Gewinne sind nicht auf Dritte übertragbar – die Begleitperson für die Reise wählst du aber völlig frei.",
   },
   {
     q: "Was passiert, wenn ich versehentlich falsche Daten eingetragen habe?",
@@ -152,12 +163,15 @@ const FAQ_ITEMS: Array<{ q: string; a: React.ReactNode }> = [
   },
 ];
 
-const GOLD_CTA =
-  "inline-flex min-h-[52px] items-center justify-center rounded-xl bg-gradient-to-b from-[var(--gw-gold-strong)] to-[var(--gw-gold-deep)] px-7 py-3.5 text-base font-semibold text-[#181207] shadow-lg shadow-black/40 outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-bg)]";
-
-/** Deutlich sichtbarer Amazon-CTA (Schritt 1): Gold-Outline auf dunklem Grund. */
-const OUTLINE_CTA =
-  "inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 border-[var(--gw-gold)] bg-[var(--gw-gold)]/10 px-6 py-3 text-base font-semibold text-[var(--gw-gold-strong)] shadow-lg shadow-black/30 outline-none transition-colors hover:bg-[var(--gw-gold)]/20 focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-bg)]";
+/**
+ * Beide Schritt-CTAs teilen exakt dieselbe Geometrie (feste Höhe, volle Breite,
+ * gleiche Schrift/Abstände, kein Umbruch) und sitzen per mt-auto auf derselben
+ * Linie – nur die Füllung unterscheidet sich (Outline = Amazon, Gold = Registrierung).
+ */
+const STEP_CTA =
+  "mt-auto inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-xl px-4 text-base font-semibold whitespace-nowrap shadow-lg shadow-black/40 outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-bg)]";
+const GOLD_CTA = `${STEP_CTA} bg-gradient-to-b from-[var(--gw-gold-strong)] to-[var(--gw-gold-deep)] text-[#181207] hover:brightness-105`;
+const OUTLINE_CTA = `${STEP_CTA} border-2 border-[var(--gw-gold)] bg-[var(--gw-gold)]/10 text-[var(--gw-gold-strong)] hover:bg-[var(--gw-gold)]/20`;
 
 function SectionHeading({
   kicker,
@@ -192,7 +206,17 @@ function ClosedNotice({ phase }: { phase: SweepstakesPhase }) {
           </h3>
           <p className="mx-auto mt-3 max-w-xl text-[var(--gw-ink-soft)]">
             Schau bald wieder vorbei – die Registrierung ist noch nicht geöffnet. Die
-            Gewinnerbekanntgabe erfolgt am {ANNOUNCEMENT_DATE_LABEL}.
+            Gewinnerbekanntgabe erfolgt am {ANNOUNCEMENT_DATETIME_LABEL}.
+          </p>
+        </>
+      ) : phase === "announced" ? (
+        <>
+          <h3 className="mt-5 text-2xl font-semibold text-[var(--gw-ink)]">
+            Die Verlosung ist abgeschlossen.
+          </h3>
+          <p className="mx-auto mt-3 max-w-xl text-[var(--gw-ink-soft)]">
+            Vielen Dank an alle Teilnehmenden. Die Gewinnerinnen und Gewinner wurden am{" "}
+            {ANNOUNCEMENT_DATETIME_LABEL} per E-Mail benachrichtigt.
           </p>
         </>
       ) : (
@@ -202,7 +226,7 @@ function ClosedNotice({ phase }: { phase: SweepstakesPhase }) {
           </h3>
           <p className="mx-auto mt-3 max-w-xl text-[var(--gw-ink-soft)]">
             Vielen Dank für die großartige Unterstützung und die zahlreichen Registrierungen. Die
-            Gewinnerbekanntgabe erfolgt am {ANNOUNCEMENT_DATE_LABEL}.
+            Gewinnerbekanntgabe erfolgt am {ANNOUNCEMENT_DATETIME_LABEL}.
           </p>
         </>
       )}
@@ -272,25 +296,26 @@ export default async function GewinnPage({
             }}
           />
           <DubaiSkyline className="pointer-events-none absolute inset-x-0 bottom-0 h-32 w-full sm:h-40 lg:h-52" />
-          <div className="relative mx-auto grid max-w-6xl gap-y-9 px-5 pt-12 pb-28 sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_auto] lg:gap-x-20 lg:gap-y-7 lg:pt-20 lg:pb-40">
+          <div className="relative mx-auto grid max-w-6xl gap-y-9 px-5 pt-12 pb-36 sm:px-8 sm:pb-44 lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-[auto_auto] lg:gap-x-12 lg:gap-y-7 xl:grid-cols-[minmax(0,1fr)_380px] xl:gap-x-20 lg:pt-20 lg:pb-56">
             <div className="gw-fade order-1 lg:order-none lg:col-start-1 lg:row-start-1">
               <p className="inline-flex items-center gap-2 rounded-full border gw-hairline bg-white/[0.04] px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-ink-soft)]">
                 <CalendarDays className="h-3.5 w-3.5 text-[var(--gw-gold)]" aria-hidden="true" />
-                Gewinnerbekanntgabe am {ANNOUNCEMENT_DATE_LABEL}
+                Gewinnerbekanntgabe am {ANNOUNCEMENT_DATETIME_LABEL}
               </p>
               <h1
                 id="hero-heading"
-                className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl"
+                className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl xl:text-6xl"
               >
-                Dein Buchkauf könnte dich{" "}
+                Deine Buchbestellung könnte dich{" "}
                 <span className="gw-gold-text">nach Dubai</span> bringen.
               </h1>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-[var(--gw-ink-soft)]">
-                {TRIP_DURATION_LABEL} Dubai für zwei Personen im Wert von{" "}
-                <strong className="font-semibold text-[var(--gw-gold-strong)]">
+                Hauptgewinn: {TRIP_DURATION_LABEL} Dubai für zwei Personen im Wert von{" "}
+                <strong className="font-semibold whitespace-nowrap text-[var(--gw-gold-strong)]">
                   {PRIZE_VALUE_LABEL}
                 </strong>
-                . Zwei Schritte trennen dich vom Lostopf – zusammen dauern sie keine zwei Minuten.
+                , dazu {SECONDARY_PRIZES_COUNT} Wertgutscheine für den {SECONDARY_PRIZE_SHOP_NAME}. Zwei
+                Schritte trennen dich vom Lostopf – zusammen dauern sie keine zwei Minuten.
               </p>
             </div>
 
@@ -309,7 +334,7 @@ export default async function GewinnPage({
                       width={700}
                       height={1115}
                       priority
-                      sizes="(min-width: 1024px) 380px, (min-width: 640px) 240px, 208px"
+                      sizes="(min-width: 1280px) 380px, (min-width: 1024px) 320px, (min-width: 640px) 240px, 208px"
                     />
                   </div>
                 </div>
@@ -317,20 +342,22 @@ export default async function GewinnPage({
             </div>
 
             <div className="gw-fade order-2 lg:order-none lg:col-start-1 lg:row-start-2">
-              {/* Zwei Schritte: erst bestellen (Amazon-CTA), dann registrieren */}
+              {/* Zwei Schritte: erst bestellen (Amazon-CTA), dann registrieren.
+                  Ab md liegen Kicker/Titel/Text/Button/Fußnote per Subgrid zeilenweise
+                  auf gleicher Höhe – Buttons bleiben unabhängig von Umbrüchen bündig. */}
               <ol
-                className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+                className="grid grid-cols-1 gap-4 md:grid-cols-2"
                 aria-label="Teilnahme in zwei Schritten"
               >
-                <li className="flex min-w-0 flex-col rounded-2xl border gw-hairline bg-[var(--gw-surface)] p-5 sm:p-6">
+                <li className="flex min-w-0 flex-col rounded-2xl border gw-hairline bg-[var(--gw-surface)] p-5 sm:p-6 md:grid md:grid-rows-subgrid md:row-span-5 md:gap-y-0">
                   <p className="text-xs font-semibold tracking-[0.2em] text-[var(--gw-gold)] uppercase">
                     Schritt 1
                   </p>
-                  <h2 className="mt-2 text-xl font-semibold text-[var(--gw-ink)]">
-                    Buch bei Amazon bestellen
+                  <h2 className="mt-2 text-xl font-semibold text-[var(--gw-ink)] lg:text-lg">
+                    Bei Amazon bestellen
                   </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--gw-ink-soft)]">
-                    „Die Lizenz zum Erfolg“ als Taschenbuch bestellen.{" "}
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--gw-ink-soft)] mb-5">
+                    Das Taschenbuch „Die Lizenz zum Erfolg“ bestellen.{" "}
                     <strong className="font-semibold text-[var(--gw-ink)]">
                       Bestellnummer aufbewahren
                     </strong>{" "}
@@ -342,7 +369,7 @@ export default async function GewinnPage({
                     rel="noopener noreferrer"
                     data-gw-event="gewinnspiel_amazon_klick"
                     data-cta-id="hero_schritt_1"
-                    className={`${OUTLINE_CTA} mt-5 w-full`}
+                    className={OUTLINE_CTA}
                   >
                     Hier geht’s zum Buch
                     <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -351,29 +378,30 @@ export default async function GewinnPage({
                     Schon bestellt? Weiter mit Schritt 2.
                   </p>
                 </li>
-                <li className="flex min-w-0 flex-col rounded-2xl border border-[var(--gw-gold)]/60 bg-gradient-to-b from-[var(--gw-surface-2)] to-[var(--gw-surface)] p-5 shadow-[0_0_0_1px_rgba(214,178,111,0.12),0_24px_60px_-30px_rgba(214,178,111,0.45)] sm:p-6">
+                <li className="flex min-w-0 flex-col rounded-2xl border border-[var(--gw-gold)]/60 bg-gradient-to-b from-[var(--gw-surface-2)] to-[var(--gw-surface)] p-5 shadow-[0_0_0_1px_rgba(214,178,111,0.12),0_24px_60px_-30px_rgba(214,178,111,0.45)] sm:p-6 md:grid md:grid-rows-subgrid md:row-span-5 md:gap-y-0">
                   <p className="text-xs font-semibold tracking-[0.2em] text-[var(--gw-gold)] uppercase">
                     Schritt 2
                   </p>
-                  <h2 className="mt-2 text-xl font-semibold text-[var(--gw-ink)]">
+                  <h2 className="mt-2 text-xl font-semibold text-[var(--gw-ink)] lg:text-lg">
                     Registrierung abschließen
                   </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--gw-ink-soft)]">
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--gw-ink-soft)] mb-5">
                     Bestellnummer und Kontaktdaten hier eintragen.{" "}
                     <strong className="font-semibold text-[var(--gw-ink)]">
                       Erst damit bist du im Lostopf
                     </strong>{" "}
-                    – der Kauf allein reicht nicht.
+                    – die Bestellung allein reicht nicht.
                   </p>
                   <a
                     href="#teilnahme"
                     data-gw-event="gewinnspiel_cta_registrieren"
-                    className={`${GOLD_CTA} mt-5 w-full`}
+                    className={GOLD_CTA}
                   >
-                    Jetzt Registrierung abschließen
+                    Jetzt registrieren
                   </a>
                   <p className="mt-3 text-xs text-[var(--gw-ink-mute)]">
-                    Registrierung möglich bis zur Gewinnerbekanntgabe am {ANNOUNCEMENT_DATE_LABEL}.
+                    Registrierungsschluss:{" "}
+                    <span className="whitespace-nowrap">{ENTRY_DEADLINE_LABEL}</span>
                   </p>
                 </li>
               </ol>
@@ -398,6 +426,11 @@ export default async function GewinnPage({
               <p className="mt-3 text-sm text-[var(--gw-ink-mute)]">
                 {TRIP_DURATION_LABEL} Dubai · Gesamtwert {PRIZE_VALUE_LABEL} · Für dich und eine
                 Begleitperson deiner Wahl
+              </p>
+              <p className="mt-2 text-sm text-[var(--gw-ink-mute)]">
+                Außerdem verlost:{" "}
+                {SECONDARY_PRIZES.map((p) => `${p.count}× ${p.valueLabel}`).join(" · ")} Wertgutscheine
+                für den {SECONDARY_PRIZE_SHOP_NAME} – {SECONDARY_PRIZE_EXAMPLES_LABEL}.
               </p>
             </div>
           </div>
@@ -442,7 +475,7 @@ export default async function GewinnPage({
               </h2>
               <blockquote className="mt-6 space-y-4 text-lg leading-relaxed text-[var(--gw-ink-soft)]">
                 <p>
-                  Mit dem Kauf von „Die Lizenz zum Erfolg“ unterstützt du nicht nur dieses Buch,
+                  Mit deiner Bestellung von „Die Lizenz zum Erfolg“ unterstützt du nicht nur dieses Buch,
                   sondern auch die Geschichte und die Idee dahinter. Dafür möchte ich dir persönlich
                   Danke sagen.
                 </p>
@@ -482,7 +515,7 @@ export default async function GewinnPage({
         {/* ---------------------------------------------------------------- */}
         <section aria-labelledby="gewinn-heading" className="mx-auto max-w-6xl px-5 py-16 sm:px-8 lg:py-24">
           <SectionHeading
-            kicker="Der Gewinn"
+            kicker="Der Hauptgewinn"
             title="Eine exklusive Dubai-Reise für zwei Personen"
             intro={`Fünf Tage, die bleiben – von der Business Class bis zur Suite. Für dich und eine Begleitperson deiner Wahl.`}
           />
@@ -509,6 +542,53 @@ export default async function GewinnPage({
               </p>
             </div>
           </div>
+          {/* Weitere Gewinne: Wertgutscheine für den Wiresoft Software Shop */}
+          <div className="mt-16">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-semibold tracking-[0.25em] text-[var(--gw-gold)] uppercase">
+                Weitere Gewinne
+              </p>
+              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-balance text-[var(--gw-ink)] sm:text-3xl">
+                {SECONDARY_PRIZES_COUNT} Wertgutscheine für den {SECONDARY_PRIZE_SHOP_NAME}
+              </h3>
+              <p className="mt-4 text-[var(--gw-ink-soft)]">
+                Neben der Dubai-Reise verlosen wir Gutscheine im Gesamtwert von{" "}
+                {SECONDARY_PRIZES_TOTAL_LABEL} – einlösbar auf das gesamte Sortiment,{" "}
+                {SECONDARY_PRIZE_EXAMPLES_LABEL}.
+              </p>
+            </div>
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {SECONDARY_PRIZES.map((prize) => (
+                <div
+                  key={prize.valueLabel}
+                  className="rounded-2xl border gw-hairline bg-[var(--gw-surface)] p-6 text-center transition-colors hover:border-[var(--gw-gold)]/40"
+                >
+                  <p className="gw-gold-text text-4xl font-semibold tracking-tight">
+                    {prize.count}×
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-[var(--gw-ink)]">
+                    {prize.valueLabel} Wertgutschein
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--gw-ink-soft)]">
+                    für den {SECONDARY_PRIZE_SHOP_NAME}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-center text-xs text-[var(--gw-ink-mute)]">
+              Hauptgewinn bleibt die Dubai-Reise. Pro Person wird höchstens ein Gewinn vergeben.{" "}
+              <a
+                href={SECONDARY_PRIZE_SHOP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-gw-event="gewinnspiel_wiresoft_klick"
+                className="underline decoration-[var(--gw-gold)]/40 underline-offset-4 hover:text-[var(--gw-gold-strong)]"
+              >
+                Zum {SECONDARY_PRIZE_SHOP_NAME}
+              </a>
+            </p>
+          </div>
+
         </section>
 
         {/* ---------------------------------------------------------------- */}
@@ -525,8 +605,8 @@ export default async function GewinnPage({
                 {
                   icon: BookOpen,
                   step: "1",
-                  title: "Buch kaufen",
-                  text: "„Die Lizenz zum Erfolg“ bei einem teilnehmenden Händler kaufen.",
+                  title: "Buch bestellen",
+                  text: "„Die Lizenz zum Erfolg“ bei einem teilnehmenden Händler bestellen.",
                   extra: (
                     <a
                       href={AMAZON_PRODUCT_URL}
@@ -549,7 +629,7 @@ export default async function GewinnPage({
                   icon: PartyPopper,
                   step: "3",
                   title: "An der Verlosung teilnehmen",
-                  text: "Nach erfolgreicher Registrierung an der Verlosung der Dubai-Reise teilnehmen.",
+                  text: "Nach erfolgreicher Registrierung an der Verlosung der Dubai-Reise und der Wiresoft-Gutscheine teilnehmen.",
                 },
               ].map(({ icon: Icon, step, title, text, extra }) => (
                 <li
@@ -660,7 +740,7 @@ export default async function GewinnPage({
               Jetzt Bestellung registrieren
             </a>
             <p className="mt-4 text-sm text-[var(--gw-ink-mute)]">
-              Gewinnerbekanntgabe am {ANNOUNCEMENT_DATE_LABEL}
+              Gewinnerbekanntgabe am {ANNOUNCEMENT_DATETIME_LABEL}
             </p>
           </div>
         </section>

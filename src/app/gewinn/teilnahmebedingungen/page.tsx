@@ -2,13 +2,20 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  ANNOUNCEMENT_DATE_LABEL,
+  ANNOUNCEMENT_DATETIME_LABEL,
   CONTACT_EMAIL,
   ELIGIBLE_COUNTRIES_LABEL,
+  ENTRY_DEADLINE_LABEL,
   MIN_AGE,
   ORGANIZER_ADDRESS,
   ORGANIZER_NAME,
   PRIZE_VALUE_LABEL,
+  SECONDARY_PRIZE_EXAMPLES_LABEL,
+  SECONDARY_PRIZE_SHOP_NAME,
+  SECONDARY_PRIZE_SHOP_URL,
+  SECONDARY_PRIZES,
+  SECONDARY_PRIZES_COUNT,
+  SECONDARY_PRIZES_TOTAL_LABEL,
   TERMS_VERSION,
 } from "@/lib/gewinnspiel-config";
 
@@ -52,11 +59,11 @@ export default function TeilnahmebedingungenPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-[var(--gw-ink)]">2. Gewinn</h2>
+            <h2 className="text-lg font-semibold text-[var(--gw-ink)]">2. Gewinne</h2>
             <p className="mt-2">
-              Verlost wird eine 5-tägige Dubai-Reise für die Gewinnerin oder den Gewinner und eine
-              frei wählbare Begleitperson im Gesamtwert von {PRIZE_VALUE_LABEL}. Der Gewinn
-              umfasst:
+              Hauptgewinn ist eine 5-tägige Dubai-Reise für die Gewinnerin oder den Gewinner und
+              eine frei wählbare Begleitperson im Gesamtwert von {PRIZE_VALUE_LABEL}. Der
+              Hauptgewinn umfasst:
             </p>
             <ul className="mt-2 list-inside list-disc space-y-1">
               <li>Hin- und Rückflug mit Emirates in der Business Class für zwei Personen</li>
@@ -75,6 +82,22 @@ export default function TeilnahmebedingungenPage() {
               Reisedokumente, Reiseversicherungen), tragen die Reisenden selbst. Für die Reise sind
               gültige Reisedokumente erforderlich.
             </p>
+            <p className="mt-2">
+              Daneben werden {SECONDARY_PRIZES_COUNT} Wertgutscheine für den{" "}
+              {SECONDARY_PRIZE_SHOP_NAME} ({SECONDARY_PRIZE_SHOP_URL}) im Gesamtwert von{" "}
+              {SECONDARY_PRIZES_TOTAL_LABEL} verlost:{" "}
+              {SECONDARY_PRIZES.map((p) => `${p.count} × ${p.valueLabel}`).join(", ")}. Die
+              Wertgutscheine sind auf das gesamte Sortiment des Shops einlösbar (
+              {SECONDARY_PRIZE_EXAMPLES_LABEL}). Gültigkeitsdauer und weitere Einlösebedingungen
+              werden zusammen mit dem Gutschein mitgeteilt; eine Barauszahlung ist ausgeschlossen.
+              Pro Person wird höchstens ein Gewinn vergeben.
+            </p>
+            <p className="mt-2">
+              Diese Fassung (Version {TERMS_VERSION}) gilt für alle gültigen Teilnahmen – auch für
+              bereits zuvor registrierte Bestellungen. Gegenüber der Vorfassung wurden die
+              Teilnahmefrist verlängert, die Gewinnerbekanntgabe verschoben und die Wertgutscheine
+              als weitere Gewinne ergänzt.
+            </p>
           </section>
 
           <section>
@@ -82,18 +105,18 @@ export default function TeilnahmebedingungenPage() {
               3. Teilnahme und Teilnahmezeitraum
             </h2>
             <p className="mt-2">
-              Die Teilnahme erfolgt durch den Kauf des Buches „Die Lizenz zum Erfolg“ bei einem
+              Die Teilnahme erfolgt durch die Bestellung des Buches „Die Lizenz zum Erfolg“ bei einem
               Händler und die Registrierung der Bestell- bzw. Auftragsnummer zusammen mit den
               Kontaktdaten auf lizenzzumerfolg.com/gewinn. Jede Bestellnummer kann nur einmal
               registriert werden; mit mehreren Bestellungen sind entsprechend mehrere Teilnahmen
               möglich. Die Bestellbestätigung ist bis zum Abschluss der Verlosung aufzubewahren und
-              auf Anforderung des Veranstalters als Kaufnachweis vorzulegen.
+              auf Anforderung des Veranstalters als Bestellnachweis vorzulegen.
             </p>
             <p className="mt-2">
-              Die Teilnahme ist bis zur Gewinnerbekanntgabe am {ANNOUNCEMENT_DATE_LABEL} möglich.
-              Ein etwaiger früherer Teilnahmeschluss wird rechtzeitig auf der Aktionsseite
-              veröffentlicht. Der Kauf des Buches erfolgt zum regulären Preis; über die
-              Registrierung hinaus entstehen keine Teilnahmekosten.
+              Die Teilnahme ist ab Veröffentlichung dieser Bedingungen bis zum Registrierungsschluss
+              am {ENTRY_DEADLINE_LABEL} (MESZ) möglich; später eingehende Registrierungen nehmen
+              nicht mehr teil. Die Bestellung des Buches erfolgt
+              zum regulären Preis; über die Registrierung hinaus entstehen keine Teilnahmekosten.
             </p>
           </section>
 
@@ -113,12 +136,15 @@ export default function TeilnahmebedingungenPage() {
               5. Gewinnermittlung und Benachrichtigung
             </h2>
             <p className="mt-2">
-              Die Gewinnerin oder der Gewinner wird nach Ende des Teilnahmezeitraums per
-              Zufallsziehung unter allen gültigen Teilnahmen ermittelt. Die Gewinnerbekanntgabe
-              erfolgt am {ANNOUNCEMENT_DATE_LABEL}; die Benachrichtigung erfolgt über die
-              angegebene E-Mail-Adresse und gegebenenfalls telefonisch. Meldet sich die Gewinnerin
-              oder der Gewinner nicht innerhalb von 14 Tagen nach der Benachrichtigung oder kann
-              kein gültiger Kaufnachweis erbracht werden, kann ersatzweise neu gezogen werden.
+              Die Gewinnerinnen und Gewinner werden nach Registrierungsschluss per Zufallsziehung
+              unter allen gültigen Teilnahmen ermittelt – zunächst der Hauptgewinn, anschließend
+              die Wertgutscheine in absteigender Reihenfolge ihres Werts. Eine gezogene Teilnahme
+              sowie weitere Teilnahmen derselben Person werden bei den folgenden Ziehungen nicht
+              mehr berücksichtigt. Die Gewinnerbekanntgabe erfolgt am {ANNOUNCEMENT_DATETIME_LABEL}{" "}
+              (MESZ); die Benachrichtigung erfolgt über die
+              angegebene E-Mail-Adresse und gegebenenfalls telefonisch. Meldet sich eine Gewinnerin
+              oder ein Gewinner nicht innerhalb von 14 Tagen nach der Benachrichtigung oder kann
+              kein gültiger Bestellnachweis erbracht werden, kann ersatzweise neu gezogen werden.
             </p>
             <p className="mt-2">
               Eine öffentliche Bekanntgabe erfolgt ohne gesonderte Einwilligung höchstens in
@@ -131,11 +157,14 @@ export default function TeilnahmebedingungenPage() {
           <section>
             <h2 className="text-lg font-semibold text-[var(--gw-ink)]">6. Gewinnabwicklung</h2>
             <p className="mt-2">
-              Der Gewinn ist nicht übertragbar; die Begleitperson kann frei gewählt werden. Eine
-              Barauszahlung oder ein Umtausch des Gewinns ist ausgeschlossen. Kann eine im Gewinn
-              enthaltene Leistung aus Gründen, die der Veranstalter nicht zu vertreten hat, nicht
-              erbracht werden, erhält die Gewinnerin bzw. der Gewinner eine gleichwertige
-              Ersatzleistung.
+              Die Gewinne sind nicht übertragbar; die Begleitperson der Reise kann frei gewählt
+              werden. Eine Barauszahlung oder ein Umtausch der Gewinne ist ausgeschlossen. Die
+              Wertgutscheine werden nach Bestätigung der Gewinnberechtigung (Rückmeldung und auf
+              Anforderung Bestellnachweis) per E-Mail an die bei der Registrierung angegebene
+              Adresse übermittelt. Kann ein Gewinn oder eine darin enthaltene Leistung aus Gründen,
+              die der Veranstalter nicht zu vertreten hat, nicht erbracht werden (bei Wertgutscheinen
+              z. B. bei Einstellung des Shops), erhält die jeweilige Gewinnerin bzw. der jeweilige
+              Gewinner eine gleichwertige Ersatzleistung.
             </p>
           </section>
 

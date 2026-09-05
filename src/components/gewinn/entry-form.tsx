@@ -6,7 +6,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { EMPTY_SWEEPSTAKES_STATE } from "@/actions/action-states";
 import { submitSweepstakesAction } from "@/actions/sweepstakes-actions";
 import { trackGewinnEvent } from "@/lib/gewinn-analytics";
-import { ANNOUNCEMENT_DATE_LABEL, RETAILERS } from "@/lib/gewinnspiel-config";
+import { ANNOUNCEMENT_DATETIME_LABEL, RETAILERS } from "@/lib/gewinnspiel-config";
 import { cn } from "@/lib/utils";
 
 /**
@@ -113,12 +113,12 @@ export function EntryForm({
             Deine Teilnahme wurde erfolgreich registriert.
           </h3>
           <p className="mt-4 text-[var(--gw-ink-soft)]">
-            Vielen Dank für deine Teilnahme – und vor allem für den Kauf und die Unterstützung
+            Vielen Dank für deine Teilnahme – und vor allem für deine Bestellung und die Unterstützung
             meines Buches. Deine Angaben sind bei uns eingegangen.
           </p>
           <p className="mt-3 text-[var(--gw-ink-soft)]">
             Ich wünsche dir viel Glück bei der Verlosung! Die Gewinnerbekanntgabe erfolgt am{" "}
-            {ANNOUNCEMENT_DATE_LABEL}.
+            {ANNOUNCEMENT_DATETIME_LABEL}.
           </p>
           <p className="mt-4 font-medium text-[var(--gw-ink)]">Soheil Hosseini</p>
 
@@ -177,7 +177,7 @@ export function EntryForm({
 
       <fieldset className="min-w-0">
         <legend className="text-lg font-semibold tracking-tight text-[var(--gw-ink)]">
-          Kaufdaten
+          Bestelldaten
         </legend>
         <p className="mt-1 text-sm text-[var(--gw-ink-mute)]">
           Du findest die Bestellnummer in deiner Bestellbestätigung.
@@ -431,7 +431,7 @@ export function EntryForm({
           {pending ? "Wird übermittelt …" : "Verbindlich am Gewinnspiel teilnehmen"}
         </button>
         <p className="mt-3 text-sm text-[var(--gw-ink-mute)]">
-          Die Gewinnerbekanntgabe erfolgt am {ANNOUNCEMENT_DATE_LABEL}.
+          Die Gewinnerbekanntgabe erfolgt am {ANNOUNCEMENT_DATETIME_LABEL}.
         </p>
       </div>
     </form>

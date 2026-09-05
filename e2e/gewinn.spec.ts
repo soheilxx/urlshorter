@@ -13,9 +13,14 @@ test.describe("Gewinnspiel-Landingpage", () => {
     await page.goto("/gewinn");
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      "Dein Buchkauf könnte dich",
+      "Deine Buchbestellung könnte dich",
     );
-    await expect(page.getByText("Gewinnerbekanntgabe am 06.10.2026").first()).toBeVisible();
+    await expect(page.getByText("Gewinnerbekanntgabe am 12.10.2026").first()).toBeVisible();
+    // Weitere Gewinne (Wiresoft-Gutscheine) sind sichtbar
+    await expect(
+      page.getByRole("heading", { name: /100 Wertgutscheine für den Wiresoft Software Shop/ }),
+    ).toBeVisible();
+    await expect(page.getByText("Registrierungsschluss: 11.10.2026, 23:59 Uhr")).toBeVisible();
     await expect(page.getByText("20.000 €").first()).toBeVisible();
     await expect(
       page.getByRole("img", { name: /Buchcover: Die Lizenz zum Erfolg/ }),
@@ -26,10 +31,10 @@ test.describe("Gewinnspiel-Landingpage", () => {
     await expect(amazonLink).toBeVisible();
     await expect(amazonLink).toHaveAttribute("href", "https://link.amazon/B0eyhvaQw");
     await expect(amazonLink).toHaveAttribute("target", "_blank");
-    await expect(page.getByRole("heading", { name: "Buch bei Amazon bestellen" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bei Amazon bestellen" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Registrierung abschließen" })).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Jetzt Registrierung abschließen" }),
+      page.getByRole("link", { name: "Jetzt registrieren" }),
     ).toHaveAttribute("href", "#teilnahme");
     await expect(
       page.getByRole("img", { name: /Soheil Hosseini, Autor/ }),

@@ -267,8 +267,10 @@ sind exakt 4 Kleinbuchstaben). Alle Eckwerte werden zentral in
 
 Die Teilnahmebedingungen (Version in `TERMS_VERSION`) sind unter
 `/gewinn/teilnahmebedingungen` veröffentlicht; Veranstalter ist die Wiresoft
-Portal Ltd. (DIFC, Dubai). Teilnahme bis zur Gewinnerbekanntgabe möglich,
-sofern kein früherer `ENTRY_DEADLINE` gesetzt wird. Eine automatische
+Portal Ltd. (DIFC, Dubai). Registrierungsschluss ist der 11.10.2026, 23:59 Uhr
+(`ENTRY_DEADLINE`), die Gewinnerbekanntgabe erfolgt am 12.10.2026 um 12 Uhr
+(`ANNOUNCEMENT_DATE`); neben der Dubai-Reise werden 100 Wertgutscheine für den
+Wiresoft Software Shop verlost (`SECONDARY_PRIZES`). Eine automatische
 Gewinnerziehung ist bewusst nicht implementiert (Ziehung erfolgt manuell,
 Status „Gewinner“ wird im Admin gepflegt).
 
