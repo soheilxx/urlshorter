@@ -19,6 +19,7 @@ beforeEach(() => {
   vi.stubEnv("APP_SECRET", "x".repeat(64));
   vi.stubEnv("REDDIT_PIXEL_ID", "a2_testpixel");
   vi.stubEnv("REDDIT_CAPI_ACCESS_TOKEN", "test-token");
+  vi.stubEnv("REDDIT_CAPI_TEST_ID", "t2_test_only");
   vi.stubEnv("PUBLIC_BASE_URL", "https://lizenzzumerfolg.com");
   vi.stubEnv("CONSENT_COOKIE_NAME", "marketing");
   vi.stubEnv("CONSENT_COOKIE_ACCEPTED_VALUE", "yes");
@@ -76,11 +77,18 @@ describe("Reddit-Kontext und Collect", () => {
     expect(sendRedditCapiEvents).toHaveBeenCalledWith(
       expect.objectContaining({
         pixelId: "a2_testpixel",
+        testId: null,
         clickId: body.clickId,
         events: [{ id: body.id, type: "PageVisit", timestamp: body.timestamp }],
       }),
     );
     expect(prisma.tagEvent.create).toHaveBeenCalledTimes(1);
+  });
+  it("wendet die konfigurierte Reddit-Test-ID nur auf ausdrücklich markierte Prüfläufe an", async () => {
+    await POST(request(payload({ utm: { source: "reddit_capi_verification" } })));
+    expect(sendRedditCapiEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ testId: "t2_test_only" }),
+    );
   });
   it("lehnt fremden Origin und manipulierte Pfade ab", async () => {
     expect((await POST(request(payload(), { origin: "https://evil.example" }))).status).toBe(403);

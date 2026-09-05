@@ -133,7 +133,9 @@ export async function POST(request: Request): Promise<Response> {
       await sendRedditCapiEvents({
         pixelId: context.pixelId,
         accessToken,
-        testId: env.REDDIT_CAPI_TEST_ID,
+        // Ein aktiver Prüflauf darf regulären Anzeigen-Traffic nicht in Testevents umwandeln.
+        testId:
+          input.utm?.source === "reddit_capi_verification" ? env.REDDIT_CAPI_TEST_ID : null,
         events: [{ id: input.id, type: input.type, timestamp: input.timestamp }],
         sourceUrl,
         clickId: input.clickId,
