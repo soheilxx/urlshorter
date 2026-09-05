@@ -227,6 +227,9 @@ export default function RedditBookPage() {
             </div>
             <p className={styles.communityNote}>
               Mit deiner Bestellung unterstützt du einen Autor aus unserer Reddit-Community.
+              <span className={styles.donationNote}>
+                Die gesamten Einnahmen des Autors aus diesem Buch fließen an den Kinderschutzbund.
+              </span>
             </p>
             <h1>
               Er legt sich mit Microsoft an.

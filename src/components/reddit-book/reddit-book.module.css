@@ -711,6 +711,11 @@
   line-height: 1.7;
   margin-bottom: 18px;
 }
+.donationNote {
+  display: block;
+  margin-top: 6px;
+  font-weight: 650;
+}
 .footer {
   padding: 36px 0 34px;
   color: var(--muted);
