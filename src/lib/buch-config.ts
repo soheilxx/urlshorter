@@ -11,6 +11,20 @@ export const BUCH_URL = "https://lizenzzumerfolg.com/das-buch";
 export const BUCH_TITEL = "Die Lizenz zum Erfolg";
 export const BUCH_UNTERTITEL = "Business ohne Plan, Ausreden oder Kompromisse";
 export const BUCH_AUTOR = "Soheil Hosseini";
+
+/**
+ * Spendenzusage (Vorgabe von Soheil, 05.09.2026): Die gesamten Einnahmen des
+ * Autors aus dem Buch fließen an den Kinderschutzbund – sichtbar im Hero,
+ * in der Autor-/Dank-Sektion und in den FAQ, damit eine Bestellung auch als
+ * Spende verstanden wird.
+ */
+export const SPENDEN_EMPFAENGER = "Kinderschutzbund";
+export const SPENDEN_HINWEIS = `Die gesamten Einnahmen des Autors aus diesem Buch fließen an den ${SPENDEN_EMPFAENGER}.`;
+export const SPENDEN_HINWEIS_KURZ = `Alle Autoren-Einnahmen gehen an den ${SPENDEN_EMPFAENGER}`;
+/** Ich-Form für Zitat-/Dank-Abschnitte des Autors. */
+export const SPENDEN_HINWEIS_ICH = `Meine gesamten Einnahmen aus diesem Buch fließen an den ${SPENDEN_EMPFAENGER}.`;
+/** Kein Spendenversprechen des Bestellers – nur der Autorenanteil fließt an den Empfänger. */
+export const SPENDEN_WIRKUNG = `Mit jeder Bestellung unterstützt du damit automatisch den ${SPENDEN_EMPFAENGER}`;
 export const BUCH_VERLAG = "Deutscher Wirtschaftsbuch Verlag";
 export const BUCH_FORMAT_LABEL = "Taschenbuch";
 export const BUCH_PREIS_LABEL = "18 €";

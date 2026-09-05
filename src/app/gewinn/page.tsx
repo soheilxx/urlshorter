@@ -5,6 +5,7 @@ import {
   ExternalLink,
   Gem,
   Handshake,
+  HeartHandshake,
   Hotel,
   PartyPopper,
   Plane,
@@ -18,6 +19,12 @@ import { EntryForm } from "@/components/gewinn/entry-form";
 import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import { getEnv } from "@/lib/env";
 import { createBookConversionConfig } from "@/lib/book-conversion-context";
+import {
+  SPENDEN_HINWEIS,
+  SPENDEN_HINWEIS_ICH,
+  SPENDEN_HINWEIS_KURZ,
+  SPENDEN_WIRKUNG,
+} from "@/lib/buch-config";
 import { createRedditTrackingConfig } from "@/lib/reddit-context";
 import {
   AMAZON_PRODUCT_URL,
@@ -43,7 +50,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: { absolute: "Dubai-Reise gewinnen | Die Lizenz zum Erfolg" },
   description:
-    "Buchbestellung registrieren und an der Verlosung einer exklusiven Dubai-Reise für zwei Personen im Wert von 20.000 € sowie 100 Wertgutscheinen für den Wiresoft Software Shop teilnehmen.",
+    "Buch bestellen, Dubai-Reise im Wert von 20.000 € und 100 Wiresoft-Gutscheine gewinnen – alle Autoren-Einnahmen gehen an den Kinderschutzbund.",
   alternates: { canonical: GEWINN_URL },
   robots: { index: true, follow: true },
   openGraph: {
@@ -160,6 +167,10 @@ const FAQ_ITEMS: Array<{ q: string; a: React.ReactNode }> = [
   {
     q: "Kann ich mit mehreren Bestellungen mehrfach teilnehmen?",
     a: "Ja – jede Bestellnummer kann genau einmal registriert werden. Mit mehreren Bestellungen sind entsprechend mehrere Teilnahmen möglich.",
+  },
+  {
+    q: "Wohin fließen die Einnahmen aus dem Buch?",
+    a: `${SPENDEN_HINWEIS} ${SPENDEN_WIRKUNG} – auch wenn du das Buch verschenkst oder am Gewinnspiel gar nicht teilnehmen möchtest.`,
   },
 ];
 
@@ -298,10 +309,17 @@ export default async function GewinnPage({
           <DubaiSkyline className="pointer-events-none absolute inset-x-0 bottom-0 h-32 w-full sm:h-40 lg:h-52" />
           <div className="relative mx-auto grid max-w-6xl gap-y-9 px-5 pt-12 pb-36 sm:px-8 sm:pb-44 lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-[auto_auto] lg:gap-x-12 lg:gap-y-7 xl:grid-cols-[minmax(0,1fr)_380px] xl:gap-x-20 lg:pt-20 lg:pb-56">
             <div className="gw-fade order-1 lg:order-none lg:col-start-1 lg:row-start-1">
-              <p className="inline-flex items-center gap-2 rounded-full border gw-hairline bg-white/[0.04] px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-ink-soft)]">
-                <CalendarDays className="h-3.5 w-3.5 text-[var(--gw-gold)]" aria-hidden="true" />
-                Gewinnerbekanntgabe am {ANNOUNCEMENT_DATETIME_LABEL}
-              </p>
+              <div className="flex flex-wrap gap-2">
+                <p className="inline-flex items-center gap-2 rounded-full border gw-hairline bg-white/[0.04] px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-ink-soft)]">
+                  <CalendarDays className="h-3.5 w-3.5 text-[var(--gw-gold)]" aria-hidden="true" />
+                  Gewinnerbekanntgabe am {ANNOUNCEMENT_DATETIME_LABEL}
+                </p>
+                {/* Spendenzusage: sofort sichtbar – jede Bestellung ist zugleich eine Spende */}
+                <p className="inline-flex items-center gap-2 rounded-full border border-[var(--gw-gold)]/50 bg-[var(--gw-gold)]/10 px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-gold-strong)]">
+                  <HeartHandshake className="h-3.5 w-3.5" aria-hidden="true" />
+                  {SPENDEN_HINWEIS_KURZ}
+                </p>
+              </div>
               <h1
                 id="hero-heading"
                 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl xl:text-6xl"
@@ -483,6 +501,11 @@ export default async function GewinnPage({
                   Dass du meinem Buch dein Vertrauen schenkst, bedeutet mir sehr viel. Die
                   Dubai-Reise ist deshalb mehr als nur ein Gewinnspiel – sie ist mein persönliches
                   Dankeschön an alle, die mich und dieses Projekt unterstützen.
+                </p>
+                <p>
+                  Und noch etwas ist mir wichtig: {SPENDEN_HINWEIS_ICH} Mit jeder Bestellung hilfst
+                  du also auch Kindern, die Schutz brauchen – ganz unabhängig davon, ob du am
+                  Gewinnspiel teilnimmst.
                 </p>
                 <p>
                   Ich wünsche dir viel Glück bei der Verlosung und hoffe, dass wir uns vielleicht

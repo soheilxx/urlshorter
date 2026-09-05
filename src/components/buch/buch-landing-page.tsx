@@ -3,6 +3,7 @@ import {
   CalendarDays,
   ExternalLink,
   Gift,
+  HeartHandshake,
   Music2,
   ShoppingBag,
   Ticket,
@@ -25,6 +26,9 @@ import {
   SONG_TITEL,
   SPOTIFY_TRACK_URL,
   YOUTUBE_VIDEO_ID,
+  SPENDEN_HINWEIS,
+  SPENDEN_HINWEIS_KURZ,
+  SPENDEN_WIRKUNG,
 } from "@/lib/buch-config";
 import { getEnv } from "@/lib/env";
 import { createBookConversionConfig } from "@/lib/book-conversion-context";
@@ -168,17 +172,33 @@ export async function BuchLandingPage({
           />
           <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-y-9 px-5 pt-12 pb-16 sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_auto] lg:gap-x-20 lg:gap-y-7 lg:pt-20 lg:pb-24">
             <div className="gw-fade lg:col-start-1 lg:row-start-1">
-              {isGutschein ? (
-                <p className="inline-flex items-center gap-2 rounded-full border border-[var(--gw-gold)]/50 bg-[var(--gw-gold)]/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-[var(--gw-gold-strong)]">
-                  <Ticket className="h-3.5 w-3.5" aria-hidden="true" />
-                  Leser-Aktion: {GUTSCHEIN_RABATT_LABEL} Gutschein für den {GUTSCHEIN_SHOP_NAME}
+              <div className="flex flex-wrap gap-2">
+                {isGutschein ? (
+                  <p className="inline-flex items-center gap-2 rounded-full border border-[var(--gw-gold)]/50 bg-[var(--gw-gold)]/10 px-4 py-1.5 text-xs font-semibold tracking-wide text-[var(--gw-gold-strong)]">
+                    <Ticket className="h-3.5 w-3.5" aria-hidden="true" />
+                    Leser-Aktion: {GUTSCHEIN_RABATT_LABEL} Gutschein für den {GUTSCHEIN_SHOP_NAME}
+                  </p>
+                ) : (
+                  <p className="inline-flex items-center gap-2 rounded-full border gw-hairline bg-white/[0.04] px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-ink-soft)]">
+                    <CalendarDays className="h-3.5 w-3.5 text-[var(--gw-gold)]" aria-hidden="true" />
+                    Neuerscheinung · erscheint am {BUCH_ERSCHEINT_LABEL}
+                  </p>
+                )}
+                {/* Spendenzusage: jede Bestellung ist zugleich eine Spende (Gold-Pill nur, wenn nicht schon die Aktions-Pill golden ist) */}
+                <p
+                  className={
+                    isGutschein
+                      ? "inline-flex items-center gap-2 rounded-full border gw-hairline bg-white/[0.04] px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-ink-soft)]"
+                      : "inline-flex items-center gap-2 rounded-full border border-[var(--gw-gold)]/50 bg-[var(--gw-gold)]/10 px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-gold-strong)]"
+                  }
+                >
+                  <HeartHandshake
+                    className={isGutschein ? "h-3.5 w-3.5 text-[var(--gw-gold)]" : "h-3.5 w-3.5"}
+                    aria-hidden="true"
+                  />
+                  {SPENDEN_HINWEIS_KURZ}
                 </p>
-              ) : (
-                <p className="inline-flex items-center gap-2 rounded-full border gw-hairline bg-white/[0.04] px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-ink-soft)]">
-                  <CalendarDays className="h-3.5 w-3.5 text-[var(--gw-gold)]" aria-hidden="true" />
-                  Neuerscheinung · erscheint am {BUCH_ERSCHEINT_LABEL}
-                </p>
-              )}
+              </div>
               <h1
                 id="hero-heading"
                 className="mt-6 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl"
@@ -546,6 +566,9 @@ export async function BuchLandingPage({
                   gleichnamigen Song – erzählt er seine Geschichte und die Idee dahinter.
                 </p>
                 <p>„Dass du meinem Buch dein Vertrauen schenkst, bedeutet mir sehr viel.“</p>
+                <p>
+                  {SPENDEN_HINWEIS} {SPENDEN_WIRKUNG} – auch wenn du das Buch verschenkst.
+                </p>
               </blockquote>
               <figcaption className="mt-6 flex items-center gap-4">
                 <Image
