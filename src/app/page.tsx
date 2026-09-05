@@ -4,6 +4,7 @@ import { classifyRequest } from "@/lib/bot-detection";
 import { DelayedRedirect } from "@/components/gewinn/delayed-redirect";
 import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import { getEnv } from "@/lib/env";
+import { createBookConversionConfig } from "@/lib/book-conversion-context";
 import { createRedditTrackingConfig } from "@/lib/reddit-context";
 import { getRedirectDelayMs } from "@/lib/settings";
 
@@ -43,6 +44,7 @@ export default async function RootPage() {
         tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
         redditPixelId={env.REDDIT_PIXEL_ID ?? null}
         redditTracking={createRedditTrackingConfig("/", "not-required")}
+        bookConversion={createBookConversionConfig("/", "not-required")}
         linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
         consentMode="not-required"
         consentCookieName={env.CONSENT_COOKIE_NAME ?? null}

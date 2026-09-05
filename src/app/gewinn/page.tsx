@@ -17,6 +17,7 @@ import { DubaiSkyline } from "@/components/gewinn/dubai-skyline";
 import { EntryForm } from "@/components/gewinn/entry-form";
 import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import { getEnv } from "@/lib/env";
+import { createBookConversionConfig } from "@/lib/book-conversion-context";
 import { createRedditTrackingConfig } from "@/lib/reddit-context";
 import {
   AMAZON_PRODUCT_URL,
@@ -151,6 +152,13 @@ const FAQ_ITEMS: Array<{ q: string; a: React.ReactNode }> = [
   },
 ];
 
+const GOLD_CTA =
+  "inline-flex min-h-[52px] items-center justify-center rounded-xl bg-gradient-to-b from-[var(--gw-gold-strong)] to-[var(--gw-gold-deep)] px-7 py-3.5 text-base font-semibold text-[#181207] shadow-lg shadow-black/40 outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-bg)]";
+
+/** Deutlich sichtbarer Amazon-CTA (Schritt 1): Gold-Outline auf dunklem Grund. */
+const OUTLINE_CTA =
+  "inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 border-[var(--gw-gold)] bg-[var(--gw-gold)]/10 px-6 py-3 text-base font-semibold text-[var(--gw-gold-strong)] shadow-lg shadow-black/30 outline-none transition-colors hover:bg-[var(--gw-gold)]/20 focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-bg)]";
+
 function SectionHeading({
   kicker,
   title,
@@ -233,6 +241,7 @@ export default async function GewinnPage({
         tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
         redditPixelId={env.REDDIT_PIXEL_ID ?? null}
         redditTracking={createRedditTrackingConfig("/gewinn", "not-required")}
+        bookConversion={createBookConversionConfig("/gewinn", "not-required")}
         linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
         consentMode="not-required"
         consentCookieName={env.CONSENT_COOKIE_NAME ?? null}
@@ -264,7 +273,7 @@ export default async function GewinnPage({
           />
           <DubaiSkyline className="pointer-events-none absolute inset-x-0 bottom-0 h-32 w-full sm:h-40 lg:h-52" />
           <div className="relative mx-auto grid max-w-6xl gap-y-9 px-5 pt-12 pb-28 sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_auto] lg:gap-x-20 lg:gap-y-7 lg:pt-20 lg:pb-40">
-            <div className="gw-fade lg:col-start-1 lg:row-start-1">
+            <div className="gw-fade order-1 lg:order-none lg:col-start-1 lg:row-start-1">
               <p className="inline-flex items-center gap-2 rounded-full border gw-hairline bg-white/[0.04] px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-ink-soft)]">
                 <CalendarDays className="h-3.5 w-3.5 text-[var(--gw-gold)]" aria-hidden="true" />
                 Gewinnerbekanntgabe am {ANNOUNCEMENT_DATE_LABEL}
@@ -277,16 +286,16 @@ export default async function GewinnPage({
                 <span className="gw-gold-text">nach Dubai</span> bringen.
               </h1>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-[var(--gw-ink-soft)]">
-                Registriere jetzt deine Bestellung von „Die Lizenz zum Erfolg“ und sichere dir die
-                Chance auf eine exklusive Dubai-Reise für zwei Personen im Wert von{" "}
+                {TRIP_DURATION_LABEL} Dubai für zwei Personen im Wert von{" "}
                 <strong className="font-semibold text-[var(--gw-gold-strong)]">
                   {PRIZE_VALUE_LABEL}
                 </strong>
-                .
+                . Zwei Schritte trennen dich vom Lostopf – zusammen dauern sie keine zwei Minuten.
               </p>
             </div>
 
-            <div className="gw-fade-late mx-auto w-52 pr-3 sm:w-60 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:w-full lg:self-center lg:pr-6">
+            {/* Mobil: Cover erst nach den beiden Schritten, damit der Amazon-CTA im sichtbaren Bereich bleibt */}
+            <div className="gw-fade-late order-3 mx-auto w-52 pr-3 sm:w-60 lg:order-none lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:w-full lg:self-center lg:pr-6">
               <div className="relative">
                 <div
                   aria-hidden="true"
@@ -307,8 +316,69 @@ export default async function GewinnPage({
               </div>
             </div>
 
-            <div className="gw-fade lg:col-start-1 lg:row-start-2">
-              <ul className="flex flex-wrap gap-x-5 gap-y-2.5 text-sm text-[var(--gw-ink-soft)]">
+            <div className="gw-fade order-2 lg:order-none lg:col-start-1 lg:row-start-2">
+              {/* Zwei Schritte: erst bestellen (Amazon-CTA), dann registrieren */}
+              <ol
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+                aria-label="Teilnahme in zwei Schritten"
+              >
+                <li className="flex min-w-0 flex-col rounded-2xl border gw-hairline bg-[var(--gw-surface)] p-5 sm:p-6">
+                  <p className="text-xs font-semibold tracking-[0.2em] text-[var(--gw-gold)] uppercase">
+                    Schritt 1
+                  </p>
+                  <h2 className="mt-2 text-xl font-semibold text-[var(--gw-ink)]">
+                    Buch bei Amazon bestellen
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--gw-ink-soft)]">
+                    „Die Lizenz zum Erfolg“ als Taschenbuch bestellen.{" "}
+                    <strong className="font-semibold text-[var(--gw-ink)]">
+                      Bestellnummer aufbewahren
+                    </strong>{" "}
+                    – die brauchst du in Schritt 2.
+                  </p>
+                  <a
+                    href={AMAZON_PRODUCT_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-gw-event="gewinnspiel_amazon_klick"
+                    data-cta-id="hero_schritt_1"
+                    className={`${OUTLINE_CTA} mt-5 w-full`}
+                  >
+                    Hier geht’s zum Buch
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                  <p className="mt-3 text-xs text-[var(--gw-ink-mute)]">
+                    Schon bestellt? Weiter mit Schritt 2.
+                  </p>
+                </li>
+                <li className="flex min-w-0 flex-col rounded-2xl border border-[var(--gw-gold)]/60 bg-gradient-to-b from-[var(--gw-surface-2)] to-[var(--gw-surface)] p-5 shadow-[0_0_0_1px_rgba(214,178,111,0.12),0_24px_60px_-30px_rgba(214,178,111,0.45)] sm:p-6">
+                  <p className="text-xs font-semibold tracking-[0.2em] text-[var(--gw-gold)] uppercase">
+                    Schritt 2
+                  </p>
+                  <h2 className="mt-2 text-xl font-semibold text-[var(--gw-ink)]">
+                    Registrierung abschließen
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--gw-ink-soft)]">
+                    Bestellnummer und Kontaktdaten hier eintragen.{" "}
+                    <strong className="font-semibold text-[var(--gw-ink)]">
+                      Erst damit bist du im Lostopf
+                    </strong>{" "}
+                    – der Kauf allein reicht nicht.
+                  </p>
+                  <a
+                    href="#teilnahme"
+                    data-gw-event="gewinnspiel_cta_registrieren"
+                    className={`${GOLD_CTA} mt-5 w-full`}
+                  >
+                    Jetzt Registrierung abschließen
+                  </a>
+                  <p className="mt-3 text-xs text-[var(--gw-ink-mute)]">
+                    Registrierung möglich bis zur Gewinnerbekanntgabe am {ANNOUNCEMENT_DATE_LABEL}.
+                  </p>
+                </li>
+              </ol>
+
+              <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2.5 text-sm text-[var(--gw-ink-soft)]">
                 {[
                   "Emirates Business Class",
                   "5-Sterne-Designerhotel",
@@ -325,26 +395,6 @@ export default async function GewinnPage({
                   </li>
                 ))}
               </ul>
-
-              <div className="mt-8 flex flex-col gap-4 sm:items-start">
-                <a
-                  href="#teilnahme"
-                  data-gw-event="gewinnspiel_cta_registrieren"
-                  className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-gradient-to-b from-[var(--gw-gold-strong)] to-[var(--gw-gold-deep)] px-7 py-3.5 text-base font-semibold text-[#181207] shadow-lg shadow-black/40 outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-bg)]"
-                >
-                  Jetzt Bestellung registrieren
-                </a>
-                <a
-                  href={AMAZON_PRODUCT_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-gw-event="gewinnspiel_amazon_klick"
-                  className="inline-flex min-h-[44px] items-center justify-center gap-1.5 self-center text-sm font-medium text-[var(--gw-ink-soft)] underline decoration-[var(--gw-gold)]/40 underline-offset-4 outline-none hover:text-[var(--gw-gold-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] sm:self-start"
-                >
-                  Noch kein Buch? Bei Amazon bestellen
-                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                </a>
-              </div>
               <p className="mt-3 text-sm text-[var(--gw-ink-mute)]">
                 {TRIP_DURATION_LABEL} Dubai · Gesamtwert {PRIZE_VALUE_LABEL} · Für dich und eine
                 Begleitperson deiner Wahl

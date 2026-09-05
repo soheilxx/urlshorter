@@ -16,6 +16,7 @@
     "test:integration": "vitest run -c vitest.integration.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:reddit": "playwright test -c playwright.reddit.config.ts",
+    "test:e2e:book": "playwright test -c playwright.book.config.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",

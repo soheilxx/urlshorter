@@ -27,6 +27,7 @@ import {
   YOUTUBE_VIDEO_ID,
 } from "@/lib/buch-config";
 import { getEnv } from "@/lib/env";
+import { createBookConversionConfig } from "@/lib/book-conversion-context";
 import { createRedditTrackingConfig } from "@/lib/reddit-context";
 import {
   AMAZON_PRODUCT_URL,
@@ -132,6 +133,10 @@ export function BuchLandingPage({
         tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
         redditPixelId={env.REDDIT_PIXEL_ID ?? null}
         redditTracking={createRedditTrackingConfig(isGutschein ? "/gutschein" : "/das-buch", "not-required")}
+        bookConversion={createBookConversionConfig(
+          isGutschein ? "/gutschein" : "/das-buch",
+          "not-required",
+        )}
         linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
         consentMode="not-required"
         consentCookieName={env.CONSENT_COOKIE_NAME ?? null}

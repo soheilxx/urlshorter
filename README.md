@@ -626,6 +626,33 @@ Klick-Event-ID (Deduplication).
 
 Logs: `linkedin_capi.sent` / `linkedin_capi.send_failed`.
 
+### Buchseiten: Meta/TikTok/LinkedIn Pixel + Conversion-APIs (`/gewinn`, `/das-buch`, `/gutschein`, `/`)
+
+Die Buch-Landingpages nutzen `src/components/book-conversion-tracking.tsx`
+nach demselben Muster wie die Reddit-Anbindung (`docs/reddit-capi-setup.md`):
+Pro Handlung entsteht **eine UUID**, die das Browser-Pixel als `eventID` /
+`event_id` sendet und die `POST /api/book/events` an die Conversion-APIs
+weiterreicht – Meta, TikTok und LinkedIn deduplizieren Pixel- und
+Server-Event damit selbst. Der signierte Kontext (`book-conversion-context.ts`,
+`APP_SECRET`) bindet Route und Consent-Modus; Tokens verlassen den Server nie.
+
+| Handlung                        | Meta Pixel + CAPI | TikTok Pixel + Events API | LinkedIn                      | GA4/GTM       | Intern             |
+| ------------------------------- | ----------------- | ------------------------- | ----------------------------- | ------------- | ------------------ |
+| Sichtbarer Seitenaufruf         | `PageView`        | `Pageview` (nur Pixel)    | Insight Tag                   | Seiten-Event  | `book_page_view`   |
+| Klick auf einen Amazon-Buchlink | `AddToCart`       | `AddToCart`               | Conversion (nur `li_fat_id`)  | `add_to_cart` | `book_add_to_cart` |
+
+`AddToCart` trägt `content_ids` = ISBN, `value` 18, `currency` EUR
+(Kauf-Proxy auf ausdrücklichen Wunsch – kein Umsatz, kein Purchase). Der
+Amazon-Klick erzeugt bei Meta **kein** zusätzliches Custom-Event mehr.
+Benötigte Variablen: `META_PIXEL_ID` + `META_CAPI_ACCESS_TOKEN`,
+`TIKTOK_PIXEL_ID` + `TIKTOK_EVENTS_API_TOKEN`, optional `LINKEDIN_PARTNER_ID`
++ `LINKEDIN_CONVERSION_RULE_ID` + `LINKEDIN_CAPI_ACCESS_TOKEN`. Ohne Token
+läuft nur das Pixel (Log `book_capi.meta_not_configured`). Logs:
+`book_capi.meta_sent`, `book_capi.tiktok_sent`, `linkedin_capi.sent`,
+`book_collect.failed`. Prüfen: Meta Events Manager → Test-Events
+(`META_CAPI_TEST_EVENT_CODE` temporär setzen), Browserprüfung
+`npm run test:e2e:book` (Port 3102, blockiert alle externen Zugriffe).
+
 ### Woran erkenne ich, dass ein Link korrekt trackt?
 
 1. Kurzlink im Inkognito-Fenster öffnen → Bridge-Page → Amazon.

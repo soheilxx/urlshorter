@@ -34,6 +34,10 @@ export interface TagCapiEvent {
   fbc: string | null;
   ttp: string | null;
   ttclid: string | null;
+  /** Meta custom_data (z. B. value/currency/content_ids bei AddToCart). */
+  customData?: Record<string, unknown>;
+  /** TikTok properties (z. B. value/currency/contents bei AddToCart). */
+  properties?: Record<string, unknown>;
 }
 
 /** Meta-Event-Name (Standardevent für Seitenaufrufe, sonst Custom). */
@@ -71,6 +75,7 @@ export async function sendMetaCapiSingle(
         action_source: "website",
         event_source_url: event.sourceUrl,
         user_data: userData,
+        ...(event.customData ? { custom_data: event.customData } : {}),
       },
     ],
   };
@@ -135,6 +140,7 @@ export async function sendTikTokSingle(
         event_id: event.eventId,
         user,
         page: { url: event.sourceUrl },
+        ...(event.properties ? { properties: event.properties } : {}),
       },
     ],
   };

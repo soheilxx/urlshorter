@@ -21,8 +21,16 @@ test.describe("Gewinnspiel-Landingpage", () => {
       page.getByRole("img", { name: /Buchcover: Die Lizenz zum Erfolg/ }),
     ).toBeVisible();
 
-    const amazonLink = page.getByRole("link", { name: /Bei Amazon bestellen/ });
+    // Schritt 1 (Amazon-CTA) und Schritt 2 (Registrierung) stehen sichtbar im Hero
+    const amazonLink = page.getByRole("link", { name: /Hier geht.s zum Buch/ });
+    await expect(amazonLink).toBeVisible();
     await expect(amazonLink).toHaveAttribute("href", "https://link.amazon/B0eyhvaQw");
+    await expect(amazonLink).toHaveAttribute("target", "_blank");
+    await expect(page.getByRole("heading", { name: "Buch bei Amazon bestellen" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Registrierung abschließen" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Jetzt Registrierung abschließen" }),
+    ).toHaveAttribute("href", "#teilnahme");
     await expect(
       page.getByRole("img", { name: /Soheil Hosseini, Autor/ }),
     ).toBeVisible();
@@ -127,6 +135,46 @@ test.describe("Gewinnspiel-Landingpage", () => {
       await page.reload();
       await expect(page.getByLabel("Status")).toHaveValue("IN_REVIEW");
     }
+  });
+
+  test("Tracking: PageView und Amazon-Klick erreichen /api/book/events mit derselben Event-ID wie das Meta-Pixel", async ({
+    page,
+  }) => {
+    // Externe Pixel-Skripte blockieren – nur die First-Party-Kette wird geprüft (echte Route + DB).
+    await page.route("**/*", (route) =>
+      new URL(route.request().url()).hostname === "127.0.0.1" ? route.continue() : route.abort(),
+    );
+    const beacons: Array<{ id: string; type: string; status: number }> = [];
+    page.on("response", async (response) => {
+      if (!response.url().endsWith("/api/book/events")) return;
+      const body = JSON.parse(response.request().postData() ?? "{}") as {
+        id: string;
+        type: string;
+      };
+      beacons.push({ id: body.id, type: body.type, status: response.status() });
+    });
+    await page.goto("/gewinn");
+    await expect.poll(() => beacons.length).toBe(1);
+    expect(beacons[0]).toMatchObject({ type: "PageView", status: 204 });
+
+    const popupPromise = page.waitForEvent("popup");
+    await page.getByRole("link", { name: /Hier geht.s zum Buch/ }).click();
+    const popup = await popupPromise;
+    await expect.poll(() => beacons.length).toBe(2);
+    expect(beacons[1]).toMatchObject({ type: "AddToCart", status: 204 });
+    await popup.close();
+
+    const pixel = await page.evaluate(() => {
+      const queue = (window as Window & { fbq?: { queue?: unknown[][] } }).fbq?.queue ?? [];
+      return queue
+        .map((entry) => Array.from(entry as unknown[]))
+        .filter((entry) => entry[0] === "track")
+        .map((entry) => [entry[1], (entry[3] as { eventID?: string } | undefined)?.eventID]);
+    });
+    expect(pixel).toEqual([
+      ["PageView", beacons[0]!.id],
+      ["AddToCart", beacons[1]!.id],
+    ]);
   });
 
   test("Teilnahmebedingungen sind vollständig veröffentlicht", async ({ page }) => {

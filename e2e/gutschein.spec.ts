@@ -124,6 +124,20 @@ test.describe.serial("Gutscheinaktion", () => {
     expect(csv).toContain(ORDER_NUMBER);
   });
 
+  test("Tracking: Seitenaufruf erreicht /api/book/events (204)", async ({ page }) => {
+    await page.route("**/*", (route) =>
+      new URL(route.request().url()).hostname === "127.0.0.1" ? route.continue() : route.abort(),
+    );
+    const responsePromise = page.waitForResponse((r) => r.url().endsWith("/api/book/events"));
+    await page.goto("/gutschein");
+    const response = await responsePromise;
+    expect(response.status()).toBe(204);
+    expect(JSON.parse(response.request().postData() ?? "{}")).toMatchObject({
+      type: "PageView",
+      path: "/gutschein",
+    });
+  });
+
   test("Viewer darf das Gutschein-Dashboard nicht sehen", async ({ page }) => {
     const prisma = new PrismaClient();
     const email = `viewer-${randomUUID().slice(0, 8)}@test.local`;

@@ -3,6 +3,8 @@
  * Es werden ausschließlich Event-NAMEN übermittelt – niemals Formulardaten,
  * Bestellnummern, Referenzen oder sonstige personenbezogene Inhalte.
  */
+const AMAZON_CLICK_EVENTS = new Set(["gewinnspiel_amazon_klick", "buch_amazon_klick"]);
+
 export function trackGewinnEvent(name: string): void {
   if (typeof window === "undefined") return;
   try {
@@ -13,7 +15,9 @@ export function trackGewinnEvent(name: string): void {
     };
     w.dataLayer?.push({ event: name });
     w.gtag?.("event", name);
-    w.fbq?.("trackCustom", name);
+    // Amazon-Klicks laufen bei Meta als Standardevent "AddToCart" (Pixel + CAPI,
+    // book-conversion-tracking.tsx) – kein zusätzliches Custom-Event.
+    if (!AMAZON_CLICK_EVENTS.has(name)) w.fbq?.("trackCustom", name);
   } catch {
     // Tracking darf niemals die Seite stören.
   }
