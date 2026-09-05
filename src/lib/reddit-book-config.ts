@@ -5,9 +5,10 @@ export const REDDIT_BOOK_URL = `https://lizenzzumerfolg.com${REDDIT_BOOK_PATH}`;
  * Diese Werte sind KEINE Analytics, Rezensionen oder Kaufnachweise. */
 export const ACTIVITY_DISPLAY = {
   epoch: Date.UTC(2026, 8, 5),
-  baseScore: 1268,
+  baseScore: 8426,
   stepMs: 67_000,
-  minimumReaders: 24,
+  minimumReaders: 184,
+  maximumReaders: 326,
 };
 
 export function displayedActivity(now: number, actualScore = 0) {
@@ -18,8 +19,20 @@ export function displayedActivity(now: number, actualScore = 0) {
       0,
       ACTIVITY_DISPLAY.baseScore + Math.floor(elapsed / ACTIVITY_DISPLAY.stepMs) + actualScore,
     ),
-    readers: ACTIVITY_DISPLAY.minimumReaders + ((tick * 7 + Math.floor(tick / 3)) % 23),
+    readers: ACTIVITY_DISPLAY.minimumReaders + ((tick * 7 + Math.floor(tick / 3)) % 115),
   };
+}
+
+/** Kleine, immer von der vorigen Anzeige abweichende Änderung innerhalb des Anzeigenbereichs. */
+export function nextReaderCount(previous: number, random = Math.random()) {
+  const { minimumReaders, maximumReaders } = ACTIVITY_DISPLAY;
+  const current = Number.isInteger(previous)
+    ? Math.max(minimumReaders, Math.min(maximumReaders, previous))
+    : minimumReaders;
+  const seed = Number.isFinite(random) ? Math.max(0, Math.min(0.999999, random)) : 0.5;
+  const delta = (2 + Math.floor(seed * 11)) * (seed < 0.5 ? -1 : 1);
+  const next = current + delta;
+  return next < minimumReaders || next > maximumReaders ? current - delta : next;
 }
 
 export const BOOK_FAQ = [

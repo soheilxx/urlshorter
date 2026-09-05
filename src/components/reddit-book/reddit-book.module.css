@@ -359,6 +359,7 @@
   flex-wrap: wrap;
 }
 .votePill {
+  position: relative;
   display: flex;
   align-items: center;
   border-radius: 28px;
@@ -378,8 +379,47 @@
   background: var(--border);
 }
 .votePill > span {
-  min-width: 34px;
+  min-width: 42px;
   text-align: center;
+}
+.votePill[data-live-like="true"] {
+  animation: liveVotePulse 950ms ease-out;
+}
+.votePill .liveIncrease {
+  position: absolute;
+  right: 38px;
+  top: -12px;
+  min-width: 24px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10px;
+  line-height: 18px;
+  pointer-events: none;
+  animation: liveVoteRise 950ms ease-out both;
+}
+@keyframes liveVotePulse {
+  20% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@keyframes liveVoteRise {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  20%,
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 .upvoted {
   background: var(--accent-soft);

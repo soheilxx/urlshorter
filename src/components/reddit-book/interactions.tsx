@@ -6,6 +6,7 @@ import { REDDIT_BOOK_URL } from "@/lib/reddit-book-config";
 import { AMAZON_PRODUCT_URL } from "@/lib/gewinnspiel-config";
 import { BUCH_PREIS_LABEL } from "@/lib/buch-config";
 import styles from "./reddit-book.module.css";
+import { useVisibleActivity } from "./use-visible-activity";
 
 type Activity = { score: number; readers: number; vote: number };
 export function PostActions({ initial }: { initial: Activity }) {
@@ -15,6 +16,9 @@ export function PostActions({ initial }: { initial: Activity }) {
   const [message, setMessage] = useState("");
   const [manualShare, setManualShare] = useState(false);
   const saving = useRef(false);
+  const voteElement = useRef<HTMLDivElement>(null);
+  const live = useVisibleActivity(voteElement, saving, initial.readers);
+  const displayedScore = activity.score + live.boost;
   const generation = useRef(0);
   const channel = useRef<BroadcastChannel | null>(null);
 
@@ -120,6 +124,8 @@ export function PostActions({ initial }: { initial: Activity }) {
     <div className={styles.actionsArea}>
       <div className={styles.actions}>
         <div
+          ref={voteElement}
+          data-live-like={live.increase > 0}
           className={`${styles.votePill} ${activity.vote === 1 ? styles.upvoted : activity.vote === -1 ? styles.downvoted : ""}`}
           aria-label="Beitrag bewerten"
         >
@@ -132,9 +138,14 @@ export function PostActions({ initial }: { initial: Activity }) {
           >
             <ArrowUp size={21} aria-hidden="true" />
           </button>
-          <span data-testid="vote-score" aria-label={`${activity.score} Punkte`}>
-            {new Intl.NumberFormat("de-DE").format(activity.score)}
+          <span data-testid="vote-score" aria-label={`${displayedScore} Punkte`}>
+            {new Intl.NumberFormat("de-DE").format(displayedScore)}
           </span>
+          {live.increase > 0 && (
+            <span className={styles.liveIncrease} aria-hidden="true">
+              +{live.increase}
+            </span>
+          )}
           <button
             type="button"
             aria-label="Downvote"
@@ -153,7 +164,7 @@ export function PostActions({ initial }: { initial: Activity }) {
         </a>
         <span className={styles.readers}>
           <span className={styles.liveDot} aria-hidden="true" />
-          {activity.readers} lesen gerade
+          <span data-testid="reader-count">{live.readers}</span> lesen gerade
         </span>
       </div>
       <p className={styles.actionStatus} role="status">

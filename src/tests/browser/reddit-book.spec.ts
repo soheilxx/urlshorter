@@ -21,7 +21,7 @@ async function capture(page: Page, failedVote = false, blockedPixel = false) {
         if (failedVote) return route.fulfill({ status: 503 });
         vote = JSON.parse(route.request().postData() ?? "{}").vote;
       }
-      return route.fulfill({ json: { score: 1268 + vote, readers: 32, vote } });
+      return route.fulfill({ json: { score: 8426 + vote, readers: 234, vote } });
     }
     return route.continue();
   });
@@ -34,6 +34,11 @@ async function capture(page: Page, failedVote = false, blockedPixel = false) {
       }),
     );
   return events;
+}
+async function freezeClock(page: Page) {
+  const now = new Date();
+  await page.clock.install({ time: now });
+  await page.clock.pauseAt(now);
 }
 for (const width of [360, 390, 430, 1280, 1440])
   for (const theme of ["light", "dark"] as const) {
@@ -145,6 +150,7 @@ for (const cookie of ["yes", "declined"]) {
   });
 }
 test("Vote bleibt nach Reload erhalten und ist zurücknehmbar; kein ATC", async ({ page }) => {
+  await freezeClock(page);
   const events = await capture(page);
   await page.goto("/buch-reddit");
   const up = page.getByRole("button", { name: "Upvote", exact: true });
@@ -154,15 +160,16 @@ test("Vote bleibt nach Reload erhalten und ist zurücknehmbar; kein ATC", async 
   await expect(up).toHaveAttribute("aria-pressed", "true");
   await up.click();
   await expect(up).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("vote-score")).toHaveText("1.268");
+  await expect(page.getByTestId("vote-score")).toHaveText("8.426");
   expect(events.some((x) => x.type === "AddToCart")).toBe(false);
 });
 test("Vote-Ausfall rollt Anzeige zurück, Amazon bleibt bedienbar", async ({ page }) => {
+  await freezeClock(page);
   await capture(page, true);
   await page.goto("/buch-reddit");
   await page.getByRole("button", { name: "Upvote", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("nicht gespeichert");
-  await expect(page.getByTestId("vote-score")).toHaveText("1.268");
+  await expect(page.getByTestId("vote-score")).toHaveText("8.426");
   await expect(page.locator("#first-book-cta")).toHaveAttribute(
     "href",
     "https://link.amazon/B0eyhvaQw",
@@ -190,6 +197,71 @@ test("Blockierter Pixel beeinträchtigt den CAPI-Aufruf nicht", async ({ page })
   await page.locator("#first-book-cta").press("Enter");
   await expect.poll(() => events.length).toBe(2);
   expect(events.map((x) => x.type)).toEqual(["PageVisit", "AddToCart"]);
+});
+test("Likes steigen nur im sichtbaren Bereich; Pause außerhalb und im Hintergrund, ohne ATC", async ({
+  page,
+}, testInfo) => {
+  await freezeClock(page);
+  const events = await capture(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/buch-reddit");
+  await expect(page.getByRole("button", { name: "Upvote", exact: true })).toBeEnabled();
+  const score = page.getByTestId("vote-score");
+  const readScore = async () => Number((await score.innerText()).replaceAll(".", ""));
+  await page.locator("#book-footer").scrollIntoViewIfNeeded();
+  await expect(score).not.toBeInViewport();
+  await page.clock.runFor(8000);
+  expect(await readScore()).toBe(8426);
+  await score.scrollIntoViewIfNeeded();
+  await expect(score).toBeInViewport();
+  await page.clock.runFor(2150);
+  const afterFirst = await readScore();
+  expect(afterFirst).toBeGreaterThan(8426);
+  await expect(page.locator('[data-live-like="true"]')).toHaveCount(1);
+  await page.screenshot({ path: testInfo.outputPath("sichtbarer-like-zuwachs.png") });
+  await page.locator("#book-footer").scrollIntoViewIfNeeded();
+  await page.clock.runFor(8000);
+  expect(await readScore()).toBe(afterFirst);
+  await score.scrollIntoViewIfNeeded();
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.clock.runFor(8000);
+  expect(await readScore()).toBe(afterFirst);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => "visible",
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.clock.runFor(2150);
+  expect(await readScore()).toBeGreaterThan(afterFirst);
+  expect(events.map((x) => x.type)).toEqual(["PageVisit"]);
+});
+test("Dreistellige Leser variieren bei jedem Reload; sichtbare Likes bleiben erhalten", async ({
+  page,
+}) => {
+  await freezeClock(page);
+  await capture(page);
+  await page.goto("/buch-reddit");
+  await expect(page.getByRole("button", { name: "Upvote", exact: true })).toBeEnabled();
+  await page.getByTestId("vote-score").scrollIntoViewIfNeeded();
+  await page.clock.runFor(2150);
+  const firstScore = await page.getByTestId("vote-score").innerText();
+  let previous = Number(await page.getByTestId("reader-count").innerText());
+  for (let i = 0; i < 3; i++) {
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Upvote", exact: true })).toBeEnabled();
+    const next = Number(await page.getByTestId("reader-count").innerText());
+    expect(next).toBeGreaterThanOrEqual(184);
+    expect(next).toBeLessThanOrEqual(326);
+    expect(next).not.toBe(previous);
+    expect(Math.abs(next - previous)).toBeLessThanOrEqual(12);
+    await expect(page.getByTestId("vote-score")).toHaveText(firstScore);
+    previous = next;
+  }
 });
 test("Ohne JavaScript: Systemfarbe, Inhalt, FAQ und Amazon-Link funktionieren", async ({
   browser,

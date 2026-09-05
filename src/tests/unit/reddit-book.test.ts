@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET, POST } from "@/app/api/reddit/book-vote/route";
 import { newVoteIdentity, voteIdentity, VOTE_COOKIE, writeBookVote } from "@/lib/reddit-book-votes";
-import { ACTIVITY_DISPLAY, displayedActivity } from "@/lib/reddit-book-config";
+import { ACTIVITY_DISPLAY, displayedActivity, nextReaderCount } from "@/lib/reddit-book-config";
 import { resetEnvCache } from "@/lib/env";
 import { prisma } from "@/lib/db";
 
@@ -52,7 +52,19 @@ describe("Buch-Stimmen", () => {
     expect(displayedActivity(now + ACTIVITY_DISPLAY.stepMs).score).toBe(
       displayedActivity(now).score + 1,
     );
-    expect(displayedActivity(now).readers).toBeGreaterThanOrEqual(24);
+    expect(displayedActivity(now).score).toBeGreaterThan(8400);
+    expect(displayedActivity(now).readers).toBeGreaterThanOrEqual(100);
+    expect(displayedActivity(now).readers).toBeLessThan(1000);
+  });
+  it("variiert die dreistellige Leserzahl bei jedem Aufruf in kleinen Schritten, auch an Grenzen", () => {
+    for (const previous of [184, 185, 230, 325, 326])
+      for (const seed of [0, 0.1, 0.5, 0.99, 1]) {
+        const next = nextReaderCount(previous, seed);
+        expect(next).not.toBe(previous);
+        expect(next).toBeGreaterThanOrEqual(ACTIVITY_DISPLAY.minimumReaders);
+        expect(next).toBeLessThanOrEqual(ACTIVITY_DISPLAY.maximumReaders);
+        expect(Math.abs(next - previous)).toBeLessThanOrEqual(12);
+      }
   });
   it("setzt eine signierte, nicht per JavaScript lesbare Identität", async () => {
     const response = await GET(new NextRequest(endpoint));
