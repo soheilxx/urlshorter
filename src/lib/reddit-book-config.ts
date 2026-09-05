@@ -41,6 +41,6 @@ export const BOOK_FAQ = [
   {
     question: "Wo kann ich das Buch bestellen?",
     answer:
-      "Die Buttons führen dich zum Buch auf Amazon. Dort siehst du die aktuelle Verfügbarkeit, den gültigen Preis und die Lieferbedingungen. Das Taschenbuch erscheint am 6. Oktober 2026 und kann vorbestellt werden.",
+      "Die Buttons führen dich zum Buch auf Amazon. Dort siehst du die aktuelle Verfügbarkeit, den gültigen Preis und die Lieferbedingungen. Das Taschenbuch erscheint am 6. Oktober 2026 und kann bestellt werden.",
   },
 ] as const;

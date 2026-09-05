@@ -35,7 +35,7 @@ import {
   ReadingProgress,
   SavedReadingNote,
 } from "@/components/reddit-book/interactions";
-import { BookConsent } from "@/components/reddit-book/consent";
+import { RedditTracking } from "@/components/reddit-tracking";
 import styles from "@/components/reddit-book/reddit-book.module.css";
 
 export const dynamic = "force-dynamic";
@@ -102,7 +102,8 @@ function AmazonButton({
 export default function RedditBookPage() {
   const env = getEnv();
   const preorder = Date.now() < Date.parse(BUCH_ERSCHEINT_ISO);
-  const cta = preorder ? "Bei Amazon vorbestellen" : "Bei Amazon ansehen";
+  const cta = "Bei Amazon bestellen";
+  const tracking = createRedditTrackingConfig(REDDIT_BOOK_PATH, "not-required");
   const privacyUrl = env.PRIVACY_URL ?? "https://soheil-hosseini.de/datenschutz";
   const imprintUrl = env.IMPRINT_URL ?? "https://soheil-hosseini.de/impressum";
   const jsonLd = {
@@ -445,7 +446,7 @@ export default function RedditBookPage() {
                   </summary>
                   <p>
                     {i === 3
-                      ? `Die Buttons führen dich zum Buch auf Amazon. Dort siehst du die aktuelle Verfügbarkeit, den gültigen Preis und die Lieferbedingungen. ${preorder ? "Das Taschenbuch erscheint am 6. Oktober 2026 und kann vorbestellt werden." : "Das Erscheinungsdatum des Taschenbuchs ist der 6. Oktober 2026."}`
+                      ? `Die Buttons führen dich zum Buch auf Amazon. Dort siehst du die aktuelle Verfügbarkeit, den gültigen Preis und die Lieferbedingungen. ${preorder ? "Das Taschenbuch erscheint am 6. Oktober 2026 und kann bestellt werden." : "Das Erscheinungsdatum des Taschenbuchs ist der 6. Oktober 2026."}`
                       : item.answer}
                   </p>
                 </details>
@@ -482,12 +483,6 @@ export default function RedditBookPage() {
               <a href={privacyUrl} target="_blank" rel="noopener noreferrer">
                 Datenschutz
               </a>
-              <BookConsent
-                config={createRedditTrackingConfig(REDDIT_BOOK_PATH, "required")}
-                cookieName={env.CONSENT_COOKIE_NAME ?? "lze_reddit_consent"}
-                acceptedValue={env.CONSENT_COOKIE_ACCEPTED_VALUE ?? "yes"}
-                privacyUrl={privacyUrl}
-              />
             </nav>
             <span>© {new Date().getFullYear()} Soheil Hosseini</span>
           </footer>
@@ -513,9 +508,7 @@ export default function RedditBookPage() {
                 <strong>{BUCH_PREIS_LABEL}</strong>
                 <span>Taschenbuch · Deutsch</span>
               </div>
-              <AmazonButton placement="sidebar">
-                {preorder ? "Bei Amazon vorbestellen" : "Bei Amazon ansehen"}
-              </AmazonButton>
+              <AmazonButton placement="sidebar">{cta}</AmazonButton>
               <span className={styles.cardDate}>
                 {preorder ? "Erscheint am" : "Erschienen am"} 6. Oktober 2026
               </span>
@@ -529,6 +522,7 @@ export default function RedditBookPage() {
         </aside>
       </div>
       <MobileBookCta label={cta} />
+      {tracking && <RedditTracking config={tracking} />}
     </div>
   );
 }

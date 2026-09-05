@@ -35,18 +35,12 @@ async function capture(page: Page, failedVote = false, blockedPixel = false) {
     );
   return events;
 }
-async function accepted(page: Page) {
-  await page
-    .context()
-    .addCookies([{ name: "lze_reddit_consent", value: "yes", url: "http://127.0.0.1:3101" }]);
-}
 for (const width of [360, 390, 430, 1280, 1440])
   for (const theme of ["light", "dark"] as const) {
     test(`${width}px ${theme}: vollständige Seite ohne Überlauf und unabhängig vom Admin-Theme`, async ({
       page,
     }, testInfo) => {
       await capture(page);
-      await accepted(page);
       await page.context().addCookies([
         {
           name: "theme",
@@ -98,17 +92,19 @@ for (const width of [360, 390, 430, 1280, 1440])
       );
     });
   }
-test("Consent: Ablehnung, Annahme, Widerruf; genau eine PV und ein ATC pro Handlung", async ({
-  page,
-}) => {
+test("Ohne Cookie-Dialog: sofort eine PV und genau ein ATC pro Bestell-Klick", async ({ page }) => {
   const events = await capture(page);
   await page.goto("/buch-reddit?utm_source=reddit&rdt_cid=qa-click");
-  await page.getByRole("button", { name: "Ohne Werbe-Tracking", exact: true }).click();
-  expect(events).toHaveLength(0);
-  await page.getByRole("button", { name: "Cookie-Einstellungen", exact: true }).click();
-  await page.getByRole("button", { name: "Tracking erlauben", exact: true }).click();
   await expect.poll(() => events.length).toBe(1);
   expect(events[0]).toMatchObject({ type: "PageVisit", path: "/buch-reddit" });
+  await expect(page.getByRole("button", { name: "Cookie-Einstellungen", exact: true })).toHaveCount(
+    0,
+  );
+  await expect(page.locator("[data-consent-open]")).toHaveCount(0);
+  expect(await page.locator('a[data-reddit-event="amazon"]').allTextContents()).toEqual(
+    Array(5).fill("Bei Amazon bestellen"),
+  );
+  await expect(page.locator("main")).not.toContainText(/vorbestell/i);
   await page.getByRole("button", { name: "Upvote", exact: true }).click();
   await expect(page.getByRole("button", { name: "Upvote", exact: true })).toHaveAttribute(
     "aria-pressed",
@@ -132,18 +128,24 @@ test("Consent: Ablehnung, Annahme, Widerruf; genau eine PV und ein ATC pro Handl
     ((window as PixelWindow).rdt?.callQueue ?? []).filter((x) => x[0] === "track"),
   );
   expect(pixel).toEqual(events.map((x) => ["track", x.type, { conversionId: x.id }]));
-  await page.getByRole("button", { name: "Cookie-Einstellungen", exact: true }).click();
-  await page.getByRole("button", { name: "Ohne Werbe-Tracking", exact: true }).click();
-  const before = events.length;
-  await page.locator('[data-cta-id="final"]').click();
-  expect(events).toHaveLength(before);
-  await page.getByRole("button", { name: "Cookie-Einstellungen", exact: true }).click();
-  await page.getByRole("button", { name: "Tracking erlauben", exact: true }).click();
   expect(events.filter((x) => x.type === "PageVisit")).toHaveLength(1);
 });
+for (const cookie of ["yes", "declined"]) {
+  test(`Früherer Cookie ${cookie} beeinflusst PV und ATC nicht`, async ({ page }) => {
+    await page
+      .context()
+      .addCookies([{ name: "lze_reddit_consent", value: cookie, url: "http://127.0.0.1:3101" }]);
+    const events = await capture(page);
+    await page.goto("/buch-reddit");
+    await expect.poll(() => events.length).toBe(1);
+    await page.locator("#first-book-cta").press("Enter");
+    await expect.poll(() => events.length).toBe(2);
+    expect(events.map((x) => x.type)).toEqual(["PageVisit", "AddToCart"]);
+    await expect(page.locator("[data-consent-open]")).toHaveCount(0);
+  });
+}
 test("Vote bleibt nach Reload erhalten und ist zurücknehmbar; kein ATC", async ({ page }) => {
   const events = await capture(page);
-  await accepted(page);
   await page.goto("/buch-reddit");
   const up = page.getByRole("button", { name: "Upvote", exact: true });
   await up.click();
@@ -158,7 +160,6 @@ test("Vote bleibt nach Reload erhalten und ist zurücknehmbar; kein ATC", async 
 test("Vote-Ausfall rollt Anzeige zurück, Amazon bleibt bedienbar", async ({ page }) => {
   await capture(page, true);
   await page.goto("/buch-reddit");
-  await page.getByRole("button", { name: "Ohne Werbe-Tracking", exact: true }).click();
   await page.getByRole("button", { name: "Upvote", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("nicht gespeichert");
   await expect(page.getByTestId("vote-score")).toHaveText("1.268");
@@ -171,7 +172,6 @@ test("Mobile Sticky-CTA erscheint erst nach dem ersten CTA und weicht dem Footer
   page,
 }) => {
   const events = await capture(page);
-  await accepted(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/buch-reddit");
   const sticky = page.locator('[data-cta-id="mobile-sticky"]');
@@ -185,7 +185,6 @@ test("Mobile Sticky-CTA erscheint erst nach dem ersten CTA und weicht dem Footer
 });
 test("Blockierter Pixel beeinträchtigt den CAPI-Aufruf nicht", async ({ page }) => {
   const events = await capture(page, false, true);
-  await accepted(page);
   await page.goto("/buch-reddit");
   await expect.poll(() => events.length).toBe(1);
   await page.locator("#first-book-cta").press("Enter");
@@ -216,7 +215,6 @@ test("Labormessung LCP und CLS, Chrome mobil 390px ohne Netz-/CPU-Drosselung", a
   page,
 }, testInfo) => {
   await capture(page);
-  await accepted(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     const metrics = { lcp: 0, cls: 0 };

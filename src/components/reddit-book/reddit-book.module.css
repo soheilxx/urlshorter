@@ -678,15 +678,13 @@
   gap: 4px 18px;
   margin: 12px 0 7px;
 }
-.footer nav > a,
-.textButton {
+.footer nav > a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
   font-size: 11px !important;
 }
-.footer nav > a:hover,
-.textButton:hover {
+.footer nav > a:hover {
   text-decoration: underline;
 }
 .footer > span {
@@ -779,66 +777,6 @@
 }
 .outArrow {
   transform: rotate(45deg);
-}
-.consentPanel {
-  position: fixed;
-  z-index: 60;
-  right: 24px;
-  bottom: 24px;
-  width: min(460px, calc(100vw - 32px));
-  padding: 22px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow: 0 8px 50px #0003;
-  color: var(--text);
-  font-size: 12px;
-}
-.consentHeading {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.consentHeading > svg {
-  color: var(--accent);
-  flex-shrink: 0;
-}
-.consentHeading strong {
-  font-size: 13px;
-}
-.consentHeading button {
-  margin-left: auto;
-  display: grid;
-  place-items: center;
-  min-width: 36px;
-  min-height: 36px;
-  border-radius: 50%;
-}
-.consentPanel p {
-  font-size: 12px;
-  line-height: 1.8;
-  margin: 13px 0 17px;
-  color: var(--muted);
-}
-.consentPanel p a {
-  text-decoration: underline;
-}
-.consentChoices {
-  display: flex;
-  gap: 9px;
-}
-.consentChoices button {
-  min-height: 44px;
-  flex: 1;
-  font-size: 11px !important;
-  font-weight: 650;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  background: var(--soft);
-  padding: 8px;
-}
-.consentChoices button:hover {
-  border-color: var(--accent);
 }
 @media (min-width: 1500px) {
   .layout {
@@ -1158,26 +1096,6 @@
   .mobileCta .primaryButton {
     font-size: 11px;
     min-height: 44px;
-  }
-  .shell:has([data-consent-open="true"]) .mobileCta {
-    visibility: hidden;
-  }
-  .consentPanel {
-    right: 16px;
-    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    padding: 20px;
-  }
-  .consentHeading strong {
-    font-size: 12px;
-  }
-  .consentPanel p {
-    font-size: 11px;
-  }
-  .consentChoices button {
-    font-size: 10px !important;
-  }
-  .consentChoices {
-    gap: 7px;
   }
 }
 @media (max-width: 380px) {
