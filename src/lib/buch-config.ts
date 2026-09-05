@@ -20,9 +20,6 @@ export const BUCH_AUTOR = "Soheil Hosseini";
  */
 export const SPENDEN_EMPFAENGER = "Kinderschutzbund";
 export const SPENDEN_HINWEIS = `Die gesamten Einnahmen des Autors aus diesem Buch fließen an den ${SPENDEN_EMPFAENGER}.`;
-export const SPENDEN_HINWEIS_KURZ = `Alle Autoren-Einnahmen gehen an den ${SPENDEN_EMPFAENGER}`;
-/** Ich-Form für Zitat-/Dank-Abschnitte des Autors. */
-export const SPENDEN_HINWEIS_ICH = `Meine gesamten Einnahmen aus diesem Buch fließen an den ${SPENDEN_EMPFAENGER}.`;
 /** Kein Spendenversprechen des Bestellers – nur der Autorenanteil fließt an den Empfänger. */
 export const SPENDEN_WIRKUNG = `Mit jeder Bestellung unterstützt du damit automatisch den ${SPENDEN_EMPFAENGER}`;
 export const BUCH_VERLAG = "Deutscher Wirtschaftsbuch Verlag";

@@ -21,8 +21,6 @@ import { getEnv } from "@/lib/env";
 import { createBookConversionConfig } from "@/lib/book-conversion-context";
 import {
   SPENDEN_HINWEIS,
-  SPENDEN_HINWEIS_ICH,
-  SPENDEN_HINWEIS_KURZ,
   SPENDEN_WIRKUNG,
 } from "@/lib/buch-config";
 import { createRedditTrackingConfig } from "@/lib/reddit-context";
@@ -50,7 +48,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: { absolute: "Dubai-Reise gewinnen | Die Lizenz zum Erfolg" },
   description:
-    "Buch bestellen, Dubai-Reise im Wert von 20.000 € und 100 Wiresoft-Gutscheine gewinnen – alle Autoren-Einnahmen gehen an den Kinderschutzbund.",
+    "Buch bestellen, Dubai-Reise im Wert von 20.000 € und 100 Wiresoft-Gutscheine gewinnen. Die gesamten Einnahmen des Autors aus diesem Buch fließen an den Kinderschutzbund.",
   alternates: { canonical: GEWINN_URL },
   robots: { index: true, follow: true },
   openGraph: {
@@ -317,7 +315,7 @@ export default async function GewinnPage({
                 {/* Spendenzusage: sofort sichtbar – jede Bestellung ist zugleich eine Spende */}
                 <p className="inline-flex items-center gap-2 rounded-full border border-[var(--gw-gold)]/50 bg-[var(--gw-gold)]/10 px-4 py-1.5 text-xs font-medium tracking-wide text-[var(--gw-gold-strong)]">
                   <HeartHandshake className="h-3.5 w-3.5" aria-hidden="true" />
-                  {SPENDEN_HINWEIS_KURZ}
+                  {SPENDEN_HINWEIS}
                 </p>
               </div>
               <h1
@@ -503,9 +501,10 @@ export default async function GewinnPage({
                   Dankeschön an alle, die mich und dieses Projekt unterstützen.
                 </p>
                 <p>
-                  Und noch etwas ist mir wichtig: {SPENDEN_HINWEIS_ICH} Mit jeder Bestellung hilfst
-                  du also auch Kindern, die Schutz brauchen – ganz unabhängig davon, ob du am
-                  Gewinnspiel teilnimmst.
+                  Und noch etwas ist mir wichtig:{" "}
+                  <strong className="font-semibold text-[var(--gw-gold-strong)]">{SPENDEN_HINWEIS}</strong>{" "}
+                  Mit jeder Bestellung hilfst du also auch Kindern, die Schutz brauchen – ganz
+                  unabhängig davon, ob du am Gewinnspiel teilnimmst.
                 </p>
                 <p>
                   Ich wünsche dir viel Glück bei der Verlosung und hoffe, dass wir uns vielleicht

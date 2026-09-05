@@ -27,7 +27,6 @@ import {
   SPOTIFY_TRACK_URL,
   YOUTUBE_VIDEO_ID,
   SPENDEN_HINWEIS,
-  SPENDEN_HINWEIS_KURZ,
   SPENDEN_WIRKUNG,
 } from "@/lib/buch-config";
 import { getEnv } from "@/lib/env";
@@ -196,7 +195,7 @@ export async function BuchLandingPage({
                     className={isGutschein ? "h-3.5 w-3.5 text-[var(--gw-gold)]" : "h-3.5 w-3.5"}
                     aria-hidden="true"
                   />
-                  {SPENDEN_HINWEIS_KURZ}
+                  {SPENDEN_HINWEIS}
                 </p>
               </div>
               <h1

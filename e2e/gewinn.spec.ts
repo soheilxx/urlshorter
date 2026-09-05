@@ -22,7 +22,11 @@ test.describe("Gewinnspiel-Landingpage", () => {
     ).toBeVisible();
     await expect(page.getByText("Registrierungsschluss: 11.10.2026, 23:59 Uhr")).toBeVisible();
     // Spendenzusage sichtbar im Hero und als FAQ
-    await expect(page.getByText("Alle Autoren-Einnahmen gehen an den Kinderschutzbund")).toBeVisible();
+    await expect(
+      page
+        .getByText("Die gesamten Einnahmen des Autors aus diesem Buch fließen an den Kinderschutzbund.")
+        .first(),
+    ).toBeVisible();
     await expect(page.getByText("Wohin fließen die Einnahmen aus dem Buch?")).toBeVisible();
     await expect(page.getByText("20.000 €").first()).toBeVisible();
     await expect(

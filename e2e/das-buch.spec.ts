@@ -27,7 +27,9 @@ test("Seite rendert Buch, Autor, Fakten und Amazon-CTAs", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("erscheint am 06.10.2026").first()).toBeVisible();
   await expect(
-    page.getByText("Alle Autoren-Einnahmen gehen an den Kinderschutzbund").first(),
+    page
+      .getByText("Die gesamten Einnahmen des Autors aus diesem Buch fließen an den Kinderschutzbund.")
+      .first(),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "David gegen Goliath" })).toBeVisible();
   await expect(
