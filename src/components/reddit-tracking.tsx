@@ -20,8 +20,15 @@ function cookie(name: string): string | undefined {
 }
 
 /** Nur mounten, wenn die übergeordnete Consent-Prüfung Marketing freigibt. */
-export function RedditTracking({ config }: { config: RedditTrackingConfig }) {
-  const pageSent = useRef(false);
+export function RedditTracking({
+  config,
+  visitState,
+}: {
+  config: RedditTrackingConfig;
+  visitState?: { current: boolean };
+}) {
+  const localVisitState = useRef(false);
+  const pageSent = visitState ?? localVisitState;
   const lastClick = useRef(0);
   useEffect(() => {
     const w = window as RedditWindow;
@@ -125,6 +132,6 @@ export function RedditTracking({ config }: { config: RedditTrackingConfig }) {
       document.removeEventListener("click", click, true);
       document.removeEventListener("auxclick", click, true);
     };
-  }, [config]);
+  }, [config, pageSent]);
   return null;
 }

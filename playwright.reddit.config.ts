@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 /** Isolierte Browserprüfung: kein DB-Reset, keine echten Werbeereignisse. Build vorher erstellen. */
 export default defineConfig({
   testDir: "./src/tests/browser",
-  testMatch: "reddit-tracking.spec.ts",
+  testMatch: /reddit-(tracking|book)\.spec\.ts/,
   timeout: 30_000,
   workers: 1,
   reporter: "list",

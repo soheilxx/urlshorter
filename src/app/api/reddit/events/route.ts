@@ -66,11 +66,15 @@ export async function POST(request: Request): Promise<Response> {
     )
       return done(400);
     const env = getEnv();
+    const cookieName =
+      env.CONSENT_COOKIE_NAME ?? (context.path === "/buch-reddit" ? "lze_reddit_consent" : null);
+    const acceptedValue =
+      env.CONSENT_COOKIE_ACCEPTED_VALUE ?? (context.path === "/buch-reddit" ? "yes" : null);
     let consentCookie: string | null = null;
-    if (env.CONSENT_COOKIE_NAME) {
+    if (cookieName) {
       for (const part of (request.headers.get("cookie") ?? "").split(";")) {
         const [key, ...value] = part.trim().split("=");
-        if (key === env.CONSENT_COOKIE_NAME) {
+        if (key === cookieName) {
           try {
             consentCookie = decodeURIComponent(value.join("="));
           } catch {
@@ -82,8 +86,8 @@ export async function POST(request: Request): Promise<Response> {
     if (
       !evaluateConsent({
         mode: context.consentMode,
-        cookieName: env.CONSENT_COOKIE_NAME,
-        acceptedValue: env.CONSENT_COOKIE_ACCEPTED_VALUE,
+        cookieName,
+        acceptedValue,
         cookieValue: consentCookie,
       }).hasMarketingConsent
     )
@@ -134,8 +138,7 @@ export async function POST(request: Request): Promise<Response> {
         pixelId: context.pixelId,
         accessToken,
         // Ein aktiver Prüflauf darf regulären Anzeigen-Traffic nicht in Testevents umwandeln.
-        testId:
-          input.utm?.source === "reddit_capi_verification" ? env.REDDIT_CAPI_TEST_ID : null,
+        testId: input.utm?.source === "reddit_capi_verification" ? env.REDDIT_CAPI_TEST_ID : null,
         events: [{ id: input.id, type: input.type, timestamp: input.timestamp }],
         sourceUrl,
         clickId: input.clickId,

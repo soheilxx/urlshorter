@@ -5,6 +5,18 @@ generator client {
   provider = "prisma-client-js"
 }
 
+/// Reale, pseudonyme Abstimmung der Buchseite; keine Conversion-Ereignisse.
+model RedditBookVote {
+  visitor   String   @id
+  value     Int      @db.SmallInt
+  updatedAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model RedditBookCounter {
+  id    String @id
+  score Int    @default(0)
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")

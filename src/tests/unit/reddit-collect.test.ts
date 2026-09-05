@@ -106,6 +106,18 @@ describe("Reddit-Kontext und Collect", () => {
     await POST(request(payload({ context }), { cookie: "" }));
     expect(sendRedditCapiEvents).toHaveBeenCalledTimes(1);
   });
+  it("nutzt auf der neuen Buchseite denselben Consent-Fallback wie der Browser", async () => {
+    vi.stubEnv("CONSENT_COOKIE_NAME", "");
+    vi.stubEnv("CONSENT_COOKIE_ACCEPTED_VALUE", "");
+    resetEnvCache();
+    const config = createRedditTrackingConfig("/buch-reddit", "required")!;
+    const body = payload({ context: config.context, path: config.path });
+    await POST(request(body, { cookie: "" }));
+    await POST(request(body, { cookie: "lze_reddit_consent=declined" }));
+    expect(sendRedditCapiEvents).not.toHaveBeenCalled();
+    await POST(request(body, { cookie: "lze_reddit_consent=yes" }));
+    expect(sendRedditCapiEvents).toHaveBeenCalledTimes(1);
+  });
   it("zählt Likes, veraltete Ereignisse und fremde Ziele nicht als ATC", async () => {
     expect((await POST(request(payload({ type: "Like" })))).status).toBe(400);
     expect((await POST(request(payload({ timestamp: Date.now() - 11 * 60 * 1000 })))).status).toBe(
