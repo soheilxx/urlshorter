@@ -40,7 +40,7 @@ import styles from "@/components/reddit-book/reddit-book.module.css";
 
 export const dynamic = "force-dynamic";
 const description =
-  "2011 ist Soheil Hosseini 20, als seine erste Auseinandersetzung mit Microsoft beginnt. Die Lizenz zum Erfolg erzählt seinen Weg von der Kindheit zum Unternehmer.";
+  "Soheil Hosseini ist 20, als seine erste Auseinandersetzung mit Microsoft beginnt. Die Lizenz zum Erfolg erzählt seinen Weg von der Kindheit zum Unternehmer.";
 export const metadata: Metadata = {
   title: {
     absolute: "Er ist 20. Sein Gegner: Microsoft. | Die Lizenz zum Erfolg",
@@ -238,8 +238,8 @@ export default function RedditBookPage() {
             </h1>
             <div className={styles.intro}>
               <p>
-                2011 beginnt Soheil Hosseinis erste Auseinandersetzung mit Microsoft. Er ist gerade
-                einmal 20 Jahre alt. Ein junger Unternehmer trifft auf einen Weltkonzern.
+                Soheil Hosseini ist gerade einmal 20 Jahre alt, als seine erste Auseinandersetzung
+                mit Microsoft beginnt. Ein junger Unternehmer trifft auf einen Weltkonzern.
               </p>
               <p>
                 Der Konflikt begleitet ihn über Jahre. Diese Biografie führt dich auch zu seinen
@@ -282,7 +282,7 @@ export default function RedditBookPage() {
               <section>
                 <span className={styles.sectionKicker}>01 / DIE SCHLAGZEILE</span>
                 <h2>
-                  2011: Ein junger Unternehmer.
+                  Ein junger Unternehmer.
                   <br />
                   Ein Weltkonzern als Gegenüber.
                 </h2>
