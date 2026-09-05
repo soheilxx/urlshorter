@@ -40,16 +40,16 @@ import styles from "@/components/reddit-book/reddit-book.module.css";
 
 export const dynamic = "force-dynamic";
 const description =
-  "Ein Unternehmer gegen Microsoft. Und eine Lebensgeschichte, die viel früher beginnt. Entdecke Die Lizenz zum Erfolg von Soheil Hosseini.";
+  "2011 ist Soheil Hosseini 20, als seine erste Auseinandersetzung mit Microsoft beginnt. Die Lizenz zum Erfolg erzählt seinen Weg von der Kindheit zum Unternehmer.";
 export const metadata: Metadata = {
   title: {
-    absolute: "Ein Unternehmer gegen Microsoft. Die Geschichte dahinter. | Die Lizenz zum Erfolg",
+    absolute: "Er ist 20. Sein Gegner: Microsoft. | Die Lizenz zum Erfolg",
   },
   description,
   alternates: { canonical: REDDIT_BOOK_URL },
   robots: { index: true, follow: true },
   openGraph: {
-    title: "Ein Unternehmer gegen Microsoft. Die Geschichte dahinter.",
+    title: "Er ist 20. Sein Gegner: Microsoft.",
     description,
     url: REDDIT_BOOK_URL,
     siteName: BUCH_TITEL,
@@ -232,26 +232,27 @@ export default function RedditBookPage() {
               </span>
             </p>
             <h1>
-              Er legt sich mit Microsoft an.
+              Er ist 20.
               <br />
-              <span>Aber seine Geschichte beginnt viel früher.</span>
+              <span>Sein Gegner: Microsoft.</span>
             </h1>
             <div className={styles.intro}>
               <p>
-                Auf der einen Seite: ein Weltkonzern. Auf der anderen: ein Unternehmer, der seinen
-                eigenen Weg geht. Die Auseinandersetzung dauert Jahre.
+                2011 beginnt Soheil Hosseinis erste Auseinandersetzung mit Microsoft. Er ist gerade
+                einmal 20 Jahre alt. Ein junger Unternehmer trifft auf einen Weltkonzern.
               </p>
               <p>
-                Das klingt nach David gegen Goliath. Interessant wird es bei der Frage:{" "}
-                <strong>Wer ist der Mensch, der sich darauf einlässt?</strong>
+                Der Konflikt begleitet ihn über Jahre. Diese Biografie führt dich auch zu seinen
+                Anfängen und den Menschen und Entscheidungen auf seinem Weg:{" "}
+                <strong>Was hat ihn geprägt? Und wie hat er sich etwas Eigenes aufgebaut?</strong>
               </p>
             </div>
             <div className={styles.tldr}>
               <span>TL;DR</span>
               <p>
-                Mit sechs Jahren aus dem Iran nach Deutschland. Später eigene Unternehmen. Dann der
-                Konflikt mit Microsoft. <strong>Die Lizenz zum Erfolg</strong> erzählt den Lebensweg
-                hinter der Schlagzeile.
+                Kindheit im Iran, Neuanfang in Deutschland, eigene Unternehmen:{" "}
+                <strong>Die Lizenz zum Erfolg</strong> erzählt Soheil Hosseinis Weg – weit über den
+                Konflikt mit Microsoft hinaus.
               </p>
             </div>
             <div className={styles.heroBook}>
@@ -281,23 +282,24 @@ export default function RedditBookPage() {
               <section>
                 <span className={styles.sectionKicker}>01 / DIE SCHLAGZEILE</span>
                 <h2>
-                  Ein ungleicher Gegner.
+                  2011: Ein junger Unternehmer.
                   <br />
-                  Und eine ziemlich menschliche Frage.
+                  Ein Weltkonzern als Gegenüber.
                 </h2>
                 <p>
-                  Microsoft kennt jeder. Soheil Hosseini wahrscheinlich noch nicht. Schon darin
-                  steckt das Spannungsverhältnis dieser Geschichte: Ein Name ist allgegenwärtig. Den
-                  anderen musst du erst kennenlernen.
+                  Soheil ist 20, als die erste Auseinandersetzung mit Microsoft beginnt. Daraus wird
+                  ein Konflikt, der ihn über Jahre begleitet. Das macht neugierig auf den jungen
+                  Menschen hinter der Geschichte: auf seine Entscheidungen und darauf, was ihm
+                  wichtig ist.
                 </p>
                 <p>
-                  Ein jahrelanger Konflikt mit einem Weltkonzern weckt Neugier. Aber die Größe des
-                  Gegners allein macht noch keinen Menschen interessant. Dafür braucht es den Blick
-                  auf das, was davor liegt. Auf Herkunft, Entscheidungen und das Leben neben der
-                  Auseinandersetzung.
+                  Wer Soheil kennenlernen will, begegnet auch dem Kind, das in einem neuen Land
+                  ankommt, und dem Unternehmer, der Firmen in verschiedenen Branchen aufbaut. Hinter
+                  dem Konflikt steht ein Mensch mit einer eigenen Herkunft und eigenen Vorstellungen
+                  vom Leben.
                 </p>
                 <p>
-                  <strong>Genau dort beginnt diese Biografie.</strong>
+                  <strong>Das Buch verbindet diese Kapitel zu einer Lebensgeschichte.</strong>
                 </p>
               </section>
               <section>
@@ -308,60 +310,62 @@ export default function RedditBookPage() {
                   gab es einen Neuanfang.
                 </h2>
                 <p>
-                  Soheil kommt mit sechs Jahren aus dem Iran nach Deutschland. Seine Mutter zieht
-                  ihn unter schwierigen Bedingungen allein groß. Lange bevor von Unternehmen und
-                  einem Konflikt mit Microsoft die Rede ist, steht ein Kind vor einem ganz anderen
-                  Anfang.
+                  Seine Kindheit beginnt im Iran. Mit sechs Jahren kommt Soheil nach Deutschland.
+                  Seine Mutter zieht ihn unter schwierigen Bedingungen allein groß. Hier beginnt der
+                  Weg, der ihn später zum Unternehmer macht.
                 </p>
                 <p>
-                  Wer heute auf einen Unternehmer schaut, sieht leicht zuerst das Ergebnis. Eine
-                  Biografie dreht die Perspektive um: Sie setzt früher an. Bei den Umständen, die
-                  sich ein Mensch nicht aussucht. Und bei dem Weg, der daraus entsteht.
+                  Viele Jahre später gründet er Unternehmen in Software, Finanzen und Mode. Wie
+                  führt ein Weg von diesem Neuanfang zu einem Leben als Unternehmer? Welche
+                  Entscheidungen geben ihm eine Richtung?
                 </p>
                 <p>
-                  Aus dem Kind wird ein Unternehmer, der Firmen in Software, Finanzen und Mode
-                  aufbaut. Der Abstand zwischen diesen beiden Lebensphasen ist der Raum, den eine
-                  Schlagzeile nicht erzählen kann. Ein Buch schon.
+                  <em>Die Lizenz zum Erfolg</em> nimmt dich mit durch diese Lebensphasen. Du lernst
+                  Soheil in seiner persönlichen Geschichte kennen – von der Kindheit bis zum Aufbau
+                  seiner Unternehmen.
                 </p>
               </section>
               <section>
                 <span className={styles.sectionKicker}>03 / MEHR ALS EIN KONFLIKT</span>
-                <h2>Drei Gründe, weiterzulesen.</h2>
+                <h2>Drei Gründe, dieses Buch zu lesen.</h2>
                 <p>
-                  Der Streit mit Microsoft ist ein Einstieg. Die größere Geschichte berührt Fragen,
-                  für die du weder Unternehmer sein noch dich mit Softwarelizenzen auskennen musst.
+                  Ein Buch für Momente, in denen du etwas verändern willst, auf Widerstand stößt
+                  oder dich fragst, was Erfolg für dich bedeutet.
                 </p>
                 <div className={styles.themes}>
                   <div>
                     <span>01</span>
                     <div>
-                      <h3>Herkunft. Was bringt ein Mensch mit?</h3>
+                      <h3>Du willst etwas Eigenes aufbauen.</h3>
                       <p>
-                        Eine Kindheit zwischen zwei Ländern. Ein Neuanfang in Deutschland. Die
-                        Frage, wie viel eines Lebenswegs schon beginnt, bevor jemand seine erste
-                        eigene Entscheidung trifft.
+                        Ein eigenes Projekt, ein beruflicher Neustart oder der Schritt in die
+                        Selbstständigkeit: Du begleitest einen Unternehmer durch unterschiedliche
+                        Branchen und lernst seine Entscheidungen kennen. Daraus kannst du Impulse
+                        für deinen nächsten Schritt mitnehmen.
                       </p>
                     </div>
                   </div>
                   <div>
                     <span>02</span>
                     <div>
-                      <h3>Aufbau. Wie entsteht etwas Eigenes?</h3>
+                      <h3>Du willst dich von Gegenwind nicht kleinmachen lassen.</h3>
                       <p>
-                        Vom persönlichen Anfang zu Unternehmen in unterschiedlichen Branchen.
-                        Interessant ist der Weg dazwischen – gerade für Leser, die hinter
-                        Berufsbezeichnungen und fertige Lebensläufe schauen wollen.
+                        Im Job, im eigenen Projekt oder gegenüber Menschen mit mehr Einfluss:
+                        Widerstand kennen viele. Soheils jahrelanger Konflikt mit Microsoft bietet
+                        einen persönlichen Blick auf die Frage, wofür man einsteht – und wie man mit
+                        Gegenwind umgeht.
                       </p>
                     </div>
                   </div>
                   <div>
                     <span>03</span>
                     <div>
-                      <h3>Selbstbestimmung. Was heißt ein eigener Weg?</h3>
+                      <h3>Du willst Erfolg nach deinen Maßstäben.</h3>
                       <p>
-                        Wo kommen die eigenen Maßstäbe her? Wofür lohnt sich Widerstand? Eine fremde
-                        Lebensgeschichte gibt diesen Fragen ein Gesicht und lässt Raum für die
-                        eigene Haltung.
+                        Was zählt für dich: Unabhängigkeit, etwas zu schaffen oder für eine
+                        Überzeugung einzustehen? Diese Lebensgeschichte lädt dich ein, deine
+                        Vorstellungen von Erfolg zu prüfen und dir klarer darüber zu werden, welchen
+                        Weg du gehen möchtest.
                       </p>
                     </div>
                   </div>
@@ -370,19 +374,18 @@ export default function RedditBookPage() {
               <section className={styles.readerSection}>
                 <BookOpen size={25} aria-hidden="true" />
                 <h2>
-                  Du musst ihn nicht schon feiern.
+                  Lerne den Menschen
                   <br />
-                  Du kannst ihn erst einmal lesen.
+                  hinter der Geschichte kennen.
                 </h2>
                 <p>
-                  Gute Biografien leben davon, dass man sich auf einen Menschen einlässt. Man kann
-                  seine Entscheidungen spannend finden, sie hinterfragen und an ganz anderen Stellen
-                  hängen bleiben als erwartet.
+                  Wenn du Biografien gerne liest, weil dich Menschen und ihre Entscheidungen
+                  interessieren, findest du hier einen Lebensweg zwischen zwei Ländern, mehreren
+                  Branchen und einem jahrelangen Konflikt.
                 </p>
                 <p>
-                  Wenn du Bücher magst, die aus einem unbekannten Namen einen Menschen machen, ist
-                  das hier eine Einladung: Geh über die Schlagzeile hinaus. Bild dir dein eigenes
-                  Urteil.
+                  Nimm dir Zeit für die Geschichte von Soheil Hosseini. Für seine Anfänge, seine
+                  Unternehmen und die Frage, wie ein Mensch seinen eigenen Weg findet.
                 </p>
                 <a href="#buch" className={styles.inlineLink}>
                   Das Buch kennenlernen <ArrowUpRight size={17} aria-hidden="true" />
