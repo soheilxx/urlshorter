@@ -464,6 +464,9 @@ export default function RedditBookPage() {
                 <br className={styles.desktopBreak} /> Und ein Mensch, den du erst noch kennenlernen
                 kannst.
               </p>
+              <p className={styles.communityNote}>
+                Mit deiner Bestellung unterstützt du einen Autor aus unserer Reddit-Community.
+              </p>
               <AmazonButton placement="final">{cta}</AmazonButton>
               <span className={styles.smallNote}>
                 {BUCH_PREIS_LABEL} · Taschenbuch{preorder ? " · Erscheint am 6. Oktober" : ""}

@@ -697,6 +697,15 @@
   color: var(--muted);
   margin-bottom: 22px;
 }
+.finalCta .communityNote {
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
 .footer {
   padding: 36px 0 34px;
   color: var(--muted);
