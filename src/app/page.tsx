@@ -4,6 +4,7 @@ import { classifyRequest } from "@/lib/bot-detection";
 import { DelayedRedirect } from "@/components/gewinn/delayed-redirect";
 import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import { getEnv } from "@/lib/env";
+import { createRedditTrackingConfig } from "@/lib/reddit-context";
 import { getRedirectDelayMs } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,7 @@ export default async function RootPage() {
         metaPixelId={env.META_PIXEL_ID ?? null}
         tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
         redditPixelId={env.REDDIT_PIXEL_ID ?? null}
+        redditTracking={createRedditTrackingConfig("/", "not-required")}
         linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
         consentMode="not-required"
         consentCookieName={env.CONSENT_COOKIE_NAME ?? null}

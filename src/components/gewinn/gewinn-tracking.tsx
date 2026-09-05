@@ -3,6 +3,8 @@
 import Script from "next/script";
 import { useEffect, useState } from "react";
 import { trackGewinnEvent } from "@/lib/gewinn-analytics";
+import { RedditTracking } from "@/components/reddit-tracking";
+import type { RedditTrackingConfig } from "@/lib/reddit-events";
 
 /**
  * Marketing-Tracking der Gewinnspielseite – identische Pixel-Konfiguration
@@ -23,6 +25,7 @@ export interface GewinnTrackingConfig {
   metaPixelId: string | null;
   tiktokPixelId: string | null;
   redditPixelId: string | null;
+  redditTracking?: RedditTrackingConfig | null;
   linkedInPartnerId: string | null;
   consentMode: string;
   consentCookieName: string | null;
@@ -123,7 +126,9 @@ ttq.page();
         </Script>
       ) : null}
 
-      {config.redditPixelId ? (
+      {config.redditTracking ? (
+        <RedditTracking config={config.redditTracking} />
+      ) : config.redditPixelId ? (
         <Script id="gw-reddit" strategy="afterInteractive">
           {`!function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?p.sendEvent.apply(p,arguments):p.callQueue.push(arguments)};p.callQueue=[];var t=d.createElement("script");t.src="https://www.redditstatic.com/ads/pixel.js",t.async=!0;var s=d.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}}(window,document);
 rdt('init', '${config.redditPixelId}');

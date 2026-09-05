@@ -17,6 +17,7 @@ import { DubaiSkyline } from "@/components/gewinn/dubai-skyline";
 import { EntryForm } from "@/components/gewinn/entry-form";
 import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import { getEnv } from "@/lib/env";
+import { createRedditTrackingConfig } from "@/lib/reddit-context";
 import {
   AMAZON_PRODUCT_URL,
   ANNOUNCEMENT_DATE_LABEL,
@@ -231,6 +232,7 @@ export default async function GewinnPage({
         metaPixelId={env.META_PIXEL_ID ?? null}
         tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
         redditPixelId={env.REDDIT_PIXEL_ID ?? null}
+        redditTracking={createRedditTrackingConfig("/gewinn", "not-required")}
         linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
         consentMode="not-required"
         consentCookieName={env.CONSENT_COOKIE_NAME ?? null}
