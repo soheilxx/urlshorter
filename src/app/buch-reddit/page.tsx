@@ -225,6 +225,9 @@ export default function RedditBookPage() {
               </div>
               <span className={styles.adLabel}>Werbung</span>
             </div>
+            <p className={styles.communityNote}>
+              Mit deiner Bestellung unterstützt du einen Autor aus unserer Reddit-Community.
+            </p>
             <h1>
               Er legt sich mit Microsoft an.
               <br />
@@ -463,9 +466,6 @@ export default function RedditBookPage() {
                 Herkunft. Eigene Unternehmen. Ein Weltkonzern als Gegner.
                 <br className={styles.desktopBreak} /> Und ein Mensch, den du erst noch kennenlernen
                 kannst.
-              </p>
-              <p className={styles.communityNote}>
-                Mit deiner Bestellung unterstützt du einen Autor aus unserer Reddit-Community.
               </p>
               <AmazonButton placement="final">{cta}</AmazonButton>
               <span className={styles.smallNote}>

@@ -697,7 +697,7 @@
   color: var(--muted);
   margin-bottom: 22px;
 }
-.finalCta .communityNote {
+.post .communityNote {
   padding-left: 12px;
   border-left: 2px solid var(--accent);
   color: var(--text);
