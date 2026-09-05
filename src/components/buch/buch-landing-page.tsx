@@ -99,7 +99,7 @@ function SectionHeading({
   );
 }
 
-export function BuchLandingPage({
+export async function BuchLandingPage({
   variant,
   utm,
   formToken,
@@ -133,7 +133,7 @@ export function BuchLandingPage({
         tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
         redditPixelId={env.REDDIT_PIXEL_ID ?? null}
         redditTracking={createRedditTrackingConfig(isGutschein ? "/gutschein" : "/das-buch", "not-required")}
-        bookConversion={createBookConversionConfig(
+        bookConversion={await createBookConversionConfig(
           isGutschein ? "/gutschein" : "/das-buch",
           "not-required",
         )}

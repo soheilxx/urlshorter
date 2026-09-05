@@ -5,6 +5,25 @@ import type { BookConversionConfig } from "@/lib/book-conversion-events";
 import type { ConsentMode } from "@/lib/consent";
 import { getEnv, requireAppSecret } from "@/lib/env";
 import { AMAZON_PRODUCT_URL } from "@/lib/gewinnspiel-config";
+import { resolveTagSite } from "@/lib/tag-sites";
+
+/** TRACK.SITE-Site der Buchseiten – Pixel-IDs/Tokens aus Dashboard (DB) oder Env. */
+export const BOOK_SITE_ID = "lizenzzumerfolg";
+
+/** Pixel-IDs + CAPI-Tokens: Dashboard-Verwaltung zuerst, Env als Fallback; DB-Fehler → Env. */
+export async function resolveBookSite() {
+  const env = getEnv();
+  const site = await resolveTagSite(BOOK_SITE_ID).catch(() => null);
+  return {
+    metaPixelId: site?.pixels.meta ?? env.META_PIXEL_ID ?? null,
+    metaToken: site?.capi.metaToken ?? env.META_CAPI_ACCESS_TOKEN ?? null,
+    metaTestEventCode: site?.capi.metaTestEventCode ?? env.META_CAPI_TEST_EVENT_CODE ?? null,
+    tiktokPixelId: site?.pixels.tiktok ?? env.TIKTOK_PIXEL_ID ?? null,
+    tiktokToken: site?.capi.tiktokToken ?? env.TIKTOK_EVENTS_API_TOKEN ?? null,
+    tiktokTestEventCode: site?.capi.tiktokTestEventCode ?? env.TIKTOK_TEST_EVENT_CODE ?? null,
+    linkedInPartnerId: site?.pixels.linkedin ?? env.LINKEDIN_PARTNER_ID ?? null,
+  };
+}
 
 /**
  * Signierte Servervorgabe für das Buch-Conversion-Tracking (Meta/TikTok/
@@ -31,14 +50,15 @@ function linkedInConversionId(ruleId: string | null | undefined): string | null 
   return /^[0-9]{1,20}$/.test(digits) ? digits : null;
 }
 
-export function createBookConversionConfig(
+export async function createBookConversionConfig(
   path: BookTrackingPath,
   consentMode: ConsentMode,
-): BookConversionConfig | null {
+): Promise<BookConversionConfig | null> {
   const env = getEnv();
-  const metaPixelId = env.META_PIXEL_ID ?? null;
-  const tiktokPixelId = env.TIKTOK_PIXEL_ID ?? null;
-  const liConversionId = env.LINKEDIN_PARTNER_ID
+  const site = await resolveBookSite();
+  const metaPixelId = site.metaPixelId;
+  const tiktokPixelId = site.tiktokPixelId;
+  const liConversionId = site.linkedInPartnerId
     ? linkedInConversionId(env.LINKEDIN_CONVERSION_RULE_ID)
     : null;
   if (!metaPixelId && !tiktokPixelId && !liConversionId) return null;

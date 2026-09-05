@@ -44,7 +44,7 @@ export default async function RootPage() {
         tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
         redditPixelId={env.REDDIT_PIXEL_ID ?? null}
         redditTracking={createRedditTrackingConfig("/", "not-required")}
-        bookConversion={createBookConversionConfig("/", "not-required")}
+        bookConversion={await createBookConversionConfig("/", "not-required")}
         linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
         consentMode="not-required"
         consentCookieName={env.CONSENT_COOKIE_NAME ?? null}

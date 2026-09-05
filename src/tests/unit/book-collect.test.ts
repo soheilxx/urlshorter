@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { resetEnvCache } from "@/lib/env";
 import { sendLinkedInCapiEvent } from "@/lib/linkedin-capi";
 import { sendMetaCapiSingle, sendTikTokSingle } from "@/lib/tag-capi";
+import { resolveTagSite } from "@/lib/tag-sites";
 
 vi.mock("@/lib/db", () => ({
   prisma: { tagEvent: { create: vi.fn(), update: vi.fn().mockResolvedValue({}) } },
@@ -21,6 +22,7 @@ vi.mock("@/lib/linkedin-capi", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/linkedin-capi")>()),
   sendLinkedInCapiEvent: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock("@/lib/tag-sites", () => ({ resolveTagSite: vi.fn().mockResolvedValue(null) }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 vi.mock("next/server", () => ({
   after: () => {
@@ -52,8 +54,8 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function payload(overrides = {}) {
-  const config = createBookConversionConfig("/gewinn", "required")!;
+async function payload(overrides = {}) {
+  const config = (await createBookConversionConfig("/gewinn", "required"))!;
   return {
     id: "6f1c2a4e-9d3b-4c8e-8a6f-2b7d1e5c9a10",
     type: "PageView",
@@ -78,8 +80,8 @@ function request(body: unknown, headers: Record<string, string> = {}) {
 }
 
 describe("Buch-Conversion-Kontext", () => {
-  it("bindet Route und Consent kryptografisch, läuft ab und trägt keine Tokens", () => {
-    const config = createBookConversionConfig("/gewinn", "required")!;
+  it("bindet Route und Consent kryptografisch, läuft ab und trägt keine Tokens", async () => {
+    const config = (await createBookConversionConfig("/gewinn", "required"))!;
     expect(config).toMatchObject({
       path: "/gewinn",
       amazonUrl: AMAZON,
@@ -101,18 +103,58 @@ describe("Buch-Conversion-Kontext", () => {
       ),
     ).toBeNull();
   });
-  it("liefert ohne konfigurierte Pixel keine Konfiguration", () => {
+  it("liefert ohne konfigurierte Pixel keine Konfiguration", async () => {
     vi.stubEnv("META_PIXEL_ID", "");
     vi.stubEnv("TIKTOK_PIXEL_ID", "");
     vi.stubEnv("LINKEDIN_PARTNER_ID", "");
     resetEnvCache();
-    expect(createBookConversionConfig("/das-buch", "not-required")).toBeNull();
+    expect(await createBookConversionConfig("/das-buch", "not-required")).toBeNull();
+  });
+  it("bevorzugt Pixel-IDs und Tokens aus der Dashboard-Verwaltung (DB) vor den Env-Werten", async () => {
+    // Kontext zuerst erzeugen (nutzt die Env-Auflösung), erst der Versand sieht die DB-Werte
+    const body = await payload();
+    vi.mocked(resolveTagSite).mockResolvedValueOnce({
+      id: "lizenzzumerfolg",
+      label: "Buch",
+      domains: ["lizenzzumerfolg.com"],
+      active: true,
+      source: "db",
+      pixels: {
+        ga4: null,
+        gtm: null,
+        meta: "999888777",
+        tiktok: null,
+        reddit: null,
+        linkedin: null,
+      },
+      capi: {
+        metaToken: "db-meta-token",
+        metaTestEventCode: null,
+        tiktokToken: null,
+        tiktokTestEventCode: null,
+      },
+    });
+    await POST(request(body));
+    // Test-Event-Code fällt wie in resolveTagSite auf die Env zurück
+    expect(sendMetaCapiSingle).toHaveBeenCalledWith(
+      "999888777",
+      "db-meta-token",
+      "TEST123",
+      expect.objectContaining({ eventName: "PageView" }),
+    );
+    expect(sendTikTokSingle).not.toHaveBeenCalled();
+  });
+  it("fällt bei DB-Fehler auf die Env-Werte zurück", async () => {
+    vi.mocked(resolveTagSite).mockRejectedValueOnce(new Error("db down"));
+    expect(await createBookConversionConfig("/gewinn", "not-required")).toMatchObject({
+      metaPixelId: "123456789012345",
+    });
   });
 });
 
 describe("POST /api/book/events", () => {
   it("leitet ein PageView mit exakt der Browser-ID an Meta CAPI weiter (kein TikTok)", async () => {
-    const body = payload();
+    const body = await payload();
     expect((await POST(request(body))).status).toBe(204);
     expect(sendMetaCapiSingle).toHaveBeenCalledWith(
       "123456789012345",
@@ -140,7 +182,7 @@ describe("POST /api/book/events", () => {
     );
   });
   it("meldet einen Amazon-Klick als AddToCart an Meta, TikTok und LinkedIn mit Produktdaten", async () => {
-    const body = payload({
+    const body = await payload({
       type: "AddToCart",
       destination: AMAZON,
       ctaId: "hero_schritt_1",
@@ -192,18 +234,20 @@ describe("POST /api/book/events", () => {
   it("sendet LinkedIn ohne Klick-ID nicht und TikTok ohne Token nicht", async () => {
     vi.stubEnv("TIKTOK_EVENTS_API_TOKEN", "");
     resetEnvCache();
-    await POST(request(payload({ type: "AddToCart", destination: AMAZON })));
+    await POST(request(await payload({ type: "AddToCart", destination: AMAZON })));
     expect(sendMetaCapiSingle).toHaveBeenCalledTimes(1);
     expect(sendTikTokSingle).not.toHaveBeenCalled();
     expect(sendLinkedInCapiEvent).not.toHaveBeenCalled();
   });
   it("lehnt fremden Origin und manipulierte Pfade ab", async () => {
-    expect((await POST(request(payload(), { origin: "https://evil.example" }))).status).toBe(403);
-    expect((await POST(request(payload({ path: "/gutschein" })))).status).toBe(403);
+    expect((await POST(request(await payload(), { origin: "https://evil.example" }))).status).toBe(
+      403,
+    );
+    expect((await POST(request(await payload({ path: "/gutschein" })))).status).toBe(403);
     expect(sendMetaCapiSingle).not.toHaveBeenCalled();
   });
   it("akzeptiert den Browser-Origin auch hinter Proxy oder lokalem next start (Host-Header)", async () => {
-    const body = JSON.stringify(payload());
+    const body = JSON.stringify(await payload());
     const headers = {
       cookie: "marketing=yes",
       "user-agent": "Mozilla/5.0 Chrome/130 Safari/537.36",
@@ -233,26 +277,29 @@ describe("POST /api/book/events", () => {
     expect((await POST(foreign)).status).toBe(403);
   });
   it("sendet und speichert nichts bei abgelehntem Consent oder Bots", async () => {
-    await POST(request(payload(), { cookie: "marketing=no" }));
-    await POST(request(payload(), { "user-agent": "Googlebot" }));
+    await POST(request(await payload(), { cookie: "marketing=no" }));
+    await POST(request(await payload(), { "user-agent": "Googlebot" }));
     expect(prisma.tagEvent.create).not.toHaveBeenCalled();
     expect(sendMetaCapiSingle).not.toHaveBeenCalled();
   });
   it("behält den serverseitig gesetzten Consent-Modus not-required", async () => {
-    const context = createBookConversionConfig("/das-buch", "not-required")!.context;
-    await POST(request(payload({ context, path: "/das-buch" }), { cookie: "" }));
+    const context = (await createBookConversionConfig("/das-buch", "not-required"))!.context;
+    await POST(request(await payload({ context, path: "/das-buch" }), { cookie: "" }));
     expect(sendMetaCapiSingle).toHaveBeenCalledTimes(1);
   });
   it("verwirft unbekannte Typen, veraltete Ereignisse, fremde Ziele und ATC auf der Root-Seite", async () => {
-    expect((await POST(request(payload({ type: "Purchase" })))).status).toBe(400);
-    expect((await POST(request(payload({ timestamp: Date.now() - 11 * 60 * 1000 })))).status).toBe(
-      400,
-    );
+    expect((await POST(request(await payload({ type: "Purchase" })))).status).toBe(400);
     expect(
-      (await POST(request(payload({ type: "AddToCart", destination: "https://evil.example" }))))
-        .status,
+      (await POST(request(await payload({ timestamp: Date.now() - 11 * 60 * 1000 })))).status,
     ).toBe(400);
-    const root = createBookConversionConfig("/", "not-required")!;
+    expect(
+      (
+        await POST(
+          request(await payload({ type: "AddToCart", destination: "https://evil.example" })),
+        )
+      ).status,
+    ).toBe(400);
+    const root = (await createBookConversionConfig("/", "not-required"))!;
     expect(
       (
         await POST(
@@ -268,12 +315,12 @@ describe("POST /api/book/events", () => {
     vi.mocked(prisma.tagEvent.create).mockRejectedValueOnce(
       new Prisma.PrismaClientKnownRequestError("duplicate", { code: "P2002", clientVersion: "6" }),
     );
-    expect((await POST(request(payload()))).status).toBe(204);
+    expect((await POST(request(await payload()))).status).toBe(204);
     expect(sendMetaCapiSingle).not.toHaveBeenCalled();
   });
   it("meldet DB-Ausfall als 503 ohne Body", async () => {
     vi.mocked(prisma.tagEvent.create).mockRejectedValueOnce(new Error("database unavailable"));
-    const response = await POST(request(payload()));
+    const response = await POST(request(await payload()));
     expect(response.status).toBe(503);
     expect(await response.text()).toBe("");
     expect(sendMetaCapiSingle).not.toHaveBeenCalled();
@@ -281,7 +328,7 @@ describe("POST /api/book/events", () => {
   it("antwortet ohne Meta-Token weiterhin 204 und sendet nichts", async () => {
     vi.stubEnv("META_CAPI_ACCESS_TOKEN", "");
     resetEnvCache();
-    expect((await POST(request(payload()))).status).toBe(204);
+    expect((await POST(request(await payload()))).status).toBe(204);
     expect(sendMetaCapiSingle).not.toHaveBeenCalled();
     expect(prisma.tagEvent.create).toHaveBeenCalledTimes(1);
   });

@@ -241,7 +241,7 @@ export default async function GewinnPage({
         tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
         redditPixelId={env.REDDIT_PIXEL_ID ?? null}
         redditTracking={createRedditTrackingConfig("/gewinn", "not-required")}
-        bookConversion={createBookConversionConfig("/gewinn", "not-required")}
+        bookConversion={await createBookConversionConfig("/gewinn", "not-required")}
         linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
         consentMode="not-required"
         consentCookieName={env.CONSENT_COOKIE_NAME ?? null}

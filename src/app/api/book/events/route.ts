@@ -2,7 +2,7 @@ import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { BOOK_IDENTIFIER_PATTERN, BOOK_PRODUCT } from "@/lib/book-conversion-events";
-import { verifyBookConversionContext } from "@/lib/book-conversion-context";
+import { resolveBookSite, verifyBookConversionContext } from "@/lib/book-conversion-context";
 import { classifyRequest } from "@/lib/bot-detection";
 import { evaluateConsent } from "@/lib/consent";
 import { prisma } from "@/lib/db";
@@ -184,12 +184,14 @@ export async function POST(request: Request): Promise<Response> {
       : undefined;
 
     const send = async () => {
+      // Pixel-IDs/Tokens: Dashboard (Websites → lizenzzumerfolg) zuerst, Env als Fallback
+      const site = await resolveBookSite();
       // Meta CAPI: PageView + AddToCart, dedupliziert über event_id (= Pixel eventID)
-      if (env.META_PIXEL_ID && env.META_CAPI_ACCESS_TOKEN) {
+      if (site.metaPixelId && site.metaToken) {
         const ok = await sendMetaCapiSingle(
-          env.META_PIXEL_ID,
-          env.META_CAPI_ACCESS_TOKEN,
-          env.META_CAPI_TEST_EVENT_CODE ?? null,
+          site.metaPixelId,
+          site.metaToken,
+          site.metaTestEventCode,
           {
             eventId: input.id,
             eventName: input.type,
@@ -217,11 +219,11 @@ export async function POST(request: Request): Promise<Response> {
       if (!isAddToCart) return;
 
       // TikTok Events API: AddToCart, dedupliziert über event_id
-      if (env.TIKTOK_PIXEL_ID && env.TIKTOK_EVENTS_API_TOKEN) {
+      if (site.tiktokPixelId && site.tiktokToken) {
         const ok = await sendTikTokSingle(
-          env.TIKTOK_PIXEL_ID,
-          env.TIKTOK_EVENTS_API_TOKEN,
-          env.TIKTOK_TEST_EVENT_CODE ?? null,
+          site.tiktokPixelId,
+          site.tiktokToken,
+          site.tiktokTestEventCode,
           {
             eventId: input.id,
             eventName: "AddToCart",
