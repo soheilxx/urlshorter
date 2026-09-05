@@ -439,6 +439,7 @@
   font-weight: 650 !important;
   padding: 0 14px;
   height: 44px;
+  white-space: nowrap;
 }
 .actionButton:hover {
   background: var(--border);
@@ -446,6 +447,10 @@
 .actionButton > span {
   font-size: 10px;
   color: var(--muted);
+}
+.actionButton .questionLabel {
+  font: inherit;
+  color: inherit;
 }
 .readers {
   margin-left: auto;
@@ -1007,9 +1012,18 @@
     letter-spacing: 0.9px;
   }
   .actions {
-    gap: 7px;
+    display: grid;
+    grid-template-columns: repeat(3, max-content);
+    gap: 6px;
+  }
+  .actionButton {
+    padding: 0 8px;
+  }
+  .questionSuffix {
+    display: none;
   }
   .readers {
+    grid-column: 1 / -1;
     font-size: 10px;
     min-height: 25px;
   }
@@ -1181,7 +1195,6 @@
   }
   .actionButton {
     font-size: 10px !important;
-    padding: 0 11px;
   }
   .votePill button {
     width: 44px;

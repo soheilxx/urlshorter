@@ -159,8 +159,11 @@ export function PostActions({ initial }: { initial: Activity }) {
         <button type="button" className={styles.actionButton} onClick={() => void share()}>
           <Share2 size={17} aria-hidden="true" /> Teilen
         </button>
-        <a className={styles.actionButton} href="#fragen">
-          Fragen zum Buch <span aria-hidden="true">4</span>
+        <a className={styles.actionButton} href="#fragen" aria-label="Fragen zum Buch">
+          <span className={styles.questionLabel}>
+            Fragen<span className={styles.questionSuffix}> zum Buch</span>
+          </span>
+          <span aria-hidden="true">4</span>
         </a>
         <span className={styles.readers}>
           <span className={styles.liveDot} aria-hidden="true" />
