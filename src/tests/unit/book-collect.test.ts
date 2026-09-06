@@ -80,6 +80,30 @@ function request(body: unknown, headers: Record<string, string> = {}) {
 }
 
 describe("Buch-Conversion-Kontext", () => {
+  it("akzeptiert Inbox-ATC und bindet es an die neue Route", async () => {
+    const config = (await createBookConversionConfig("/buch-inbox", "not-required"))!;
+    const body = await payload({
+      context: config.context,
+      path: "/buch-inbox",
+      type: "AddToCart",
+      destination: AMAZON,
+      ctaId: "inbox-hero",
+      utm: { source: "uim", medium: "inbox_ad" },
+    });
+    expect(verifyBookConversionContext(config.context)?.path).toBe("/buch-inbox");
+    expect((await POST(request(body, { cookie: "" }))).status).toBe(204);
+    expect(prisma.tagEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          path: "/buch-inbox",
+          eventName: "book_add_to_cart",
+          utmSource: "uim",
+        }),
+      }),
+    );
+    expect(sendMetaCapiSingle).toHaveBeenCalledTimes(1);
+    expect((await POST(request({ ...body, path: "/gewinn" }))).status).toBe(403);
+  });
   it("bindet Route und Consent kryptografisch, läuft ab und trägt keine Tokens", async () => {
     const config = (await createBookConversionConfig("/gewinn", "required"))!;
     expect(config).toMatchObject({

@@ -26,6 +26,30 @@ beforeEach(() => {
   resetEnvCache();
   vi.mocked(prisma.tagEvent.create).mockResolvedValue({} as never);
 });
+
+it("akzeptiert Inbox-PageVisit und ATC mit signiertem Inbox-Kontext", async () => {
+  const config = createRedditTrackingConfig("/buch-inbox", "not-required")!;
+  expect(verifyRedditContext(config.context)?.path).toBe("/buch-inbox");
+  const body = payload({ context: config.context, path: "/buch-inbox" });
+  expect((await POST(request(body, { cookie: "" }))).status).toBe(204);
+  expect(
+    (
+      await POST(
+        request(
+          {
+            ...body,
+            id: "7a4e1ee8-5b24-45ce-b4d4-2e2032844c00",
+            type: "AddToCart",
+            destination: config.amazonUrl,
+          },
+          { cookie: "" },
+        ),
+      )
+    ).status,
+  ).toBe(204);
+  expect(sendRedditCapiEvents).toHaveBeenCalledTimes(2);
+  expect((await POST(request({ ...body, path: "/buch-reddit" }))).status).toBe(403);
+});
 afterEach(() => {
   vi.unstubAllEnvs();
   resetEnvCache();
