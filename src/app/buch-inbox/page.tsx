@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   BookOpen,
   ChevronRight,
+  Gift,
   HeartHandshake,
   HelpCircle,
   Inbox,
@@ -14,13 +15,26 @@ import {
   Plus,
   UserRound,
 } from "lucide-react";
+import { DubaiSkyline } from "@/components/gewinn/dubai-skyline";
 import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import { InboxStickyCta, InboxTools } from "@/components/inbox-book/interactions";
 import styles from "@/components/inbox-book/inbox-book.module.css";
 import { createBookConversionConfig } from "@/lib/book-conversion-context";
 import { createRedditTrackingConfig } from "@/lib/reddit-context";
 import { getEnv } from "@/lib/env";
-import { AMAZON_PRODUCT_URL } from "@/lib/gewinnspiel-config";
+import {
+  AMAZON_PRODUCT_URL,
+  ENTRY_DEADLINE_LABEL,
+  GEWINN_URL,
+  MIN_AGE,
+  ELIGIBLE_COUNTRIES_LABEL,
+  PRIZE_VALUE_LABEL,
+  SECONDARY_PRIZES,
+  SECONDARY_PRIZES_COUNT,
+  SECONDARY_PRIZE_SHOP_NAME,
+  TRIP_DURATION_LABEL,
+  getSweepstakesPhase,
+} from "@/lib/gewinnspiel-config";
 import {
   BUCH_AUTOR,
   BUCH_ERSCHEINT_ISO,
@@ -43,14 +57,14 @@ import {
 
 export const dynamic = "force-dynamic";
 const description =
-  "Mit 20 stand Soheil Hosseini Microsoft gegenüber. Eine persönliche Einladung zu seiner Biografie Die Lizenz zum Erfolg – über Entscheidungen und den eigenen Weg.";
+  "Unterschätzt, gescheitert, weitergemacht: die Lebensgeschichte von Soheil Hosseini. Die gesamten Autoren-Einnahmen aus dem Buch fließen an den Kinderschutzbund.";
 export const metadata: Metadata = {
-  title: { absolute: "Mit 20 stand ich Microsoft gegenüber. | Die Lizenz zum Erfolg" },
+  title: { absolute: "Wer sagt, dass du das nicht kannst? | Die Lizenz zum Erfolg" },
   description,
   alternates: { canonical: INBOX_BOOK_URL },
   robots: { index: true, follow: true },
   openGraph: {
-    title: "Mit 20 stand ich Microsoft gegenüber.",
+    title: "Wer sagt, dass du das nicht kannst?",
     description,
     url: INBOX_BOOK_URL,
     siteName: BUCH_TITEL,
@@ -107,6 +121,14 @@ function Contents({ mobile = false }: { mobile?: boolean }) {
         <BookOpen size={18} aria-hidden="true" />
         Dein Lesestapel
       </a>
+      <a href="#kinderschutzbund">
+        <HeartHandshake size={18} aria-hidden="true" />
+        Lesen & Gutes tun
+      </a>
+      <a href="#gewinnchance">
+        <Gift size={18} aria-hidden="true" />
+        Das Gewinnspiel
+      </a>
       <a href="#autor">
         <UserRound size={18} aria-hidden="true" />
         Über den Autor
@@ -119,6 +141,21 @@ function Contents({ mobile = false }: { mobile?: boolean }) {
   );
 }
 
+function CharityLogo({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className={compact ? styles.charityLogoCompact : styles.charityLogo}>
+      <Image
+        src="/inbox/kinderschutzbund.svg"
+        alt="Der Kinderschutzbund"
+        width={202}
+        height={57}
+        unoptimized
+        priority={compact}
+      />
+    </span>
+  );
+}
+
 export default async function InboxBookPage({
   searchParams,
 }: {
@@ -127,6 +164,7 @@ export default async function InboxBookPage({
   const [query, requestHeaders] = await Promise.all([searchParams, headers()]);
   const portal = resolveInboxPortal(query, requestHeaders.get("referer"));
   const env = getEnv();
+  const sweepstakesOpen = getSweepstakesPhase() === "open";
   const bookConversion = await createBookConversionConfig(INBOX_BOOK_PATH, "not-required");
   const forthcoming = Date.now() < Date.parse(BUCH_ERSCHEINT_ISO);
   const publication = forthcoming
@@ -176,7 +214,7 @@ export default async function InboxBookPage({
               <small>Die Lizenz zum Erfolg</small>
             </span>
           </a>
-          <div className={styles.headerNote}>Eine Nachricht. Eine Lebensgeschichte.</div>
+          <div className={styles.headerNote}>Eine Geschichte, die über das Buch hinaus wirkt.</div>
           <a className={styles.headerBook} href="#buch">
             <BookOpen size={17} aria-hidden="true" />
             <span>Zum Buch</span>
@@ -198,11 +236,11 @@ export default async function InboxBookPage({
           <p className={styles.contentsLabel}>IN DIESER NACHRICHT</p>
           <Contents />
           <div className={styles.sideDonation}>
-            <HeartHandshake size={23} aria-hidden="true" />
+            <CharityLogo compact />
             <p>
-              Eine Bestellung.
+              Für deinen Lesestapel.
               <br />
-              <strong>Eine gute Sache.</strong>
+              <strong>Und für Kinder.</strong>
             </p>
             <span>{SPENDEN_HINWEIS}</span>
           </div>
@@ -246,18 +284,39 @@ export default async function InboxBookPage({
 
           <div className={styles.readingLayout}>
             <article className={styles.letter}>
-              <span className={styles.subjectLabel}>BETREFF</span>
+              <span className={styles.subjectLabel}>EINE WAHRE LEBENSGESCHICHTE</span>
               <h1>
-                Mit 20 stand ich
+                Wer sagt, dass du
                 <br />
-                <span>Microsoft gegenüber.</span>
+                <span>das nicht kannst?</span>
               </h1>
-              <p className={styles.greeting}>Hallo, ich bin Soheil.</p>
               <p className={styles.lead}>
-                Ich bin gerade einmal 20, als meine erste Auseinandersetzung mit Microsoft beginnt.
-                Ein Konflikt, der mich über Jahre begleitet.
+                In der Schule abgeschrieben. Später Unternehmer. Dazwischen: Fehler, Rückschläge –
+                und die Entscheidung, trotzdem weiterzumachen.
               </p>
 
+              <div className={styles.heroBenefits} aria-label="Was deine Bestellung bewirkt">
+                <a className={styles.charityPreview} href="#kinderschutzbund">
+                  <span className={styles.charityPercent}>100 %</span>
+                  <span className={styles.charityPreviewText}>der Autoren-Einnahmen für den</span>
+                  <CharityLogo compact />
+                </a>
+                <a className={styles.prizePreview} href="#gewinnchance">
+                  <span className={styles.benefitLabel}>
+                    <Gift size={14} aria-hidden="true" />
+                    {sweepstakesOpen ? "GEWINNCHANCE" : "DAS GEWINNSPIEL"}
+                  </span>
+                  <strong>{TRIP_DURATION_LABEL} Dubai</strong>
+                  <span>für 2 Personen</span>
+                  <span>
+                    Reisewert: <b>{PRIZE_VALUE_LABEL}</b>
+                  </span>
+                  <span className={styles.prizeExtra}>
+                    + {SECONDARY_PRIZES_COUNT} Wertgutscheine
+                  </span>
+                  {!sweepstakesOpen && <span>Aktuellen Status ansehen</span>}
+                </a>
+              </div>
               <div className={styles.earlyBook}>
                 <Image
                   src="/gewinn/buchcover.jpg"
@@ -268,7 +327,7 @@ export default async function InboxBookPage({
                   priority
                 />
                 <div>
-                  <span className={styles.eyebrow}>DAS BUCH ZUR GESCHICHTE</span>
+                  <span className={styles.eyebrow}>LESEN. VERSCHENKEN. GUTES TUN.</span>
                   <h2>{BUCH_TITEL}</h2>
                   <p>
                     {BUCH_PREIS_LABEL} · {BUCH_FORMAT_LABEL}
@@ -276,28 +335,57 @@ export default async function InboxBookPage({
                   <OrderButton id="inbox-first-cta" placement="inbox-hero" />
                 </div>
               </div>
-              <p className={styles.donation}>
-                <HeartHandshake size={21} aria-hidden="true" />
-                <span>{SPENDEN_HINWEIS}</span>
-              </p>
+              {sweepstakesOpen && (
+                <p className={styles.entryNote}>
+                  Für die Gewinnchance: Buch bestellen und die Bestellung bis {ENTRY_DEADLINE_LABEL}{" "}
+                  registrieren. <a href="#gewinnchance">So geht’s</a>
+                </p>
+              )}
 
               <section className={styles.storySection} id="geschichte">
-                <span className={styles.sectionLabel}>EIN PERSÖNLICHER EINBLICK</span>
-                <h2>
-                  Hinter diesem Konflikt
-                  <br />
-                  steht ein ganzer Lebensweg.
-                </h2>
+                <span className={styles.sectionLabel}>HALLO, ICH BIN SOHEIL.</span>
+                <h2>Bevor ich meinen Weg fand, hatten andere schon über mich entschieden.</h2>
                 <p>
-                  Vielleicht hat dich die Geschichte mit Microsoft neugierig gemacht. In meinem Buch
-                  nehme ich dich auch mit zu den Entscheidungen davor und danach: zu meinem Weg als
-                  Unternehmer in Software, Finanzen und Mode – und zu der Frage, was
-                  Selbstbestimmung für mich bedeutet.
+                  In der Schule hielt man mich für ein Problemkind. Meiner Mutter wurde wenig
+                  Hoffnung gemacht. Zum Glück gab es auch jemanden, der mir etwas zutraute und mir
+                  mit klaren Regeln eine Chance gab.
                 </p>
                 <p>
-                  <em>Die Lizenz zum Erfolg</em> ist meine Biografie. Eine Einladung, einen Menschen
-                  und seine Entscheidungen näher kennenzulernen. Und dabei eigene Gedanken
-                  mitzunehmen.
+                  Vielleicht kennst du das: Jemand sieht deine Schwierigkeiten. Du wünschst dir,
+                  dass er auch deine Möglichkeiten sieht.
+                </p>
+                <div className={styles.storyMoments}>
+                  <div>
+                    <span className={styles.momentLabel}>DER ERSTE VERSUCH</span>
+                    <h3>Ein alter Laptop. Und die Frage: Was kann ich daraus machen?</h3>
+                    <p>
+                      Nach Schule und Nebenjob saß ich am Laptop meiner Mutter und baute Websites,
+                      oft bis tief in die Nacht. Ich wollte etwas Eigenes auf die Beine stellen.
+                    </p>
+                  </div>
+                  <div>
+                    <span className={styles.momentLabel}>DER RÜCKSCHLAG</span>
+                    <h3>Fast ein Monatslohn. Für eine bittere Enttäuschung.</h3>
+                    <p>
+                      Ich bestellte zehn USB-Sticks von meinem selbst verdienten Geld. Nach Wochen
+                      kam das Paket: Darin lag eine Münze. Solche Fehlversuche gehören zu meiner
+                      Geschichte genauso wie das, was später gelang.
+                    </p>
+                  </div>
+                  <div>
+                    <span className={styles.momentLabel}>DER UNGLEICHE GEGNER</span>
+                    <h3>Mit 20 beginnt meine Auseinandersetzung mit Microsoft.</h3>
+                    <p>
+                      Ein junger Unternehmer und ein Weltkonzern. Der Konflikt zieht sich über
+                      Jahre. Wie geht man mit so einem Gegenüber um – und was macht das mit einem?
+                    </p>
+                  </div>
+                </div>
+                <p>
+                  In <em>Die Lizenz zum Erfolg</em> erzähle ich den ganzen Weg: vom
+                  Unterschätztwerden über eigene Fehler bis zum Aufbau mehrerer Unternehmen. Es geht
+                  um die Entscheidungen dazwischen. Und darum, was es bedeutet, sein Leben selbst in
+                  die Hand zu nehmen.
                 </p>
                 <a className={styles.readOn} href="#lesegruende">
                   Was du für dich mitnehmen kannst
@@ -307,13 +395,10 @@ export default async function InboxBookPage({
 
               <section className={styles.reasons} id="lesegruende">
                 <span className={styles.sectionLabel}>FÜR DEINEN NÄCHSTEN LESEABEND</span>
-                <h2>
-                  Drei Gründe, warum dich
-                  <br />
-                  dieses Buch begleiten könnte.
-                </h2>
+                <h2>Ein Buch für das, was dich gerade bewegt.</h2>
                 <p className={styles.sectionIntro}>
-                  Du musst kein Unternehmer sein, um dich in diesen Fragen wiederzufinden.
+                  Weil dich beschäftigt, wie es weitergeht. Weil du gern mit Menschen mitfieberst.
+                  Oder weil du jemandem genau so ein Buch schenken möchtest.
                 </p>
                 {INBOX_REASONS.map((reason, index) => (
                   <div className={styles.reason} key={reason.title}>
@@ -326,10 +411,117 @@ export default async function InboxBookPage({
                 ))}
               </section>
 
+              <section className={styles.charitySection} id="kinderschutzbund">
+                <span className={styles.sectionLabel}>DEINE BESTELLUNG WIRKT WEITER</span>
+                <h2>
+                  Ein Buch für dich.
+                  <br />
+                  Ein Beitrag für Kinder.
+                </h2>
+                <div className={styles.charityPromise}>
+                  <strong>100 %</strong>
+                  <p>{SPENDEN_HINWEIS}</p>
+                </div>
+                <div className={styles.charityRecipient}>
+                  <span>Spendenempfänger</span>
+                  <CharityLogo />
+                </div>
+                <p className={styles.charityMessage}>
+                  Vielleicht möchtest du meine Geschichte lesen. Vielleicht liegt dir vor allem die
+                  Unterstützung von Kindern am Herzen. Mit diesem Buch kannst du beides verbinden –
+                  auch, wenn du es verschenkst.
+                </p>
+                <OrderButton placement="inbox-charity" />
+                <span className={styles.smallNote}>
+                  {BUCH_PREIS_LABEL} · {BUCH_FORMAT_LABEL} · Bestellung über Amazon
+                </span>
+              </section>
+
+              <section className={styles.giveawaySection} id="gewinnchance">
+                <div className={styles.giveawayHeading}>
+                  <span className={styles.sectionLabel}>DAS GEWINNSPIEL ZUM BUCH</span>
+                  <h2>
+                    {sweepstakesOpen
+                      ? "Und vielleicht führt dich diese Geschichte bis nach Dubai."
+                      : "Die Dubai-Verlosung zum Buch."}
+                  </h2>
+                  <DubaiSkyline className={styles.dubaiSkyline} />
+                </div>
+                <div className={styles.giveawayBody}>
+                  <p className={styles.tripTitle}>
+                    {TRIP_DURATION_LABEL} Dubai. Für dich und deine Begleitung.
+                  </p>
+                  <p>
+                    Eine Reise im Wert von <strong>{PRIZE_VALUE_LABEL}</strong>: Emirates Business
+                    Class, eine Suite im 5-Sterne-Designerhotel und ein Dinner für zwei.
+                  </p>
+                  <div className={styles.voucherPrizes}>
+                    <Gift size={24} aria-hidden="true" />
+                    <div>
+                      <strong>Zusätzlich: {SECONDARY_PRIZES_COUNT} Wertgutscheine</strong>
+                      <span>Für den {SECONDARY_PRIZE_SHOP_NAME}</span>
+                      <p>
+                        {SECONDARY_PRIZES.map(
+                          (prize) => `${prize.count} × ${prize.valueLabel}`,
+                        ).join(" · ")}
+                      </p>
+                    </div>
+                  </div>
+                  {sweepstakesOpen ? (
+                    <>
+                      <h3>So kommt deine Bestellung in die Verlosung:</h3>
+                      <ol className={styles.entrySteps}>
+                        <li>
+                          <span>1</span>
+                          <div>
+                            <strong>Buch bestellen</strong>
+                            <p>Sichere dir dein Exemplar, zum Beispiel auf Amazon.</p>
+                          </div>
+                        </li>
+                        <li>
+                          <span>2</span>
+                          <div>
+                            <strong>Bestellung registrieren</strong>
+                            <p>Trage deine Bestellnummer auf der Gewinnspielseite ein.</p>
+                          </div>
+                        </li>
+                        <li>
+                          <span>3</span>
+                          <div>
+                            <strong>In der Verlosung dabei sein</strong>
+                            <p>Mit gültiger Registrierung bis {ENTRY_DEADLINE_LABEL}.</p>
+                          </div>
+                        </li>
+                      </ol>
+                      <OrderButton placement="inbox-giveaway" />
+                      <a
+                        className={styles.readOn}
+                        href={`${GEWINN_URL}#teilnahme`}
+                        data-gw-event="buch_gewinnspiel_klick"
+                      >
+                        Schon bestellt? Bestellung registrieren{" "}
+                        <ArrowUpRight size={15} aria-hidden="true" />
+                      </a>
+                    </>
+                  ) : (
+                    <p className={styles.entryStatus}>
+                      Die Registrierung ist aktuell nicht geöffnet. Den Stand der Verlosung findest
+                      du auf der <a href={GEWINN_URL}>Gewinnspielseite</a>.
+                    </p>
+                  )}
+                  <p className={styles.giveawayTerms}>
+                    Teilnahme ab {MIN_AGE} mit Wohnsitz in {ELIGIBLE_COUNTRIES_LABEL}. Eine
+                    Buchbestellung und ihre Registrierung sind erforderlich. Über die Registrierung
+                    hinaus entstehen keine Teilnahmekosten. Es gelten die{" "}
+                    <a href={`${GEWINN_URL}/teilnahmebedingungen`}>Teilnahmebedingungen</a>.
+                  </p>
+                </div>
+              </section>
+
               <section className={styles.bookDetails} id="buch">
                 <div className={styles.bookHeading}>
                   <BookOpen size={23} aria-hidden="true" />
-                  <span className={styles.sectionLabel}>DEIN NÄCHSTES BUCH</span>
+                  <span className={styles.sectionLabel}>FÜR DICH ODER ZUM VERSCHENKEN</span>
                 </div>
                 <h2>{BUCH_TITEL}</h2>
                 <p className={styles.subtitle}>{BUCH_UNTERTITEL}</p>
@@ -384,8 +576,9 @@ export default async function InboxBookPage({
 
               <div className={styles.invitation}>
                 <p>
-                  Wenn du Biografien gern liest, weil dich Menschen und ihre Entscheidungen
-                  interessieren, freue ich mich, wenn du meine Geschichte kennenlernst.
+                  Vielleicht sind unsere Lebenswege sehr verschieden. Aber Zweifel, Hoffnungen und
+                  der Wunsch, etwas aus dem eigenen Leben zu machen, verbinden viele von uns. Ich
+                  freue mich, wenn du mich auf diesem Weg ein Stück begleitest.
                 </p>
                 <p className={styles.signature}>
                   Herzlich,
@@ -412,24 +605,32 @@ export default async function InboxBookPage({
               <section className={styles.finalCta}>
                 <Mail size={25} aria-hidden="true" />
                 <h2>
-                  Die Nachricht endet hier.
+                  Für deinen nächsten Leseabend.
                   <br />
-                  Die Geschichte geht weiter.
+                  Und für eine gute Sache.
                 </h2>
                 <p>
-                  In „Die Lizenz zum Erfolg“. Für deinen Lesestapel – und deine eigenen Gedanken.
+                  Bestelle „Die Lizenz zum Erfolg“ für dich oder einen Menschen, an den du gerade
+                  denkst. Meine gesamten Autoren-Einnahmen gehen an den Kinderschutzbund.
                 </p>
                 <OrderButton placement="inbox-final" />
                 <span className={styles.smallNote}>
                   {BUCH_PREIS_LABEL} · {BUCH_FORMAT_LABEL} · {publication}
                 </span>
-                <p className={styles.finalDonation}>{SPENDEN_HINWEIS}</p>
+                {sweepstakesOpen && (
+                  <p className={styles.finalDonation}>
+                    Und danach: Bestellung registrieren und die Chance auf {TRIP_DURATION_LABEL}{" "}
+                    Dubai für zwei im Wert von {PRIZE_VALUE_LABEL} oder einen von{" "}
+                    {SECONDARY_PRIZES_COUNT} Wertgutscheinen sichern.{" "}
+                    <a href={`${GEWINN_URL}#teilnahme`}>Zur Registrierung</a>
+                  </p>
+                )}
               </section>
             </article>
 
             <aside className={styles.bookAside} aria-label="Das Buch auf einen Blick">
               <div className={styles.coverStage}>
-                <span>MEINE GESCHICHTE. DEIN LESESTAPEL.</span>
+                <span>UNTERSCHÄTZT. GESCHEITERT. WEITERGEMACHT.</span>
                 <Image
                   src="/gewinn/buchcover.jpg"
                   alt="Die Lizenz zum Erfolg von Soheil Hosseini"
@@ -449,6 +650,7 @@ export default async function InboxBookPage({
                 </div>
                 <OrderButton placement="inbox-sidebar" />
                 <span className={styles.smallNote}>{publication}</span>
+                <p className={styles.asideDonation}>{SPENDEN_HINWEIS}</p>
               </div>
               <a className={styles.asideMore} href="#buch">
                 Alle Angaben zum Buch

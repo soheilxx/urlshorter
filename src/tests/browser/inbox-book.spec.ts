@@ -50,7 +50,20 @@ for (const width of [320, 390, 768, 1440])
           "background-color",
           theme === "dark" ? "rgb(17, 24, 33)" : "rgb(240, 243, 247)",
         );
-        await expect(page.locator("h1")).toContainText("Mit 20 stand ich");
+        await expect(page.locator("h1")).toContainText("Wer sagt, dass du");
+        await expect(page.locator('[aria-label="Was deine Bestellung bewirkt"]')).toBeInViewport({
+          ratio: 1,
+        });
+        await expect(page.locator('[aria-label="Was deine Bestellung bewirkt"]')).toContainText(
+          "100 %",
+        );
+        await expect(page.locator('[aria-label="Was deine Bestellung bewirkt"]')).toContainText(
+          "5 Tage Dubai",
+        );
+        await expect(page.locator('[aria-label="Was deine Bestellung bewirkt"]')).toContainText(
+          "20.000 €",
+        );
+        await page.screenshot({ path: info.outputPath(`inbox-${width}-${portal}-${theme}.png`) });
         await expect(page.locator("#inbox-first-cta")).toBeInViewport({ ratio: 1 });
         const metrics = await page.evaluate(() => ({
           overflow: document.documentElement.scrollWidth > innerWidth,
@@ -117,12 +130,29 @@ test("Merken, Sharing-Fallback und FAQ; ATC nur durch echte Amazon-Klicks", asyn
     "https://lizenzzumerfolg.com/buch-inbox?portal=webde",
   );
   await page.getByText("Geht es in dem Buch nur um Microsoft?", { exact: true }).click();
+  await page.locator('[aria-label="Was deine Bestellung bewirkt"] a[href="#gewinnchance"]').click();
+  await expect(page.locator("#gewinnchance")).toContainText("10 × 500 € · 40 × 150 € · 50 × 50 €");
+  await expect(page.locator("#gewinnchance")).toContainText("11.10.2026, 23:59 Uhr");
+  await expect(page.locator("#gewinnchance")).toContainText("Emirates Business Class");
+  await expect(
+    page.getByRole("link", { name: /Schon bestellt\? Bestellung registrieren/ }),
+  ).toHaveAttribute("href", "https://lizenzzumerfolg.com/gewinn#teilnahme");
+  await expect(
+    page.getByRole("link", { name: "Teilnahmebedingungen", exact: true }),
+  ).toHaveAttribute("href", "https://lizenzzumerfolg.com/gewinn/teilnahmebedingungen");
   expect(book.filter((event) => event.type === "AddToCart")).toHaveLength(0);
   await page
     .locator("#inbox-first-cta")
     .evaluate((element) => (element as HTMLAnchorElement).click());
   expect(book.filter((event) => event.type === "AddToCart")).toHaveLength(0);
-  for (const placement of ["inbox-hero", "inbox-sidebar", "inbox-book-details", "inbox-final"]) {
+  for (const placement of [
+    "inbox-hero",
+    "inbox-sidebar",
+    "inbox-charity",
+    "inbox-giveaway",
+    "inbox-book-details",
+    "inbox-final",
+  ]) {
     await page.waitForTimeout(650);
     const popupPromise = page.waitForEvent("popup");
     await page.locator(`[data-cta-id="${placement}"]`).click();
@@ -172,7 +202,7 @@ test("Ohne JavaScript sind Nachricht, FAQ und Bestellung nutzbar", async ({ brow
   const page = await context.newPage();
   await capture(page);
   await page.goto("http://127.0.0.1:3103/buch-inbox?portal=webde");
-  await expect(page.locator("h1")).toContainText("Microsoft gegenüber.");
+  await expect(page.locator("h1")).toContainText("das nicht kannst?");
   await expect(page.locator("#inbox-first-cta")).toHaveAttribute(
     "href",
     "https://link.amazon/B0eyhvaQw",

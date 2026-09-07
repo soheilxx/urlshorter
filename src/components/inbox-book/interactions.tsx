@@ -45,7 +45,7 @@ export function InboxTools({ portal }: { portal: InboxPortal }) {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "Mit 20 stand ich Microsoft gegenüber. – Die Lizenz zum Erfolg",
+          title: "Wer sagt, dass du das nicht kannst? – Die Lizenz zum Erfolg",
           url: shareUrl,
         });
         return;
