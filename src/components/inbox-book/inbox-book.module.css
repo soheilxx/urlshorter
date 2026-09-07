@@ -442,37 +442,23 @@
   font-size: 16px;
   line-height: 1.8;
 }
-.heroBenefits {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 22px;
-}
-.charityPreview,
-.prizePreview {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 16px 18px;
-  border-radius: 8px;
-  line-height: 1.35;
-}
 .charityPreview {
-  border: 1px solid #80accd;
+  display: flow-root;
+  margin-top: 22px;
+  padding: 16px 18px;
+  border-left: 3px solid #80accd;
+  border-radius: 0 6px 6px 0;
   background: #eff7fd;
   color: #174364 !important;
+  line-height: 1.65;
 }
-.charityPercent {
-  font-size: 36px;
-  font-weight: 800;
-  letter-spacing: -1.5px;
-  line-height: 1;
+.charityPreview strong {
+  font-size: 14px;
+  font-weight: 750;
 }
-.charityPreviewText {
-  font-size: 12px;
-  margin: 5px 0 8px;
+.charityPreview p {
+  font-size: 13px;
+  margin-top: 4px;
 }
 .charityLogoCompact,
 .charityLogo {
@@ -491,36 +477,50 @@
   height: auto;
 }
 .charityPreview .charityLogoCompact {
-  padding: 5px 7px;
+  float: right;
+  width: 148px;
+  margin: 3px 0 8px 18px;
+  padding: 7px 9px;
 }
-.prizePreview {
-  border: 1px solid #cead6e;
-  background: #fff7e7;
-  color: #5d421a !important;
-  gap: 6px;
+.charityPreview .charityLogoCompact img {
+  width: 100%;
 }
-.benefitLabel {
+.giveawayTeaser {
   display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 18px 20px;
+  margin: 0 0 32px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--soft);
+  line-height: 1.7;
+}
+.giveawayTeaser > svg {
+  color: var(--muted);
+  margin-top: 3px;
+}
+.giveawayTeaser strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+.giveawayTeaser p {
+  font-size: 13px;
+  margin-top: 5px;
+  color: var(--muted);
+}
+.giveawayTeaser a {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 9px;
-  font-weight: 750;
-  letter-spacing: 0.7px;
-}
-.prizePreview > strong {
-  font-size: 19px;
-  letter-spacing: -0.4px;
-}
-.prizePreview > span:not(.benefitLabel) {
+  gap: 7px;
+  min-height: 44px;
+  margin-top: 3px;
   font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
 }
-.prizePreview .prizeExtra {
-  border-top: 1px solid #cead6e70;
-  padding-top: 6px;
-  align-self: stretch;
-}
-.heroBenefits > a:hover {
-  box-shadow: 0 3px 12px #0001;
+.giveawayTeaser a:hover {
+  text-decoration: underline;
 }
 .earlyBook {
   display: flex;
@@ -579,13 +579,6 @@
 .primaryButton:hover {
   filter: brightness(0.94);
 }
-.entryNote {
-  font-size: 11px;
-  color: var(--muted);
-  line-height: 1.65;
-  margin-top: 10px;
-}
-.entryNote a,
 .giveawayTerms a,
 .entryStatus a,
 .finalDonation a {
@@ -874,7 +867,6 @@
     color: #e1f1fd !important;
     border-color: #487994;
   }
-  .charityPercent,
   .charityPromise > strong {
     color: #91c9f5;
   }
@@ -883,7 +875,6 @@
   .charityRecipient > span:first-child {
     color: #b2c9da;
   }
-  .prizePreview,
   .giveawayHeading {
     background: #30291c;
     color: #f8e3b7 !important;
@@ -1384,37 +1375,21 @@
     padding: 10px 12px;
     gap: 8px;
   }
-  .heroBenefits {
-    gap: 9px;
+  .charityPreview {
     margin-top: 16px;
-  }
-  .charityPreview,
-  .prizePreview {
     padding: 12px;
   }
-  .charityPercent {
-    font-size: 31px;
-  }
-  .charityPreviewText {
-    font-size: 10px;
-    margin: 4px 0 6px;
+  .charityPreview .charityLogoCompact {
+    width: 120px;
+    margin-left: 12px;
+    padding: 6px 8px;
   }
   .charityLogoCompact img {
     width: 117px;
   }
-  .prizePreview {
-    gap: 5px;
-  }
-  .prizePreview > strong {
-    font-size: 17px;
-  }
-  .prizePreview > span:not(.benefitLabel) {
-    font-size: 11px;
-  }
-  .benefitLabel {
-    font-size: 8px;
-    letter-spacing: 0.3px;
-    gap: 4px;
+  .giveawayTeaser {
+    padding: 15px;
+    gap: 10px;
   }
   .storyMoments {
     padding-left: 18px;
@@ -1585,38 +1560,23 @@
     padding-inline: 10px;
     gap: 10px;
   }
-  .heroBenefits {
-    gap: 8px;
+  .charityPreview {
+    padding: 10px;
     margin-top: 12px;
   }
-  .charityPreview,
-  .prizePreview {
-    padding: 10px;
+  .charityPreview strong {
+    font-size: 13px;
   }
-  .charityPercent {
-    font-size: 29px;
-  }
-  .charityPreviewText {
-    font-size: 10px;
+  .charityPreview p {
+    font-size: 12px;
   }
   .charityLogoCompact img {
     width: 101px;
   }
   .charityPreview .charityLogoCompact {
+    width: 104px;
+    margin-left: 10px;
     padding: 5px;
-  }
-  .prizePreview > strong {
-    font-size: 15px;
-  }
-  .prizePreview > span:not(.benefitLabel) {
-    font-size: 10px;
-  }
-  .benefitLabel {
-    font-size: 7px;
-  }
-  .benefitLabel svg {
-    width: 12px;
-    height: 12px;
   }
   .charityPromise {
     flex-direction: column;

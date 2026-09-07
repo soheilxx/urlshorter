@@ -4,7 +4,7 @@ Stand: 7. September 2026. Arbeite im bestehenden Next.js-Projekt und überarbeit
 
 ## Ziel
 
-Erreiche Besucher aus GMX-/WEB.DE-Inbox-Ads mit einer persönlichen, gut lesbaren Buchvorstellung. Die Seite soll sowohl Menschen ansprechen, die eine wahre Lebensgeschichte lesen oder verschenken möchten, als auch Menschen, denen die Autoren-Spende oder die Gewinnchance wichtig ist. Zeige alle drei Motive früh und verständlich. Behalte die vertraute Postfach-Optik der eigenen Marke Lesepost bei.
+Erreiche Besucher aus GMX-/WEB.DE-Inbox-Ads mit einer persönlichen, gut lesbaren Buchvorstellung. Die Seite soll sowohl Menschen ansprechen, die eine wahre Lebensgeschichte lesen oder verschenken möchten, als auch Menschen, denen die Autoren-Spende oder die Gewinnchance wichtig ist. Beginne mit Hook und Geschichte. Zeige die Spende früh; führe die Gewinnchance später als kleinen Teaser ein. Behalte die vertraute Postfach-Optik der eigenen Marke Lesepost bei.
 
 ## Copy
 
@@ -14,19 +14,19 @@ Verwende klare, warme Sprache. Zeige, warum der Leser sich darin wiederfinden k�
 
 ## Spende
 
-Nutze die zentrale, exakte Zusage aus `buch-config.ts`. Gestalte im Einstieg eine sichtbare 100-%-Karte mit eindeutiger Beschriftung „der Autoren-Einnahmen“ und offiziellem Kinderschutzbund-Logo. Baue zusätzlich einen großen Abschnitt „Ein Buch für dich. Ein Beitrag für Kinder.“ mit der vollständigen Zusage, Spendenempfänger-Logo und einem Amazon-CTA. Die Aussage gilt auch beim Verschenken. Erfinde keine Spendenbeträge pro Buch, keine Partnerschaft und keine Empfehlung durch den Kinderschutzbund.
+Nutze die zentrale, exakte Zusage aus `buch-config.ts`. Gestalte direkt nach Hook und kurzem Einstieg einen ruhigen, gut lesbaren Spendenhinweis mit der vollständigen Autoren-Zusage und offiziellem Kinderschutzbund-Logo. Baue zusätzlich einen großen Abschnitt „Ein Buch für dich. Ein Beitrag für Kinder.“ mit der vollständigen Zusage, Spendenempfänger-Logo und einem Amazon-CTA. Die Aussage gilt auch beim Verschenken. Erfinde keine Spendenbeträge pro Buch, keine Partnerschaft und keine Empfehlung durch den Kinderschutzbund.
 
 ## Gewinnspiel
 
-Zeige im Einstieg sofort, was man gewinnen kann: fünf Tage Dubai für zwei Personen im Wert von 20.000 € und 100 zusätzliche Wertgutscheine. Übernimm alle Zahlen, Fristen und den Status aus `gewinnspiel-config.ts`. Erkläre früh, dass Bestellung und Registrierung erforderlich sind.
+Platziere nach dem ersten Erzählabschnitt einen kleinen Teaser, bevor weiter unten die ausführlichen Gewinnspielinfos folgen. Der Teaser nennt die Gewinne: fünf Tage Dubai für zwei Personen im Wert von 20.000 € und 100 zusätzliche Wertgutscheine. Übernimm alle Zahlen, Fristen und den Status aus `gewinnspiel-config.ts`. Erkläre bereits im Teaser, dass eine registrierte Buchbestellung erforderlich ist.
 
 Im ausführlichen Abschnitt: Reisebestandteile entsprechend den Teilnahmebedingungen, Gutschein-Staffeln, drei Teilnahmeschritte, Bestell-CTA, Link für bereits Bestellende zu `/gewinn#teilnahme`, Link zu Teilnahmebedingungen. Formuliere eine Gewinnchance, keinen sicheren Gewinn. Sobald die zentrale Phase nicht mehr offen ist, keine Aufforderung zu einer aktuell möglichen Teilnahme ausgeben; stattdessen zum Gewinnspielstatus verweisen.
 
 ## Oberfläche
 
-GMX-Blau und WEB.DE-Gelb sowie automatischer System-Dark-Mode bleiben. Das Logo lokal und unverändert einbinden, mit weißem Hintergrund in beiden Themes. Eine zusammenhängende Geschichte mit kurzen Absätzen, sichtbaren Stationen und klaren Zwischenüberschriften. Die Spenden- und Gewinnflächen müssen deutlich stärker auffallen als gewöhnliche Randnotizen.
+GMX-Blau und WEB.DE-Gelb sowie automatischer System-Dark-Mode bleiben. Das Logo lokal und unverändert einbinden, mit weißem Hintergrund in beiden Themes. Eine zusammenhängende Geschichte mit kurzen Absätzen, sichtbaren Stationen und klaren Zwischenüberschriften. Die Hook hat im Einstieg Vorrang. Der frühe Spendenhinweis unterstützt sie. Der spätere Gewinnspiel-Teaser bleibt dezent; ausführliche Spenden- und Gewinnabschnitte folgen weiter unten.
 
-Mobil keine horizontale Scrollfläche. Die zwei Vorteilskarten und der erste Bestell-Button sollen bereits im Einstieg sichtbar sein. Desktop: Ordnernavigation, Nachricht, Buchkarte. Merken/Teilen, FAQ und Sticky-CTA weiter nutzbar, Bedienflächen mindestens 44 Pixel.
+Mobil keine horizontale Scrollfläche. Der Spendenhinweis und der erste Bestell-Button sollen im Einstieg sichtbar sein. Prüfe, dass der Gewinnspiel-Teaser erst nach der Geschichte erscheint. Desktop: Ordnernavigation, Nachricht, Buchkarte. Merken/Teilen, FAQ und Sticky-CTA weiter nutzbar, Bedienflächen mindestens 44 Pixel.
 
 ## Technisch
 

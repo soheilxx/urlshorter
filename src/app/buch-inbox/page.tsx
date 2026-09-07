@@ -291,32 +291,17 @@ export default async function InboxBookPage({
                 <span>das nicht kannst?</span>
               </h1>
               <p className={styles.lead}>
-                In der Schule abgeschrieben. Später Unternehmer. Dazwischen: Fehler, Rückschläge –
-                und die Entscheidung, trotzdem weiterzumachen.
+                In der Schule abgeschrieben. Bis mir jemand eine Chance gab. Heute erzähle ich, was
+                aus diesem Anfang wurde.
               </p>
 
-              <div className={styles.heroBenefits} aria-label="Was deine Bestellung bewirkt">
-                <a className={styles.charityPreview} href="#kinderschutzbund">
-                  <span className={styles.charityPercent}>100 %</span>
-                  <span className={styles.charityPreviewText}>der Autoren-Einnahmen für den</span>
-                  <CharityLogo compact />
-                </a>
-                <a className={styles.prizePreview} href="#gewinnchance">
-                  <span className={styles.benefitLabel}>
-                    <Gift size={14} aria-hidden="true" />
-                    {sweepstakesOpen ? "GEWINNCHANCE" : "DAS GEWINNSPIEL"}
-                  </span>
-                  <strong>{TRIP_DURATION_LABEL} Dubai</strong>
-                  <span>für 2 Personen</span>
-                  <span>
-                    Reisewert: <b>{PRIZE_VALUE_LABEL}</b>
-                  </span>
-                  <span className={styles.prizeExtra}>
-                    + {SECONDARY_PRIZES_COUNT} Wertgutscheine
-                  </span>
-                  {!sweepstakesOpen && <span>Aktuellen Status ansehen</span>}
-                </a>
-              </div>
+              <a className={styles.charityPreview} id="inbox-charity-note" href="#kinderschutzbund">
+                <CharityLogo compact />
+                <div>
+                  <strong>Lesen und Gutes tun.</strong>
+                  <p>{SPENDEN_HINWEIS}</p>
+                </div>
+              </a>
               <div className={styles.earlyBook}>
                 <Image
                   src="/gewinn/buchcover.jpg"
@@ -335,24 +320,17 @@ export default async function InboxBookPage({
                   <OrderButton id="inbox-first-cta" placement="inbox-hero" />
                 </div>
               </div>
-              {sweepstakesOpen && (
-                <p className={styles.entryNote}>
-                  Für die Gewinnchance: Buch bestellen und die Bestellung bis {ENTRY_DEADLINE_LABEL}{" "}
-                  registrieren. <a href="#gewinnchance">So geht’s</a>
-                </p>
-              )}
-
               <section className={styles.storySection} id="geschichte">
                 <span className={styles.sectionLabel}>HALLO, ICH BIN SOHEIL.</span>
-                <h2>Bevor ich meinen Weg fand, hatten andere schon über mich entschieden.</h2>
+                <h2>Ein anderer Blick kann einen ganzen Lebensweg verändern.</h2>
                 <p>
-                  In der Schule hielt man mich für ein Problemkind. Meiner Mutter wurde wenig
-                  Hoffnung gemacht. Zum Glück gab es auch jemanden, der mir etwas zutraute und mir
-                  mit klaren Regeln eine Chance gab.
+                  Meiner Mutter wurde wenig Hoffnung gemacht. Doch jemand sah mehr in mir als meine
+                  Schwierigkeiten. Mit klaren Regeln und Aufgaben bekam ich die Gelegenheit, es zu
+                  zeigen.
                 </p>
                 <p>
-                  Vielleicht kennst du das: Jemand sieht deine Schwierigkeiten. Du wünschst dir,
-                  dass er auch deine Möglichkeiten sieht.
+                  Vielleicht kennst du diesen Wunsch: dass jemand deine Möglichkeiten sieht. Gerade
+                  dann, wenn du selbst daran zweifelst.
                 </p>
                 <div className={styles.storyMoments}>
                   <div>
@@ -392,6 +370,36 @@ export default async function InboxBookPage({
                   <ArrowDown size={16} aria-hidden="true" />
                 </a>
               </section>
+
+              <aside
+                className={styles.giveawayTeaser}
+                id="inbox-giveaway-teaser"
+                aria-label="Ein Hinweis zum Gewinnspiel"
+              >
+                <Gift size={20} aria-hidden="true" />
+                <div>
+                  <strong>
+                    {sweepstakesOpen
+                      ? "Zum Buch gehört noch eine besondere Chance."
+                      : "Die Dubai-Verlosung zum Buch."}
+                  </strong>
+                  {sweepstakesOpen ? (
+                    <p>
+                      Mit deiner registrierten Buchbestellung kannst du {TRIP_DURATION_LABEL} Dubai
+                      für zwei im Wert von {PRIZE_VALUE_LABEL} oder einen von{" "}
+                      {SECONDARY_PRIZES_COUNT} Wertgutscheinen gewinnen.
+                    </p>
+                  ) : (
+                    <p>
+                      Die Registrierung ist aktuell nicht geöffnet. Den aktuellen Stand findest du
+                      in den Gewinnspiel-Details.
+                    </p>
+                  )}
+                  <a href="#gewinnchance">
+                    Mehr zur Gewinnchance <ArrowDown size={14} aria-hidden="true" />
+                  </a>
+                </div>
+              </aside>
 
               <section className={styles.reasons} id="lesegruende">
                 <span className={styles.sectionLabel}>FÜR DEINEN NÄCHSTEN LESEABEND</span>

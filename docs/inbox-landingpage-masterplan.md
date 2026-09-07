@@ -4,7 +4,7 @@ Aktueller Stand: 7. September 2026. Dieser Plan ersetzt die Erstfassung vom 6. S
 
 ## Ziel und psychologische Gestaltung
 
-Drei eigenständige Bestellmotive früh sichtbar machen: eine persönliche Lebensgeschichte lesen, mit der Autoren-Spende den Kinderschutzbund unterstützen und nach registrierter Buchbestellung am Gewinnspiel teilnehmen. Eine verständliche Entscheidung ermöglichen, ohne dem Leser Business-Interesse vorauszusetzen.
+Die Aufmerksamkeit mit Hook und Geschichte gewinnen. Die Spende früh sichtbar machen und die Gewinnchance erst im weiteren Lesefluss als kleinen Teaser einführen. Drei eigenständige Bestellmotive tragen die Seite: eine persönliche Lebensgeschichte lesen, mit der Autoren-Spende den Kinderschutzbund unterstützen und nach registrierter Buchbestellung am Gewinnspiel teilnehmen. Eine verständliche Entscheidung ermöglichen, ohne dem Leser Business-Interesse vorauszusetzen.
 
 Die neue Hook „Wer sagt, dass du das nicht kannst?“ eröffnet ein breites Thema: unterschätzt werden und den eigenen Weg finden. Der kurze Einstieg nennt den biografischen Zusammenhang. Die anschließende Nachricht erzählt konkrete Situationen, damit sich der Leser auf einen Menschen einlassen kann. Microsoft ist ein Abschnitt des Lebenswegs. Die drei Lesegründe sprechen Veränderung und Selbstzweifel, Freude an wahren Geschichten sowie ein Geschenk mit Bedeutung an.
 
@@ -23,17 +23,17 @@ Die erwartete Wirkung ist eine Gestaltungshypothese. Ob die Seite mehr Amazon-Kl
 
 1. Eigene Marke Lesepost, erkennbarer Autor und Werbekennzeichnung im Postfach-Layout.
 2. Breite Hook und kurzer biografischer Einstieg.
-3. Zwei sofort sichtbare Karten: 100 % Autoren-Einnahmen mit Kinderschutzbund-Logo; Gewinnchance mit fünf Tagen Dubai für zwei, 20.000 € Reisewert und 100 zusätzlichen Wertgutscheinen.
-4. Kompakte Buchkarte, 18 €, erster Amazon-CTA, kurzer Hinweis auf notwendige Gewinnspielregistrierung.
+3. Ein ruhiger, gut sichtbarer Hinweis direkt nach dem Einstieg: exakte Zusage der gesamten Autoren-Einnahmen und Kinderschutzbund-Logo.
+4. Kompakte Buchkarte, 18 € und erster Amazon-CTA.
 5. Zusammenhängende Geschichte mit konkreten Stationen: Schule, erste Versuche, Rückschlag, Microsoft-Konflikt mit 20 und Bogen zum gesamten Lebensweg.
-6. Drei Lesegründe aus Sicht des Lesers: neuer Mut, Mitfühlen beim Lesen, Geschenk mit Bedeutung.
+6. Kleiner Gewinnspiel-Teaser nach der Geschichte, vor den Lesegründen: fünf Tage Dubai für zwei, 20.000 € Reisewert und 100 Wertgutscheine. Registrierung als Voraussetzung nennen; Link führt zu den späteren Details. Danach drei Lesegründe aus Sicht des Lesers: neuer Mut, Mitfühlen beim Lesen, Geschenk mit Bedeutung.
 7. Große Spendenfläche: 100 %, exakte Zusage, gut lesbares offizielles Logo, eigenes Bestellangebot.
 8. Gewinnspiel mit Dubai-Skyline, Reisebestandteilen, Gutschein-Staffeln, drei Teilnahmeschritten und Links zu Registrierung/Teilnahmebedingungen. Automatisch auf den zentralen Gewinnspielstatus reagieren.
 9. Buchdetails, Autor, persönliche Einladung, FAQ und Abschlussangebot mit allen relevanten Motiven.
 
 ## Gestaltung
 
-Bestehendes Postfach-Muster beibehalten: links Ordner, rechts Buchkarte, mittig gut lesbare Nachricht. Mobil kompakter Kopf und einspaltiger Inhalt. Beide Vorteile nebeneinander auch auf kleinen Handys; Bestell-Button früh sichtbar. Textabsätze, markierte Geschichtenstationen und eigenständige Spenden-/Gewinnflächen geben der Seite Rhythmus.
+Bestehendes Postfach-Muster beibehalten: links Ordner, rechts Buchkarte, mittig gut lesbare Nachricht. Mobil kompakter Kopf und einspaltiger Inhalt. Hook und Geschichte führen. Der Spendenhinweis steht früh; der Gewinnspiel-Teaser folgt nach dem ersten Erzählabschnitt. Bestell-Button früh sichtbar. Textabsätze, markierte Geschichtenstationen und eigenständige Spenden-/Gewinnflächen geben der Seite Rhythmus.
 
 GMX-orientierte blaue und WEB.DE-orientierte gelbe Variante, beide mit System-Dark-Mode unabhängig vom Admin-Cookie. Das Kinderschutzbund-Logo bleibt unverändert auf weißem Grund, auch im Dark-Mode. Keine externe Logo-Anfrage beim Besucher.
 
@@ -52,4 +52,4 @@ Anzeigen-Starttexte: Absender „Soheil Hosseini“, Betreff „Unterschätzt. W
 
 ## Prüfung
 
-Build und Typen/Lint. Bestehende Browsermatrix für 320/390/768/1440 Pixel, GMX/WEB.DE, Light/Dark: früh sichtbare Vorteilskarten und erster CTA, kein horizontaler Überlauf, geladenes Logo und Cover. Registrierung und Teilnahmebedingungen erreichbar, keine falschen Amazon-Conversions durch interne Links. Alle sieben Amazon-Platzierungen einschließlich mobiler Leiste prüfen. Screenshots visuell beurteilen. Nach Deployment Live-Inhalte und beide Varianten prüfen.
+Build und Typen/Lint. Bestehende Browsermatrix für 320/390/768/1440 Pixel, GMX/WEB.DE, Light/Dark: früh sichtbarer Spendenhinweis und erster CTA; Gewinnspiel-Teaser erst nach der Geschichte, vor den ausführlichen Gewinnspielinfos, kein horizontaler Überlauf, geladenes Logo und Cover. Registrierung und Teilnahmebedingungen erreichbar, keine falschen Amazon-Conversions durch interne Links. Alle sieben Amazon-Platzierungen einschließlich mobiler Leiste prüfen. Screenshots visuell beurteilen. Nach Deployment Live-Inhalte und beide Varianten prüfen.

@@ -51,18 +51,22 @@ for (const width of [320, 390, 768, 1440])
           theme === "dark" ? "rgb(17, 24, 33)" : "rgb(240, 243, 247)",
         );
         await expect(page.locator("h1")).toContainText("Wer sagt, dass du");
-        await expect(page.locator('[aria-label="Was deine Bestellung bewirkt"]')).toBeInViewport({
+        await expect(page.locator("#inbox-charity-note")).toBeInViewport({
           ratio: 1,
         });
-        await expect(page.locator('[aria-label="Was deine Bestellung bewirkt"]')).toContainText(
-          "100 %",
+        await expect(page.locator("#inbox-charity-note")).toContainText(
+          "Die gesamten Einnahmen des Autors aus diesem Buch fließen an den Kinderschutzbund.",
         );
-        await expect(page.locator('[aria-label="Was deine Bestellung bewirkt"]')).toContainText(
-          "5 Tage Dubai",
+        await expect(page.locator("#inbox-giveaway-teaser")).not.toBeInViewport();
+        await expect(page.locator("#inbox-giveaway-teaser")).toContainText("5 Tage Dubai");
+        await expect(page.locator("#inbox-giveaway-teaser")).toContainText("20.000 €");
+        const order = await page.evaluate(() =>
+          ["geschichte", "inbox-giveaway-teaser", "gewinnchance"].map(
+            (id) => document.getElementById(id)!.getBoundingClientRect().top,
+          ),
         );
-        await expect(page.locator('[aria-label="Was deine Bestellung bewirkt"]')).toContainText(
-          "20.000 €",
-        );
+        expect(order[0]).toBeLessThan(order[1]);
+        expect(order[1]).toBeLessThan(order[2]);
         await page.screenshot({ path: info.outputPath(`inbox-${width}-${portal}-${theme}.png`) });
         await expect(page.locator("#inbox-first-cta")).toBeInViewport({ ratio: 1 });
         const metrics = await page.evaluate(() => ({
@@ -130,7 +134,7 @@ test("Merken, Sharing-Fallback und FAQ; ATC nur durch echte Amazon-Klicks", asyn
     "https://lizenzzumerfolg.com/buch-inbox?portal=webde",
   );
   await page.getByText("Geht es in dem Buch nur um Microsoft?", { exact: true }).click();
-  await page.locator('[aria-label="Was deine Bestellung bewirkt"] a[href="#gewinnchance"]').click();
+  await page.locator('#inbox-giveaway-teaser a[href="#gewinnchance"]').click();
   await expect(page.locator("#gewinnchance")).toContainText("10 × 500 € · 40 × 150 € · 50 × 50 €");
   await expect(page.locator("#gewinnchance")).toContainText("11.10.2026, 23:59 Uhr");
   await expect(page.locator("#gewinnchance")).toContainText("Emirates Business Class");
