@@ -575,7 +575,7 @@ export default async function InboxBookPage({
                   <span className={styles.sectionLabel}>DER ABSENDER DIESER GESCHICHTE</span>
                   <h2>{BUCH_AUTOR}</h2>
                   <p>
-                    Mit sechs Jahren aus dem Iran nach Deutschland gekommen, von seiner Mutter
+                    Mit vier Jahren aus dem Iran nach Deutschland gekommen, von seiner Mutter
                     allein großgezogen. Später Gründer von Unternehmen in mehreren Branchen. In
                     diesem Buch erzählt Soheil seinen persönlichen Weg.
                   </p>

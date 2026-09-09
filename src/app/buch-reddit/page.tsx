@@ -311,7 +311,7 @@ export default async function RedditBookPage() {
                   gab es einen Neuanfang.
                 </h2>
                 <p>
-                  Seine Kindheit beginnt im Iran. Mit sechs Jahren kommt Soheil nach Deutschland.
+                  Seine Kindheit beginnt im Iran. Mit vier Jahren kommt Soheil nach Deutschland.
                   Seine Mutter zieht ihn unter schwierigen Bedingungen allein groß. Hier beginnt der
                   Weg, der ihn später zum Unternehmer macht.
                 </p>
