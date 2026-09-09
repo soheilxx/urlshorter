@@ -211,6 +211,12 @@ try {
       const cta = page.locator(`${target.selector}:visible`).first();
       await cta.waitFor({ state: "visible", timeout: 10_000 });
       result.clickedDestination = withoutQuery(await cta.evaluate((link) => link.href));
+      // Keep the document/queues available when the CTA is a same-tab /go link.
+      // The real click reaches document-capture tracking first; route guards also
+      // independently block every retailer and shortlink navigation request.
+      await cta.evaluate((link) =>
+        link.addEventListener("click", (event) => event.preventDefault(), { once: true }),
+      );
       await cta.click();
       await waitUntil(
         () => primaryEvents().some((event) => event.type === "AddToCart"),
