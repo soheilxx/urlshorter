@@ -1,5 +1,6 @@
 import "server-only";
 import { logger } from "@/lib/logger";
+import { capiTestEventCode } from "@/lib/meta-capi";
 
 /**
  * TikTok Events API (serverseitiges Event-Tracking).
@@ -35,7 +36,8 @@ export interface TikTokEventsInput {
   ttclid: string | null;
   /** Wert des _ttp-Cookies, falls vorhanden. */
   ttp: string | null;
-  properties: Record<string, string>;
+  eventName?: "AddToCart" | "ClickButton";
+  properties: Record<string, unknown>;
 }
 
 function clip(value: string | null | undefined): string | null {
@@ -53,7 +55,7 @@ export interface TikTokEventsPayload {
     event_id: string;
     user: Record<string, string>;
     page: { url: string };
-    properties?: Record<string, string>;
+    properties?: Record<string, unknown>;
   }>;
   test_event_code?: string;
 }
@@ -75,7 +77,7 @@ export function buildTikTokEventsPayload(input: TikTokEventsInput): TikTokEvents
     event_source_id: input.pixelId,
     data: [
       {
-        event: "ClickButton",
+        event: input.eventName ?? "ClickButton",
         event_time: Math.floor(input.eventTimeMs / 1000),
         event_id: input.eventId,
         user,
@@ -84,7 +86,7 @@ export function buildTikTokEventsPayload(input: TikTokEventsInput): TikTokEvents
       },
     ],
   };
-  const testEventCode = clip(input.testEventCode);
+  const testEventCode = capiTestEventCode(input.testEventCode);
   if (testEventCode) payload.test_event_code = testEventCode;
   return payload;
 }
@@ -96,9 +98,9 @@ export function buildTikTokEventsPayload(input: TikTokEventsInput): TikTokEvents
 export async function sendTikTokEvents(input: TikTokEventsInput): Promise<void> {
   const payload = buildTikTokEventsPayload(input);
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     const response = await fetch(TIKTOK_EVENTS_URL, {
       method: "POST",
       headers: {
@@ -108,8 +110,6 @@ export async function sendTikTokEvents(input: TikTokEventsInput): Promise<void> 
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
-    clearTimeout(timeout);
-
     const bodyText = await response.text().catch(() => "");
     let apiCode: number | null = null;
     try {
@@ -118,12 +118,11 @@ export async function sendTikTokEvents(input: TikTokEventsInput): Promise<void> 
       // Antwort war kein JSON – Status entscheidet
     }
 
-    if (!response.ok || (apiCode !== null && apiCode !== 0)) {
+    if (!response.ok || apiCode !== 0) {
       logger.error("tiktok_events.send_failed", {
         eventId: input.eventId,
         status: response.status,
         apiCode,
-        body: bodyText.slice(0, 300),
       });
       return;
     }
@@ -133,5 +132,7 @@ export async function sendTikTokEvents(input: TikTokEventsInput): Promise<void> 
       eventId: input.eventId,
       message: error instanceof Error ? error.message : "unknown",
     });
+  } finally {
+    clearTimeout(timeout);
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { isBookPurchaseUrl } from "@/lib/book-conversion-events";
 import { REDDIT_IDENTIFIER_PATTERN, type RedditTrackingConfig } from "@/lib/reddit-events";
 
 type RedditFunction = ((...args: unknown[]) => void) & {
@@ -65,7 +66,7 @@ export function RedditTracking({
     }
     if (clickId && !REDDIT_IDENTIFIER_PATTERN.test(clickId)) clickId = undefined;
 
-    function track(type: "PageVisit" | "AddToCart", ctaId?: string) {
+    function track(type: "PageVisit" | "AddToCart", ctaId?: string, destination?: string) {
       const id = crypto.randomUUID();
       try {
         w.rdt?.("track", type, { conversionId: id });
@@ -87,12 +88,18 @@ export function RedditTracking({
           clickId,
           uuid: cookie("_rdt_uuid"),
           utm,
-          ...(type === "AddToCart" ? { destination: config.amazonUrl, ctaId } : {}),
+          ...(type === "AddToCart" ? { destination, ctaId } : {}),
         });
-        const queued = navigator.sendBeacon?.(
-          "/api/reddit/events",
-          new Blob([body], { type: "text/plain" }),
-        );
+        let queued = false;
+        try {
+          queued =
+            navigator.sendBeacon?.(
+              "/api/reddit/events",
+              new Blob([body], { type: "text/plain" }),
+            ) ?? false;
+        } catch {
+          /* Manche Browser/Blocker werfen statt false zurückzugeben. */
+        }
         if (!queued) {
           void fetch("/api/reddit/events", {
             method: "POST",
@@ -114,14 +121,16 @@ export function RedditTracking({
       if (!event.isTrusted || (event.type === "click" ? event.button !== 0 : event.button !== 1))
         return;
       const target = event.target instanceof Element ? event.target : null;
-      const link = target?.closest<HTMLAnchorElement>(
-        'a[data-gw-event="buch_amazon_klick"],a[data-gw-event="gewinnspiel_amazon_klick"],a[data-reddit-event="amazon"]',
-      );
-      if (!link || link.href !== new URL(config.amazonUrl, location.origin).href) return;
+      const link = target?.closest<HTMLAnchorElement>("a[href]");
+      if (!link || !isBookPurchaseUrl(link.href)) return;
       const now = Date.now();
       if (now - lastClick.current < 600) return;
       lastClick.current = now;
-      track("AddToCart", link.dataset.ctaId?.slice(0, 64) ?? link.dataset.gwEvent ?? "amazon");
+      track(
+        "AddToCart",
+        link.dataset.ctaId?.slice(0, 64) ?? link.dataset.gwEvent ?? "amazon",
+        link.href,
+      );
     }
     pageView();
     document.addEventListener("visibilitychange", pageView);

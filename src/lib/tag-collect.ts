@@ -26,6 +26,19 @@ const vendorId = z
 
 const utmValue = z.string().trim().min(1).max(120).optional();
 
+// Nur öffentliche Produktdaten weiterreichen; keine beliebigen Event-Parameter
+// (etwa Formulareingaben oder personenbezogene Inhalte) an Werbeplattformen.
+const productParams = z.object({
+  content_name: z.string().trim().max(200).optional(),
+  content_ids: z.array(z.string().trim().min(1).max(100)).max(20).optional(),
+  content_type: z.enum(["product", "product_group"]).optional(),
+  value: z.number().finite().nonnegative().max(1_000_000).optional(),
+  currency: z
+    .string()
+    .regex(/^[A-Z]{3}$/)
+    .optional(),
+});
+
 const payloadSchema = z.object({
   site: z.string().min(1).max(50),
   id: z.string().uuid(),
@@ -41,6 +54,7 @@ const payloadSchema = z.object({
   fbc: vendorId,
   ttp: vendorId,
   ttclid: vendorId,
+  params: productParams.optional(),
   utm: z
     .object({
       source: utmValue,
@@ -66,6 +80,7 @@ export interface TagCollectData {
   fbc: string | null;
   ttp: string | null;
   ttclid: string | null;
+  productParams: z.infer<typeof productParams> | undefined;
   utm: {
     source: string | null;
     medium: string | null;
@@ -75,9 +90,7 @@ export interface TagCollectData {
   };
 }
 
-export type TagCollectResult =
-  | { ok: true; data: TagCollectData }
-  | { ok: false; reason: string };
+export type TagCollectResult = { ok: true; data: TagCollectData } | { ok: false; reason: string };
 
 /** Nur die Site-ID aus einer rohen Payload lesen (vor der Site-Auflösung). */
 export function extractSiteId(raw: unknown): string | null {
@@ -122,6 +135,7 @@ export function parseTagCollectPayload(raw: unknown, site: CollectSite): TagColl
       fbc: input.fbc ?? null,
       ttp: input.ttp ?? null,
       ttclid: input.ttclid ?? null,
+      productParams: input.params,
       utm: {
         source: input.utm?.source ?? null,
         medium: input.utm?.medium ?? null,
@@ -137,7 +151,11 @@ export function parseTagCollectPayload(raw: unknown, site: CollectSite): TagColl
 export function originAllowed(site: CollectSite, originHeader: string | null): boolean {
   if (!originHeader) return true; // ältere Browser/sendBeacon-Sonderfälle
   try {
-    return domainsAllowHostname(site.domains, new URL(originHeader).hostname);
+    const origin = new URL(originHeader);
+    return (
+      (origin.protocol === "http:" || origin.protocol === "https:") &&
+      domainsAllowHostname(site.domains, origin.hostname)
+    );
   } catch {
     return false;
   }

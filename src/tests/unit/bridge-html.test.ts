@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { runInNewContext } from "node:vm";
 import {
   buildBridgeCsp,
   destinationLabel,
@@ -55,6 +56,48 @@ describe("destinationLabel", () => {
 });
 
 describe("renderBridgePage", () => {
+  it("emits standard book conversion events with one shared ID across browser providers", () => {
+    const html = renderBridgePage(baseOptions({ destinationUrl: "https://link.amazon/B0eyhvaQw" }));
+    const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+    const fbq = vi.fn();
+    const rdt = vi.fn();
+    const context = {
+      fbq,
+      rdt,
+      dataLayer: [],
+      navigator: { sendBeacon: vi.fn(() => true) },
+      Blob,
+      setTimeout: vi.fn(),
+      location: { replace: vi.fn() },
+      document: {
+        createElement: () => ({}),
+        head: { appendChild: vi.fn() },
+        getElementsByTagName: () => [{ parentNode: { insertBefore: vi.fn() } }],
+        getElementById: () => ({ addEventListener: vi.fn() }),
+      },
+    };
+    runInNewContext(script!, { ...context, window: context });
+    expect(fbq).toHaveBeenCalledWith(
+      "trackSingle",
+      baseOptions().tracking.metaPixelId,
+      "AddToCart",
+      expect.objectContaining({
+        content_ids: ["9783690662505"],
+        value: 18,
+        currency: "EUR",
+      }),
+      { eventID: baseOptions().eventParams.event_id },
+    );
+    expect(fbq.mock.calls.filter((call) => call.includes("AmazonOutboundClick"))).toHaveLength(0);
+    expect(rdt).toHaveBeenCalledWith(
+      "track",
+      "AddToCart",
+      expect.objectContaining({ conversionId: baseOptions().eventParams.event_id }),
+    );
+    expect(context.dataLayer).toContainEqual(
+      expect.objectContaining({ event: "add_to_cart", currency: "EUR", value: 18 }),
+    );
+  });
   it("enthält Hinweistext, Button, Spinner und noscript-Fallback (Amazon-Ziel)", () => {
     const html = renderBridgePage(baseOptions());
     expect(html).toContain("Du wirst zu Amazon weitergeleitet");

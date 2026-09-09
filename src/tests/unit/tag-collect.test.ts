@@ -91,6 +91,40 @@ describe("parseTagCollectPayload", () => {
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.data.eventName).toBe("buch_kauf");
   });
+
+  it("übernimmt ausschließlich erlaubte Produktdaten für CAPI", () => {
+    const result = parseTagCollectPayload(
+      validPayload({
+        name: "add_to_cart",
+        params: {
+          content_ids: ["9783690662505"],
+          content_name: "Die Lizenz zum Erfolg",
+          content_type: "product",
+          currency: "EUR",
+          value: 18,
+          email: "private@example.org",
+          arbitrary: "not forwarded",
+        },
+      }),
+      SITE,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok)
+      expect(result.data.productParams).toEqual({
+        content_ids: ["9783690662505"],
+        content_name: "Die Lizenz zum Erfolg",
+        content_type: "product",
+        currency: "EUR",
+        value: 18,
+      });
+  });
+
+  it("verwirft ungültige Produktwerte", () => {
+    expect(parseTagCollectPayload(validPayload({ params: { value: -18 } }), SITE).ok).toBe(false);
+    expect(parseTagCollectPayload(validPayload({ params: { currency: "euro" } }), SITE).ok).toBe(
+      false,
+    );
+  });
 });
 
 describe("originAllowed", () => {
@@ -102,5 +136,6 @@ describe("originAllowed", () => {
   it("lehnt fremde Origins ab", () => {
     expect(originAllowed(SITE, "https://evil.example.com")).toBe(false);
     expect(originAllowed(SITE, "kein-origin")).toBe(false);
+    expect(originAllowed(SITE, "ftp://soheil-hosseini.de")).toBe(false);
   });
 });

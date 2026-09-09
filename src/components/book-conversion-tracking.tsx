@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import {
   BOOK_IDENTIFIER_PATTERN,
   BOOK_PRODUCT,
+  isBookPurchaseUrl,
   type BookConversionConfig,
   type BookConversionType,
 } from "@/lib/book-conversion-events";
@@ -53,6 +54,7 @@ type TrackingWindow = Window & {
   dataLayer?: unknown[];
   __lzeMetaPixels?: Set<string>;
   __lzeTikTokPixels?: Set<string>;
+  __lzeBookTrackingPath?: string;
 };
 
 function cookie(name: string): string | undefined {
@@ -166,8 +168,15 @@ const CONTENTS = {
   value: BOOK_PRODUCT.value,
   currency: BOOK_PRODUCT.currency,
 };
-const AMAZON_CTA_SELECTOR =
-  'a[data-gw-event="buch_amazon_klick"],a[data-gw-event="gewinnspiel_amazon_klick"],a[data-reddit-event="amazon"]';
+
+/** Jeder Anbieter bleibt unabhängig von einem blockierten oder fehlerhaften Pixel. */
+function attempt(send: () => void) {
+  try {
+    send();
+  } catch {
+    /* Tracking darf andere Anbieter und die Navigation nicht unterbrechen. */
+  }
+}
 
 export function BookConversionTracking({ config }: { config: BookConversionConfig }) {
   const pageSent = useRef(false);
@@ -175,7 +184,8 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
 
   useEffect(() => {
     const w = window as TrackingWindow;
-    if (location.pathname !== config.path) return;
+    if (config.enabled === false || location.pathname !== config.path) return;
+    w.__lzeBookTrackingPath = config.path;
     if (config.metaPixelId) bootstrapMeta(w, config.metaPixelId);
     if (config.tiktokPixelId) bootstrapTikTok(w, config.tiktokPixelId);
 
@@ -186,7 +196,7 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
         .filter(([, value]) => value),
     );
 
-    function send(type: BookConversionType, id: string, ctaId?: string) {
+    function send(type: BookConversionType, id: string, ctaId?: string, destination?: string) {
       try {
         const body = JSON.stringify({
           id,
@@ -201,12 +211,14 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
           ttclid: identifier(query.get("ttclid")),
           liFatId: identifier(query.get("li_fat_id") ?? cookie("li_fat_id")),
           utm,
-          ...(type === "AddToCart" ? { destination: config.amazonUrl, ctaId } : {}),
+          ...(type === "AddToCart" ? { destination, ctaId } : {}),
         });
-        const queued = navigator.sendBeacon?.(
-          "/api/book/events",
-          new Blob([body], { type: "text/plain" }),
-        );
+        let queued = false;
+        attempt(() => {
+          queued =
+            navigator.sendBeacon?.("/api/book/events", new Blob([body], { type: "text/plain" })) ??
+            false;
+        });
         if (!queued) {
           void fetch("/api/book/events", {
             method: "POST",
@@ -224,19 +236,23 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
       if (document.visibilityState !== "visible" || pageSent.current) return;
       pageSent.current = true;
       const id = crypto.randomUUID();
-      try {
-        if (config.metaPixelId) w.fbq?.("track", "PageView", {}, { eventID: id });
+      attempt(() => {
+        if (config.metaPixelId)
+          w.fbq?.("trackSingle", config.metaPixelId, "PageView", {}, { eventID: id });
+      });
+      attempt(() => {
         if (config.tiktokPixelId) w.ttq?.page?.();
-      } catch {
-        /* CAPI bleibt unabhängig. */
-      }
+      });
       send("PageView", id);
     }
 
-    function addToCart(ctaId: string) {
+    function addToCart(ctaId: string, destination: string) {
       const id = crypto.randomUUID();
-      try {
-        if (config.metaPixelId) w.fbq?.("track", "AddToCart", CONTENTS, { eventID: id });
+      attempt(() => {
+        if (config.metaPixelId)
+          w.fbq?.("trackSingle", config.metaPixelId, "AddToCart", CONTENTS, { eventID: id });
+      });
+      attempt(() => {
         if (config.tiktokPixelId) {
           w.ttq?.track?.(
             "AddToCart",
@@ -254,9 +270,13 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
             { event_id: id },
           );
         }
+      });
+      attempt(() => {
         if (config.linkedInConversionId) {
-          w.lintrk?.("track", { conversion_id: Number(config.linkedInConversionId) });
+          w.lintrk?.("track", { conversion_id: Number(config.linkedInConversionId), event_id: id });
         }
+      });
+      attempt(() => {
         const ga4 = {
           currency: BOOK_PRODUCT.currency,
           value: BOOK_PRODUCT.value,
@@ -271,22 +291,20 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
         };
         if (w.gtag) w.gtag("event", "add_to_cart", ga4);
         else (w.dataLayer ??= []).push({ event: "add_to_cart", ecommerce: ga4 });
-      } catch {
-        /* siehe oben */
-      }
-      send("AddToCart", id, ctaId);
+      });
+      send("AddToCart", id, ctaId, destination);
     }
 
     function click(event: MouseEvent) {
       if (!event.isTrusted || (event.type === "click" ? event.button !== 0 : event.button !== 1))
         return;
       const target = event.target instanceof Element ? event.target : null;
-      const link = target?.closest<HTMLAnchorElement>(AMAZON_CTA_SELECTOR);
-      if (!link || link.href !== new URL(config.amazonUrl, location.origin).href) return;
+      const link = target?.closest<HTMLAnchorElement>("a[href]");
+      if (!link || !isBookPurchaseUrl(link.href)) return;
       const now = Date.now();
       if (now - lastClick.current < 600) return;
       lastClick.current = now;
-      addToCart(link.dataset.ctaId?.slice(0, 64) ?? link.dataset.gwEvent ?? "amazon");
+      addToCart(link.dataset.ctaId?.slice(0, 64) ?? link.dataset.gwEvent ?? "amazon", link.href);
     }
 
     pageView();
@@ -294,6 +312,7 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
     document.addEventListener("click", click, true);
     document.addEventListener("auxclick", click, true);
     return () => {
+      if (w.__lzeBookTrackingPath === config.path) delete w.__lzeBookTrackingPath;
       document.removeEventListener("visibilitychange", pageView);
       document.removeEventListener("click", click, true);
       document.removeEventListener("auxclick", click, true);

@@ -44,6 +44,7 @@ export interface GewinnTrackingConfig {
 }
 
 function hasMarketingConsent(config: GewinnTrackingConfig): boolean {
+  if (config.bookConversion?.enabled === false) return false;
   if (config.consentMode === "not-required") return true;
   if (!config.consentCookieName || !config.consentAcceptedValue) return false;
   return document.cookie.split(";").some((part) => {
@@ -57,6 +58,9 @@ function hasMarketingConsent(config: GewinnTrackingConfig): boolean {
 
 export function GewinnTracking(config: GewinnTrackingConfig) {
   const [allowed, setAllowed] = useState(false);
+  const gtmContainerId = config.bookConversion?.gtmContainerId ?? config.gtmContainerId;
+  const ga4MeasurementId = config.bookConversion?.ga4MeasurementId ?? config.ga4MeasurementId;
+  const linkedInPartnerId = config.bookConversion?.linkedInPartnerId ?? config.linkedInPartnerId;
 
   useEffect(() => {
     setAllowed(hasMarketingConsent(config));
@@ -78,13 +82,13 @@ export function GewinnTracking(config: GewinnTrackingConfig) {
   }, [allowed]);
 
   const anyConfigured = Boolean(
-    config.gtmContainerId ||
-      config.ga4MeasurementId ||
-      config.metaPixelId ||
-      config.tiktokPixelId ||
-      config.redditPixelId ||
-      config.linkedInPartnerId ||
-      config.bookConversion,
+    gtmContainerId ||
+    ga4MeasurementId ||
+    config.metaPixelId ||
+    config.tiktokPixelId ||
+    config.redditPixelId ||
+    linkedInPartnerId ||
+    config.bookConversion,
   );
   if (!allowed || !anyConfigured) return null;
 
@@ -98,23 +102,23 @@ gtag('consent', 'default', {ad_storage:'granted', ad_user_data:'granted', ad_per
 dataLayer.push({event:'${config.pageEventName ?? "gewinnspiel_seite"}'});`}
       </Script>
 
-      {config.gtmContainerId ? (
+      {gtmContainerId ? (
         <Script id="gw-gtm" strategy="afterInteractive">
-          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${config.gtmContainerId}');`}
+          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmContainerId}');`}
         </Script>
       ) : null}
 
-      {!config.gtmContainerId && config.ga4MeasurementId ? (
+      {!gtmContainerId && ga4MeasurementId ? (
         <>
           <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${config.ga4MeasurementId}`}
+            src={`https://www.googletagmanager.com/gtag/js?id=${ga4MeasurementId}`}
             strategy="afterInteractive"
           />
           <Script id="gw-ga4" strategy="afterInteractive">
             {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
-gtag('config', '${config.ga4MeasurementId}');`}
+gtag('config', '${ga4MeasurementId}');`}
           </Script>
         </>
       ) : null}
@@ -148,9 +152,9 @@ rdt('track', 'PageVisit');`}
         </Script>
       ) : null}
 
-      {config.linkedInPartnerId ? (
+      {linkedInPartnerId ? (
         <Script id="gw-linkedin" strategy="afterInteractive">
-          {`window._linkedin_partner_id = '${config.linkedInPartnerId}';
+          {`window._linkedin_partner_id = '${linkedInPartnerId}';
 window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];
 window._linkedin_data_partner_ids.push(window._linkedin_partner_id);
 (function(l){if(!l){window.lintrk=function(a,b){window.lintrk.q.push([a,b])};window.lintrk.q=[]}var s=document.getElementsByTagName("script")[0];var b=document.createElement("script");b.type="text/javascript";b.async=true;b.src="https://snap.licdn.com/li.lms-analytics/insight.min.js";s.parentNode.insertBefore(b,s)})(window.lintrk);`}

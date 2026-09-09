@@ -26,7 +26,7 @@ const HERO_CTA = 'a[data-gw-event="gewinnspiel_amazon_klick"][data-cta-id="hero_
 
 async function capture(page: Page) {
   const events: CollectedEvent[] = [];
-  const reddit: unknown[] = [];
+  const reddit: CollectedEvent[] = [];
   await page.context().route("**/*", async (route) => {
     const url = new URL(route.request().url());
     if (url.origin !== ORIGIN) return route.abort();
@@ -37,6 +37,9 @@ async function capture(page: Page) {
     if (url.pathname === "/api/reddit/events") {
       reddit.push(JSON.parse(route.request().postData() ?? "{}"));
       return route.fulfill({ status: 204 });
+    }
+    if (url.pathname === "/api/reddit/book-vote") {
+      return route.fulfill({ json: { score: 8426, readers: 234, vote: 0 } });
     }
     return route.continue();
   });
@@ -74,8 +77,8 @@ test("/gewinn: PageView trägt dieselbe eventID in Meta-Pixel und CAPI; Meta-Pix
   expect(JSON.stringify(events)).not.toContain("never-send");
   const state = await pixelState(page);
   expect(state.fbq.filter((e) => e[0] === "init")).toEqual([["init", "123456789012345"]]);
-  expect(state.fbq.filter((e) => e[0] === "track")).toEqual([
-    ["track", "PageView", {}, { eventID: events[0]!.id }],
+  expect(state.fbq.filter((e) => e[0] === "trackSingle")).toEqual([
+    ["trackSingle", "123456789012345", "PageView", {}, { eventID: events[0]!.id }],
   ]);
   expect(state.ttq.filter((e) => e[0] === "page")).toHaveLength(1);
   // Reddit läuft parallel weiter (eigener Empfänger)
@@ -104,16 +107,20 @@ test("/gewinn: Amazon-CTA im Hero löst genau ein AddToCart in Pixel, CAPI, TikT
   });
   expect(events[1]!.id).not.toBe(events[0]!.id);
   const state = await pixelState(page);
-  const atc = state.fbq.filter((e) => e[0] === "track" && e[1] === "AddToCart");
+  const atc = state.fbq.filter((e) => e[0] === "trackSingle" && e[2] === "AddToCart");
   expect(atc).toHaveLength(1);
-  expect(atc[0]![2]).toMatchObject({ content_ids: ["9783690662505"], value: 18, currency: "EUR" });
-  expect(atc[0]![3]).toEqual({ eventID: events[1]!.id });
+  expect(atc[0]![1]).toBe("123456789012345");
+  expect(atc[0]![3]).toMatchObject({ content_ids: ["9783690662505"], value: 18, currency: "EUR" });
+  expect(atc[0]![4]).toEqual({ eventID: events[1]!.id });
   // Kein zusätzliches Custom-Event für den Amazon-Klick bei Meta
   expect(state.fbq.some((e) => e[0] === "trackCustom")).toBe(false);
   const tiktokAtc = state.ttq.filter((e) => e[0] === "track" && e[1] === "AddToCart");
   expect(tiktokAtc).toHaveLength(1);
   expect(tiktokAtc[0]![3]).toEqual({ event_id: events[1]!.id });
-  expect(state.lintrk).toContainEqual(["track", { conversion_id: 987654 }]);
+  expect(state.lintrk).toContainEqual([
+    "track",
+    { conversion_id: 987654, event_id: events[1]!.id },
+  ]);
   expect(state.dataLayer).toContain("add_to_cart");
   await popup.close();
 });
@@ -129,26 +136,33 @@ test("Doppelklick wird entprellt; synthetische Klicks zählen nicht", async ({ p
   await page.locator(HERO_CTA).dblclick();
   await expect.poll(() => events.length).toBe(2);
   const state = await pixelState(page);
-  expect(state.fbq.filter((e) => e[0] === "track" && e[1] === "AddToCart")).toHaveLength(1);
+  expect(state.fbq.filter((e) => e[0] === "trackSingle" && e[2] === "AddToCart")).toHaveLength(1);
 });
 
 // /gutschein benötigt die Datenbank (Gutscheinbestand) und wird in e2e/gutschein.spec.ts geprüft.
-for (const path of ["/das-buch"] as const) {
+for (const path of ["/das-buch", "/buch-reddit", "/buch-inbox"] as const) {
   test(`${path}: PageView + AddToCart über den bestehenden Amazon-CTA`, async ({ page }) => {
-    const { events } = await capture(page);
+    const { events, reddit } = await capture(page);
     await page.goto(path);
     await expect.poll(() => events.length).toBe(1);
     expect(events[0]).toMatchObject({ type: "PageView", path });
     const popupPromise = page.waitForEvent("popup");
-    await page.locator('a[data-gw-event="buch_amazon_klick"]').first().click();
+    await page.locator(`a[href="${AMAZON_URL}"]`).first().click();
     const popup = await popupPromise;
     await expect.poll(() => events.length).toBe(2);
     expect(events[1]).toMatchObject({ type: "AddToCart", path, destination: AMAZON_URL });
     const state = await pixelState(page);
-    expect(state.fbq.filter((e) => e[0] === "track").map((e) => e[1])).toEqual([
+    expect(state.fbq.filter((e) => e[0] === "trackSingle").map((e) => e[2])).toEqual([
       "PageView",
       "AddToCart",
     ]);
+    await expect.poll(() => reddit.filter((event) => event.type === "AddToCart").length).toBe(1);
+    expect(state.ttq.filter((e) => e[0] === "track" && e[1] === "AddToCart")).toHaveLength(1);
+    expect(state.lintrk).toContainEqual([
+      "track",
+      { conversion_id: 987654, event_id: events[1]!.id },
+    ]);
+    expect(state.dataLayer.filter((event) => event === "add_to_cart")).toHaveLength(1);
     await popup.close();
   });
 }
@@ -159,3 +173,141 @@ test("Root-Weiterleitung sendet nur ein PageView", async ({ page }) => {
   await expect.poll(() => events.length).toBe(1);
   expect(events[0]).toMatchObject({ type: "PageView", path: "/" });
 });
+
+for (const method of ["keyboard", "middle", "control"] as const) {
+  test(`${method}: Buchkauf zählt auf Meta und Reddit genau einmal`, async ({ page }) => {
+    const { events, reddit } = await capture(page);
+    await page.goto("/gewinn");
+    await expect.poll(() => events.length).toBe(1);
+    const cta = page.locator(HERO_CTA);
+    if (method === "keyboard") await cta.press("Enter");
+    else await cta.click(method === "middle" ? { button: "middle" } : { modifiers: ["Control"] });
+    await expect.poll(() => events.filter((e) => e.type === "AddToCart").length).toBe(1);
+    await expect.poll(() => reddit.filter((e) => e.type === "AddToCart").length).toBe(1);
+  });
+}
+
+test("unbeschrifteter Händlerlink zählt; interne Buchinformation und fremde Produkte zählen nicht", async ({
+  page,
+}) => {
+  const { events, reddit } = await capture(page);
+  await page.goto("/gewinn");
+  await expect.poll(() => events.length).toBe(1);
+  await page.locator(HERO_CTA).evaluate((link) => {
+    link.id = "tracking-unannotated-cta";
+    link.removeAttribute("data-gw-event");
+    link.setAttribute(
+      "href",
+      "https://www.thalia.de/shop/home/artikeldetails/A1081265220?utm_source=book",
+    );
+  });
+  const cta = page.locator("#tracking-unannotated-cta");
+  const popupPromise = page.waitForEvent("popup");
+  await cta.click();
+  await (await popupPromise).close();
+  await expect.poll(() => events.length).toBe(2);
+  await expect.poll(() => reddit.filter((event) => event.type === "AddToCart").length).toBe(1);
+  expect(events[1]!.destination).toBe(
+    "https://www.thalia.de/shop/home/artikeldetails/A1081265220?utm_source=book",
+  );
+  // Der negative Klick darf nicht bloß durch die Doppelklick-Sperre unterdrückt werden.
+  await page.waitForTimeout(650);
+  for (const href of ["/das-buch", "https://www.amazon.de/dp/OTHERBOOK1"]) {
+    await cta.evaluate((link, destination) => {
+      link.setAttribute("href", destination);
+      link.addEventListener("click", (event) => event.preventDefault(), { once: true });
+    }, href);
+    await cta.click();
+  }
+  expect(events).toHaveLength(2);
+});
+
+test("blockiertes Meta-Pixel lässt TikTok, LinkedIn, GA4 und CAPI weiterarbeiten", async ({
+  page,
+}) => {
+  const { events } = await capture(page);
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "fbq", {
+      value: () => {
+        throw new Error("blocked");
+      },
+    });
+  });
+  await page.goto("/buch-reddit");
+  await expect.poll(() => events.length).toBe(1);
+  await page.locator('a[data-cta-id="hero"]').click();
+  await expect.poll(() => events.length).toBe(2);
+  const state = await pixelState(page);
+  expect(state.ttq.filter((entry) => entry[0] === "page")).toHaveLength(1);
+  expect(
+    state.ttq.filter((entry) => entry[0] === "track" && entry[1] === "AddToCart"),
+  ).toHaveLength(1);
+  expect(state.lintrk).toContainEqual([
+    "track",
+    { conversion_id: 987654, event_id: events[1]!.id },
+  ]);
+  expect(state.dataLayer).toContain("add_to_cart");
+});
+
+for (const mode of ["returns-false", "throws"] as const) {
+  test(`sendBeacon ${mode}: fetch liefert PageView und AddToCart an beide Empfänger`, async ({
+    page,
+  }) => {
+    const { events, reddit } = await capture(page);
+    await page.addInitScript((behavior) => {
+      navigator.sendBeacon = () => {
+        if (behavior === "throws") throw new Error("beacon blocked");
+        return false;
+      };
+    }, mode);
+    await page.goto("/gewinn");
+    await expect.poll(() => events.length).toBe(1);
+    await page.locator(HERO_CTA).click();
+    await expect.poll(() => events.length).toBe(2);
+    await expect.poll(() => reddit.length).toBe(2);
+  });
+}
+
+for (const [path, selector] of [
+  ["/buch-reddit", '[data-cta-id="mobile-sticky"]'],
+  ["/buch-inbox", '[data-cta-id="inbox-mobile-sticky"]'],
+] as const) {
+  test(`${path}: mobiler Sticky-Kaufbutton zählt Meta und Reddit`, async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+    });
+    const page = await context.newPage();
+    const { events, reddit } = await capture(page);
+    await page.goto(`${ORIGIN}${path}`);
+    await expect.poll(() => events.length).toBe(1);
+    // Den Hero tatsächlich passieren: ein Sprung von unterhalb nach oberhalb des
+    // Viewports kann beide IntersectionObserver-Zustände bei ratio=0 belassen.
+    if (path === "/buch-reddit") {
+      const hero = page.locator("#first-book-cta");
+      await hero.scrollIntoViewIfNeeded();
+      await expect(hero).toBeInViewport();
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          }),
+      );
+    }
+    await page
+      .locator(path === "/buch-reddit" ? "#geschichte > section:nth-of-type(2)" : "#autor")
+      .scrollIntoViewIfNeeded();
+    await expect(page.locator(selector)).toBeVisible();
+    await page.locator(selector).tap();
+    await expect.poll(() => events.length).toBe(2);
+    await expect.poll(() => reddit.length).toBe(2);
+    expect(events[1]!.type).toBe("AddToCart");
+    expect(
+      (await pixelState(page)).fbq.filter(
+        (entry) => entry[0] === "trackSingle" && entry[2] === "AddToCart",
+      ),
+    ).toHaveLength(1);
+    await context.close();
+  });
+}

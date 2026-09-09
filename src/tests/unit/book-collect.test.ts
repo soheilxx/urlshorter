@@ -127,12 +127,44 @@ describe("Buch-Conversion-Kontext", () => {
       ),
     ).toBeNull();
   });
-  it("liefert ohne konfigurierte Pixel keine Konfiguration", async () => {
+  it("provides a config for GA4 even without Meta, TikTok or LinkedIn", async () => {
     vi.stubEnv("META_PIXEL_ID", "");
     vi.stubEnv("TIKTOK_PIXEL_ID", "");
     vi.stubEnv("LINKEDIN_PARTNER_ID", "");
     resetEnvCache();
-    expect(await createBookConversionConfig("/das-buch", "not-required")).toBeNull();
+    expect(await createBookConversionConfig("/das-buch", "not-required")).toMatchObject({
+      metaPixelId: null,
+      tiktokPixelId: null,
+      linkedInConversionId: null,
+      ga4MeasurementId: "G-4EK7Q83FJ6",
+    });
+  });
+  it("does not reactivate a dashboard-disabled site via environment fallbacks", async () => {
+    const body = await payload();
+    const inactive = {
+      id: "lizenzzumerfolg",
+      label: "Book",
+      domains: ["lizenzzumerfolg.com"],
+      active: false,
+      source: "db" as const,
+      pixels: { ga4: null, gtm: null, meta: null, tiktok: null, reddit: null, linkedin: null },
+      capi: {
+        metaToken: null,
+        metaTestEventCode: null,
+        tiktokToken: null,
+        tiktokTestEventCode: null,
+      },
+    };
+    vi.mocked(resolveTagSite).mockResolvedValueOnce(inactive);
+    expect(await createBookConversionConfig("/das-buch", "not-required")).toMatchObject({
+      enabled: false,
+      metaPixelId: null,
+      ga4MeasurementId: null,
+    });
+    vi.mocked(resolveTagSite).mockResolvedValueOnce(inactive);
+    expect((await POST(request(body))).status).toBe(204);
+    expect(sendMetaCapiSingle).not.toHaveBeenCalled();
+    expect(sendTikTokSingle).not.toHaveBeenCalled();
   });
   it("bevorzugt Pixel-IDs und Tokens aus der Dashboard-Verwaltung (DB) vor den Env-Werten", async () => {
     // Kontext zuerst erzeugen (nutzt die Env-Auflösung), erst der Versand sieht die DB-Werte
@@ -177,6 +209,21 @@ describe("Buch-Conversion-Kontext", () => {
 });
 
 describe("POST /api/book/events", () => {
+  it.each([
+    "https://link.amazon/B0eyhvaQw?tag=affiliate",
+    "https://www.amazon.de/dp/3690662508",
+    "https://www.thalia.de/shop/home/artikeldetails/A1081265220",
+  ])("accepts verified book retailer destination %s", async (destination) => {
+    expect((await POST(request(await payload({ type: "AddToCart", destination })))).status).toBe(
+      204,
+    );
+    expect(sendMetaCapiSingle).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      expect.any(String),
+      expect.objectContaining({ eventName: "AddToCart" }),
+    );
+  });
   it("leitet ein PageView mit exakt der Browser-ID an Meta CAPI weiter (kein TikTok)", async () => {
     const body = await payload();
     expect((await POST(request(body))).status).toBe(204);

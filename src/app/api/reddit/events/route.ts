@@ -5,7 +5,7 @@ import { classifyRequest } from "@/lib/bot-detection";
 import { evaluateConsent } from "@/lib/consent";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
-import { AMAZON_PRODUCT_URL } from "@/lib/gewinnspiel-config";
+import { isBookPurchaseUrl } from "@/lib/book-conversion-events";
 import { logger } from "@/lib/logger";
 import { sendRedditCapiEvents } from "@/lib/reddit-capi";
 import { verifyRedditContext } from "@/lib/reddit-context";
@@ -62,7 +62,7 @@ export async function POST(request: Request): Promise<Response> {
     if (age > 10 * 60 * 1_000 || age < -60_000) return done(400);
     if (
       input.type === "AddToCart" &&
-      (input.destination !== AMAZON_PRODUCT_URL || input.path === "/")
+      (!input.destination || !isBookPurchaseUrl(input.destination) || input.path === "/")
     )
       return done(400);
     const env = getEnv();

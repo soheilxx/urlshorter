@@ -5,7 +5,7 @@ import { logger } from "@/lib/logger";
  * Meta Conversions API (serverseitiges Event-Tracking).
  *
  * Für jeden menschlichen Klick werden – parallel zum Browser-Pixel – dieselben
- * Events ("PageView" und "AmazonOutboundClick") mit derselben `event_id` an
+ * Events ("PageView" und das Ziel-Event) mit derselben `event_id` an
  * die Graph API gesendet. Meta dedupliziert Browser- und Server-Events über
  * (event_name, event_id); es wird also nichts doppelt gezählt, aber Klicks
  * mit Adblocker gehen nicht mehr verloren.
@@ -37,7 +37,8 @@ export interface MetaCapiInput {
   fbp: string | null;
   /** Click-ID: _fbc-Cookie oder aus fbclid abgeleitet. */
   fbc: string | null;
-  customData: Record<string, string>;
+  outboundEventName?: "AddToCart" | "AmazonOutboundClick";
+  customData: Record<string, unknown>;
 }
 
 function clip(value: string | null | undefined): string | null {
@@ -47,8 +48,8 @@ function clip(value: string | null | undefined): string | null {
 }
 
 /**
- * Leitet den fbc-Parameter ab: vorhandenes _fbc-Cookie hat Vorrang, sonst
- * wird er aus dem fbclid-Query-Parameter im offiziellen Format
+ * Ein neuer fbclid ersetzt ein altes Cookie; bei identischer Click-ID bleibt
+ * der ursprüngliche Cookie-Zeitpunkt erhalten. Ohne Cookie wird das Format
  * `fb.1.<timestampMs>.<fbclid>` gebildet.
  */
 export function deriveFbc(
@@ -56,13 +57,31 @@ export function deriveFbc(
   fbcCookie: string | null,
   nowMs: number = Date.now(),
 ): string | null {
-  const cookie = clip(fbcCookie);
-  if (cookie) return cookie;
-  const clickId = clip(fbclid);
-  if (clickId && /^[A-Za-z0-9_-]+$/.test(clickId)) {
-    return `fb.1.${nowMs}.${clickId}`;
+  const cookie = normalizeMetaCookie(fbcCookie, "fbc");
+  const clickId = fbclid?.trim();
+  if (clickId && clickId.length <= MAX_FIELD_LENGTH && /^[A-Za-z0-9_-]+$/.test(clickId)) {
+    if (cookie?.split(".").slice(3).join(".") === clickId) return cookie;
+    return `fb.1.${Math.floor(nowMs)}.${clickId}`;
   }
-  return null;
+  return cookie;
+}
+
+/** Attribution identifiers must be intact, never silently truncated. */
+export function normalizeMetaCookie(
+  value: string | null | undefined,
+  kind: "fbp" | "fbc",
+): string | null {
+  const candidate = value?.trim();
+  if (!candidate || candidate.length > 550) return null;
+  const pattern =
+    kind === "fbp" ? /^fb\.[0-9]+\.[0-9]{13}\.[0-9]+$/ : /^fb\.[0-9]+\.[0-9]{13}\.[A-Za-z0-9_-]+$/;
+  return pattern.test(candidate) ? candidate : null;
+}
+
+/** Live deployments must never route real visitor events into Test Events. */
+export function capiTestEventCode(value: string | null | undefined): string | null {
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production") return null;
+  return clip(value);
 }
 
 interface MetaCapiEvent {
@@ -72,7 +91,7 @@ interface MetaCapiEvent {
   action_source: "website";
   event_source_url: string;
   user_data: Record<string, string>;
-  custom_data?: Record<string, string>;
+  custom_data?: Record<string, unknown>;
 }
 
 export interface MetaCapiPayload {
@@ -87,8 +106,8 @@ export function buildMetaCapiPayload(input: MetaCapiInput): MetaCapiPayload {
   const userData: Record<string, string> = {};
   const ip = clip(input.clientIp);
   const ua = clip(input.clientUserAgent);
-  const fbp = clip(input.fbp);
-  const fbc = clip(input.fbc);
+  const fbp = normalizeMetaCookie(input.fbp, "fbp");
+  const fbc = normalizeMetaCookie(input.fbc, "fbc");
   if (ip) userData.client_ip_address = ip;
   if (ua) userData.client_user_agent = ua;
   if (fbp) userData.fbp = fbp;
@@ -105,10 +124,14 @@ export function buildMetaCapiPayload(input: MetaCapiInput): MetaCapiPayload {
   const payload: MetaCapiPayload = {
     data: [
       { event_name: "PageView", ...base },
-      { event_name: "AmazonOutboundClick", ...base, custom_data: input.customData },
+      {
+        event_name: input.outboundEventName ?? "AmazonOutboundClick",
+        ...base,
+        custom_data: input.customData,
+      },
     ],
   };
-  const testEventCode = clip(input.testEventCode);
+  const testEventCode = capiTestEventCode(input.testEventCode);
   if (testEventCode) payload.test_event_code = testEventCode;
   return payload;
 }
@@ -122,24 +145,25 @@ export async function sendMetaCapiEvents(input: MetaCapiInput): Promise<void> {
   const url = `https://graph.facebook.com/${version}/${encodeURIComponent(input.pixelId)}/events`;
   const payload = buildMetaCapiPayload(input);
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CAPI_TIMEOUT_MS);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), CAPI_TIMEOUT_MS);
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...payload, access_token: input.accessToken }),
       signal: controller.signal,
     });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
+    const result = (await response.json().catch(() => null)) as {
+      events_received?: number;
+      error?: { code?: number };
+    } | null;
+    if (!response.ok || result?.events_received !== payload.data.length) {
       logger.error("meta_capi.send_failed", {
         eventId: input.eventId,
         status: response.status,
-        // Fehlermeldung gekürzt loggen, ohne Token
-        body: body.slice(0, 300),
+        eventsReceived: result?.events_received ?? null,
+        apiCode: result?.error?.code ?? null,
       });
       return;
     }
@@ -149,5 +173,7 @@ export async function sendMetaCapiEvents(input: MetaCapiInput): Promise<void> {
       eventId: input.eventId,
       message: error instanceof Error ? error.message : "unknown",
     });
+  } finally {
+    clearTimeout(timeout);
   }
 }

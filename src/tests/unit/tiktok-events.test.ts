@@ -24,6 +24,21 @@ function baseInput(overrides: Partial<TikTokEventsInput> = {}): TikTokEventsInpu
 }
 
 describe("buildTikTokEventsPayload", () => {
+  it("sends standard AddToCart for a recognized book destination", () => {
+    const payload = buildTikTokEventsPayload(
+      baseInput({
+        eventName: "AddToCart",
+        properties: {
+          value: 18,
+          currency: "EUR",
+          contents: [{ content_id: "9783690662505", content_type: "product" }],
+        },
+      }),
+    );
+    expect(payload.data[0]?.event).toBe("AddToCart");
+    expect(payload.data[0]?.properties?.value).toBe(18);
+    expect(payload.data[0]?.event_id).toBe(baseInput().eventId);
+  });
   it("sendet ClickButton mit korrekter Struktur und event_id (Deduplication)", () => {
     const payload = buildTikTokEventsPayload(baseInput());
     expect(payload.event_source).toBe("web");

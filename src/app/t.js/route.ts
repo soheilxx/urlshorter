@@ -1,4 +1,5 @@
 import { getEnv } from "@/lib/env";
+import { BOOK_PRODUCT, BOOK_PURCHASE_URL_RULES } from "@/lib/book-conversion-events";
 import { siteDomainMap } from "@/lib/tag-config";
 import { resolveTagSite } from "@/lib/tag-sites";
 
@@ -34,6 +35,7 @@ interface ScriptConfig {
   linkedin: string | null;
   collect: string;
   sites: Record<string, string[]>;
+  siteId?: string;
 }
 
 /** Globale Variante (Bestands-Snippets ohne ?site-Parameter). */
@@ -52,19 +54,21 @@ function legacyConfig(): ScriptConfig {
 }
 
 function buildScript(config: ScriptConfig): string {
-
   return `/* lizenzzumerfolg.com Tracking-Snippet */
 (function () {
   "use strict";
   try {
     var C = ${JSON.stringify(config)};
     var el = document.currentScript;
-    var siteId = (el && el.getAttribute("data-site")) || "";
+    var siteId = C.siteId || (el && el.getAttribute("data-site")) || "";
     var domains = C.sites[siteId];
     if (!domains) return;
-    var host = location.hostname.toLowerCase();
+    var host = location.hostname.toLowerCase().replace(/\\.$/, "");
     var okHost = domains.some(function (d) { return host === d || host.slice(-(d.length + 1)) === "." + d; });
     if (!okHost) return;
+    window.__lzeTags = window.__lzeTags || {};
+    if (window.__lzeTags[siteId]) return;
+    window.__lzeTags[siteId] = true;
 
     function uuid() {
       if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -74,12 +78,16 @@ function buildScript(config: ScriptConfig): string {
       });
     }
     function getCookie(name) {
-      var m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
-      return m ? decodeURIComponent(m[1]) : null;
+      try {
+        var m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+        return m ? decodeURIComponent(m[1]) : null;
+      } catch (e) { return null; }
     }
     function setCookie(name, value, days) {
-      var secure = location.protocol === "https:" ? ";Secure" : "";
-      document.cookie = name + "=" + encodeURIComponent(value) + ";path=/;max-age=" + days * 86400 + ";SameSite=Lax" + secure;
+      try {
+        var secure = location.protocol === "https:" ? ";Secure" : "";
+        document.cookie = name + "=" + encodeURIComponent(value) + ";path=/;max-age=" + days * 86400 + ";SameSite=Lax" + secure;
+      } catch (e) {}
     }
     function loadScript(src) {
       var s = document.createElement("script");
@@ -114,7 +122,13 @@ function buildScript(config: ScriptConfig): string {
         t = b.createElement(e); t.async = true; t.src = v;
         s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s);
       })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
-      window.fbq("init", C.meta);
+    }
+    if (C.meta && window.fbq) {
+      window.__lzeMetaPixels = window.__lzeMetaPixels || new Set();
+      if (!window.__lzeMetaPixels.has(C.meta)) {
+        try { window.fbq("init", C.meta); } catch (e) {}
+        window.__lzeMetaPixels.add(C.meta);
+      }
     }
 
     // ---- TikTok -------------------------------------------------------------
@@ -130,8 +144,14 @@ function buildScript(config: ScriptConfig): string {
           var o = d.createElement("script"); o.async = true; o.src = u + "?sdkid=" + e + "&lib=" + t;
           var a = d.getElementsByTagName("script")[0]; a.parentNode.insertBefore(o, a);
         };
-        ttq.load(C.tiktok);
       })(window, document, "ttq");
+    }
+    if (C.tiktok && window.ttq) {
+      window.__lzeTikTokPixels = window.__lzeTikTokPixels || new Set();
+      if (!window.__lzeTikTokPixels.has(C.tiktok)) {
+        try { if (window.ttq.load && !(window.ttq._i && window.ttq._i[C.tiktok])) window.ttq.load(C.tiktok); } catch (e) {}
+        window.__lzeTikTokPixels.add(C.tiktok);
+      }
     }
 
     // ---- Reddit -------------------------------------------------------------
@@ -156,20 +176,21 @@ function buildScript(config: ScriptConfig): string {
 
     // ---- First-Party Collect ------------------------------------------------
     function utmFromSearch() {
-      var out = {}; var q = location.search.slice(1).split("&");
+      var out = {}; var q = new URLSearchParams(location.search);
       var map = { utm_source: "source", utm_medium: "medium", utm_campaign: "campaign", utm_content: "content", utm_term: "term" };
-      for (var i = 0; i < q.length; i++) {
-        var kv = q[i].split("="); var key = map[decodeURIComponent(kv[0] || "")];
-        if (key && kv[1]) out[key] = decodeURIComponent(kv[1].replace(/\\+/g, " ")).slice(0, 120);
-      }
+      Object.keys(map).forEach(function (key) { var value = q.get(key); if (value) out[map[key]] = value.slice(0, 120); });
       return out;
     }
     function deriveFbc() {
-      var existing = getCookie("_fbc"); if (existing) return existing;
-      var m = location.search.match(/[?&]fbclid=([^&#]+)/);
-      return m ? "fb.1." + Date.now() + "." + decodeURIComponent(m[1]) : null;
+      var existing = getCookie("_fbc");
+      var clickId = new URLSearchParams(location.search).get("fbclid");
+      if (!clickId || !/^[A-Za-z0-9._-]{1,150}$/.test(clickId)) return existing;
+      if (existing && existing.slice(-(clickId.length + 1)) === "." + clickId) return existing;
+      var value = "fb.1." + Date.now() + "." + clickId;
+      setCookie("_fbc", value, 90);
+      return value;
     }
-    function collect(id, name) {
+    function collect(id, name, params) {
       try {
         var payload = {
           site: siteId, id: id, name: name,
@@ -179,29 +200,29 @@ function buildScript(config: ScriptConfig): string {
           fbp: getCookie("_fbp") || undefined,
           fbc: deriveFbc() || undefined,
           ttp: getCookie("_ttp") || undefined,
-          utm: utmFromSearch()
+          utm: utmFromSearch(),
+          params: params
         };
-        var m2 = location.search.match(/[?&]ttclid=([^&#]+)/);
-        if (m2) payload.ttclid = decodeURIComponent(m2[1]);
+        var ttclid = new URLSearchParams(location.search).get("ttclid");
+        if (ttclid && /^[A-Za-z0-9._-]{1,200}$/.test(ttclid)) payload.ttclid = ttclid;
         var body = JSON.stringify(payload);
-        if (navigator.sendBeacon) {
-          navigator.sendBeacon(C.collect, new Blob([body], { type: "text/plain" }));
-        } else if (window.fetch) {
-          fetch(C.collect, { method: "POST", body: body, keepalive: true, headers: { "Content-Type": "text/plain" } });
+        var queued = false;
+        try { queued = navigator.sendBeacon && navigator.sendBeacon(C.collect, new Blob([body], { type: "text/plain" })); } catch (e) {}
+        if (!queued && window.fetch) {
+          fetch(C.collect, { method: "POST", body: body, keepalive: true, headers: { "Content-Type": "text/plain" } }).catch(function () {});
         }
       } catch (e) { /* Tracking darf die Seite nie stören */ }
     }
 
     // ---- Pageviews (inkl. SPA) ---------------------------------------------
     function pageView() {
+      if (window.__lzeBookTrackingPath === location.pathname) return;
       var id = uuid();
-      try {
-        if (C.ga4 && !C.gtm) gtag("event", "page_view", { page_location: location.href, page_title: document.title, send_to: C.ga4 });
-        if (C.gtm) window.dataLayer.push({ event: "virtual_page_view", page_location: location.href });
-        if (window.fbq) window.fbq("track", "PageView", {}, { eventID: id });
-        if (window.ttq && window.ttq.page) window.ttq.page();
-        if (window.rdt) window.rdt("track", "PageVisit");
-      } catch (e) {}
+      try { if (C.ga4 && !C.gtm) gtag("event", "page_view", { page_location: location.href, page_title: document.title, send_to: C.ga4 }); } catch (e) {}
+      try { if (C.gtm) window.dataLayer.push({ event: "virtual_page_view", page_location: location.href }); } catch (e) {}
+      try { if (C.meta && window.fbq) window.fbq("trackSingle", C.meta, "PageView", {}, { eventID: id }); } catch (e) {}
+      try { if (C.tiktok && window.ttq && window.ttq.page) window.ttq.page({}, { event_id: id }); } catch (e) {}
+      try { if (C.reddit && window.rdt) window.rdt("track", "PageVisit"); } catch (e) {}
       collect(id, "page_view");
     }
 
@@ -218,17 +239,68 @@ function buildScript(config: ScriptConfig): string {
     window.addEventListener("popstate", onNavigate);
 
     // ---- Öffentliche Event-API ---------------------------------------------
-    window.lze = function (cmd, name, params) {
+    var lastAddToCart = 0;
+    function trackEvent(name, params) {
       try {
-        if (cmd !== "event" || !name) return;
         var safe = String(name).toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 64);
+        if (safe === "addtocart") safe = "add_to_cart";
+        if (safe === "pageview") safe = "page_view";
+        if (!safe) return;
+        var standard = safe === "add_to_cart" ? "AddToCart" : safe === "page_view" ? "PageView" : null;
+        if (standard === "AddToCart") {
+          var now = Date.now();
+          if (lastAddToCart && now - lastAddToCart < 600) return;
+          lastAddToCart = now;
+        }
         var id = uuid();
-        gtag("event", safe, params || {});
-        if (window.fbq) window.fbq("trackCustom", safe, params || {}, { eventID: id });
-        if (window.ttq && window.ttq.track) window.ttq.track(safe, params || {});
-        collect(id, safe);
+        var googleParams = params || {};
+        var tiktokParams = params || {};
+        if (standard === "AddToCart" && params && Array.isArray(params.content_ids)) {
+          googleParams = Object.assign({}, params, { items: params.content_ids.map(function (contentId) {
+            return { item_id: contentId, item_name: params.content_name, price: params.value, quantity: 1 };
+          }) });
+          tiktokParams = Object.assign({}, params, { contents: params.content_ids.map(function (contentId) {
+            return { content_id: contentId, content_name: params.content_name, content_type: params.content_type, quantity: 1 };
+          }) });
+        }
+        try { gtag("event", safe, googleParams); } catch (e) {}
+        try { if (C.meta && window.fbq) window.fbq(standard ? "trackSingle" : "trackSingleCustom", C.meta, standard || safe, params || {}, { eventID: id }); } catch (e) {}
+        try { if (C.tiktok && window.ttq && window.ttq.track) window.ttq.track(standard || safe, tiktokParams, { event_id: id }); } catch (e) {}
+        try { if (C.reddit && window.rdt && safe === "add_to_cart") window.rdt("track", "AddToCart", { conversionId: id }); } catch (e) {}
+        collect(id, safe, params);
       } catch (e) {}
+    }
+    window.lze = function (cmd, name, params) {
+      if (cmd === "event" && name) trackEvent(name, params);
     };
+
+    // ---- Buch-Kaufklicks: Standardevent, auch bei SPA-Links und Mittelklick ----
+    var book = ${JSON.stringify(BOOK_PRODUCT)};
+    var bookRules = ${JSON.stringify(BOOK_PURCHASE_URL_RULES)};
+    function isBookLink(href) {
+      try {
+        var url = new URL(href, location.href);
+        if (url.protocol !== "https:" || url.username || url.password || url.port) return false;
+        return bookRules.some(function (rule) {
+          return new RegExp(rule.host, rule.flags).test(url.hostname) &&
+            new RegExp(rule.path, rule.flags).test(url.pathname);
+        });
+      } catch (e) { return false; }
+    }
+    function bookClick(event) {
+      if (!event.isTrusted || (event.type === "click" ? event.button !== 0 : event.button !== 1)) return;
+      if (window.__lzeBookTrackingPath === location.pathname) return;
+      var target = event.target;
+      if (target && target.nodeType !== 1) target = target.parentElement;
+      var link = target && target.closest ? target.closest("a[href]") : null;
+      if (!link || !isBookLink(link.href)) return;
+      trackEvent("add_to_cart", {
+        content_name: book.name, content_ids: [book.id], content_type: "product",
+        value: book.value, currency: book.currency
+      });
+    }
+    document.addEventListener("click", bookClick, true);
+    document.addEventListener("auxclick", bookClick, true);
 
     pageView();
   } catch (e) { /* niemals die einbettende Seite beschädigen */ }
@@ -263,6 +335,7 @@ export async function GET(request: Request): Promise<Response> {
   }
   const env = getEnv();
   const config: ScriptConfig = {
+    siteId: site.id,
     ga4: site.pixels.ga4,
     gtm: site.pixels.gtm,
     meta: site.pixels.meta,

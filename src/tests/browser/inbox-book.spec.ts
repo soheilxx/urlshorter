@@ -65,8 +65,8 @@ for (const width of [320, 390, 768, 1440])
             (id) => document.getElementById(id)!.getBoundingClientRect().top,
           ),
         );
-        expect(order[0]).toBeLessThan(order[1]);
-        expect(order[1]).toBeLessThan(order[2]);
+        expect(order[0]!).toBeLessThan(order[1]!);
+        expect(order[1]!).toBeLessThan(order[2]!);
         await page.screenshot({ path: info.outputPath(`inbox-${width}-${portal}-${theme}.png`) });
         await expect(page.locator("#inbox-first-cta")).toBeInViewport({ ratio: 1 });
         const metrics = await page.evaluate(() => ({

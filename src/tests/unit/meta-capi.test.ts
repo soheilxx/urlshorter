@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildMetaCapiPayload, deriveFbc, type MetaCapiInput } from "@/lib/meta-capi";
 
 function baseInput(overrides: Partial<MetaCapiInput> = {}): MetaCapiInput {
@@ -25,7 +25,43 @@ function baseInput(overrides: Partial<MetaCapiInput> = {}): MetaCapiInput {
   };
 }
 
+afterEach(() => vi.unstubAllEnvs());
+
 describe("buildMetaCapiPayload", () => {
+  it("sends standard AddToCart and numeric product data when the route identifies the book", () => {
+    const payload = buildMetaCapiPayload(
+      baseInput({
+        outboundEventName: "AddToCart",
+        customData: {
+          content_ids: ["9783690662505"],
+          value: 18,
+          currency: "EUR",
+        },
+      }),
+    );
+    expect(payload.data.map((event) => event.event_name)).toEqual(["PageView", "AddToCart"]);
+    expect(payload.data[1]?.event_id).toBe(payload.data[0]?.event_id);
+    expect(payload.data[1]?.custom_data).toEqual({
+      content_ids: ["9783690662505"],
+      value: 18,
+      currency: "EUR",
+    });
+  });
+
+  it("never adds test codes to live production visitor events", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect(
+      buildMetaCapiPayload(baseInput({ testEventCode: "TEST12345" })).test_event_code,
+    ).toBeUndefined();
+  });
+
+  it("omits malformed Meta cookies instead of sending invalid attribution data", () => {
+    const payload = buildMetaCapiPayload(
+      baseInput({ fbp: "fb.1.1700000000.123", fbc: "fake-cookie" }),
+    );
+    expect(payload.data[0]?.user_data.fbp).toBeUndefined();
+    expect(payload.data[0]?.user_data.fbc).toBeUndefined();
+  });
   it("sendet PageView und AmazonOutboundClick mit derselben event_id (Deduplication)", () => {
     const payload = buildMetaCapiPayload(baseInput());
     expect(payload.data).toHaveLength(2);
@@ -69,10 +105,19 @@ describe("buildMetaCapiPayload", () => {
 });
 
 describe("deriveFbc", () => {
-  it("bevorzugt das vorhandene _fbc-Cookie", () => {
-    expect(deriveFbc("KlickId123", "fb.1.1700000000000.CookieWert")).toBe(
+  it("retains the original cookie timestamp when fbclid is unchanged", () => {
+    expect(deriveFbc("CookieWert", "fb.1.1700000000000.CookieWert")).toBe(
       "fb.1.1700000000000.CookieWert",
     );
+  });
+
+  it("uses a new ad click instead of a stale cookie", () => {
+    expect(deriveFbc("NewClick", "fb.1.1700000000000.OldClick", 1756000000000)).toBe(
+      "fb.1.1756000000000.NewClick",
+    );
+    expect(deriveFbc(null, "fb.1.1700000000000.OldClick")).toBe("fb.1.1700000000000.OldClick");
+    expect(deriveFbc(null, "invalid-cookie")).toBeNull();
+    expect(deriveFbc("x".repeat(501), null)).toBeNull();
   });
 
   it("leitet fbc aus fbclid im offiziellen Format ab", () => {

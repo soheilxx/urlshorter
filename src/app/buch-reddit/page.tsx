@@ -11,6 +11,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { getEnv } from "@/lib/env";
+import { createBookConversionConfig } from "@/lib/book-conversion-context";
 import { createRedditTrackingConfig } from "@/lib/reddit-context";
 import { AMAZON_PRODUCT_URL } from "@/lib/gewinnspiel-config";
 import {
@@ -35,7 +36,7 @@ import {
   ReadingProgress,
   SavedReadingNote,
 } from "@/components/reddit-book/interactions";
-import { RedditTracking } from "@/components/reddit-tracking";
+import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import styles from "@/components/reddit-book/reddit-book.module.css";
 
 export const dynamic = "force-dynamic";
@@ -99,7 +100,7 @@ function AmazonButton({
   );
 }
 
-export default function RedditBookPage() {
+export default async function RedditBookPage() {
   const env = getEnv();
   const preorder = Date.now() < Date.parse(BUCH_ERSCHEINT_ISO);
   const cta = "Bei Amazon bestellen";
@@ -531,7 +532,20 @@ export default function RedditBookPage() {
         </aside>
       </div>
       <MobileBookCta label={cta} />
-      {tracking && <RedditTracking config={tracking} />}
+      <GewinnTracking
+        gtmContainerId={env.GTM_CONTAINER_ID ?? null}
+        ga4MeasurementId={env.GA4_MEASUREMENT_ID ?? null}
+        metaPixelId={env.META_PIXEL_ID ?? null}
+        tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
+        redditPixelId={env.REDDIT_PIXEL_ID ?? null}
+        redditTracking={tracking}
+        bookConversion={await createBookConversionConfig(REDDIT_BOOK_PATH, "not-required")}
+        linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
+        consentMode="not-required"
+        consentCookieName={env.CONSENT_COOKIE_NAME ?? null}
+        consentAcceptedValue={env.CONSENT_COOKIE_ACCEPTED_VALUE ?? null}
+        pageEventName="reddit_buch_seite"
+      />
     </div>
   );
 }

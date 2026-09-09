@@ -1,4 +1,5 @@
 import { escapeHtml, jsonForInlineScript } from "@/lib/utils";
+import { BOOK_PRODUCT, isBookPurchaseUrl } from "@/lib/book-conversion-events";
 
 /**
  * Serverseitige Generierung der Weiterleitungsseite (Bridge-Page).
@@ -143,6 +144,7 @@ export function renderBridgePage(opts: BridgePageOptions): string {
     tiktok: opts.hasMarketingConsent ? tracking.tiktokPixelId : null,
     linkedin: opts.hasMarketingConsent ? tracking.linkedInPartnerId : null,
     params: opts.eventParams,
+    book: isBookPurchaseUrl(dest) ? BOOK_PRODUCT : null,
   };
 
   const footerLinks: string[] = [];
@@ -216,7 +218,11 @@ gtag("consent","default",{
   ad_personalization:C.consent?"granted":"denied",
   wait_for_update:0
 });
-dataLayer.push(Object.assign({event:"amazon_outbound_click"},C.params));
+var bookData=C.book?{content_name:C.book.name,content_ids:[C.book.id],
+  content_type:"product",value:C.book.value,currency:C.book.currency}:null;
+var googleData=C.book?Object.assign({},C.params,{currency:C.book.currency,value:C.book.value,
+  items:[{item_id:C.book.id,item_name:C.book.name,price:C.book.value,quantity:1}]}):C.params;
+dataLayer.push(Object.assign({event:C.book?"add_to_cart":"amazon_outbound_click"},googleData));
 
 var trackingAttempted=false;
 try{
@@ -227,6 +233,8 @@ try{
     j.src="https://www.googletagmanager.com/gtm.js?id="+i;f.parentNode.insertBefore(j,f);
     })(window,document,"script","dataLayer",C.gtm);
   }
+}catch(e){}
+try{
   if(C.ga4){
     trackingAttempted=true;
     var gs=document.createElement("script");gs.async=true;
@@ -234,8 +242,10 @@ try{
     document.head.appendChild(gs);
     gtag("js",new Date());
     gtag("config",C.ga4,{transport_type:"beacon"});
-    gtag("event","amazon_outbound_click",C.params);
+    gtag("event",C.book?"add_to_cart":"amazon_outbound_click",googleData);
   }
+}catch(e){}
+try{
   if(C.meta){
     trackingAttempted=true;
     (function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -244,9 +254,12 @@ try{
     t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,
     "script","https://connect.facebook.net/en_US/fbevents.js"));
     fbq("init",C.meta);
-    fbq("track","PageView",{},{eventID:C.params.event_id});
-    fbq("trackCustom","AmazonOutboundClick",C.params,{eventID:C.params.event_id});
+    fbq("trackSingle",C.meta,"PageView",{},{eventID:C.params.event_id});
+    if(C.book){fbq("trackSingle",C.meta,"AddToCart",Object.assign({},C.params,bookData),{eventID:C.params.event_id});}
+    else{fbq("trackSingleCustom",C.meta,"AmazonOutboundClick",C.params,{eventID:C.params.event_id});}
   }
+}catch(e){}
+try{
   if(C.reddit){
     trackingAttempted=true;
     !function(w,d){if(!w.rdt){var p=w.rdt=function(){p.sendEvent?
@@ -256,8 +269,13 @@ try{
     var s=d.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}}(window,document);
     rdt("init",C.reddit);
     rdt("track","PageVisit");
-    rdt("track","Custom",{customEventName:"OutboundClick",conversionId:C.params.event_id});
+    if(C.book){rdt("track","AddToCart",{value:C.book.value,currency:C.book.currency,
+      itemCount:1,conversionId:C.params.event_id,
+      products:[{id:C.book.id,name:C.book.name,category:"book"}]});}
+    else{rdt("track","Custom",{customEventName:"OutboundClick",conversionId:C.params.event_id});}
   }
+}catch(e){}
+try{
   if(C.tiktok){
     trackingAttempted=true;
     !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
@@ -275,12 +293,18 @@ try{
     e.parentNode.insertBefore(n,e)}}(window,document,"ttq");
     ttq.load(C.tiktok);
     ttq.page();
-    ttq.track("ClickButton",{content_name:C.params.link_name,
-    content_category:C.params.source},{event_id:C.params.event_id});
+    if(C.book){ttq.track("AddToCart",{value:C.book.value,currency:C.book.currency,
+      contents:[{content_id:C.book.id,content_type:"product",content_name:C.book.name}]},
+      {event_id:C.params.event_id});}
+    else{ttq.track("ClickButton",{content_name:C.params.link_name,
+      content_category:C.params.source},{event_id:C.params.event_id});}
   }
+}catch(e){}
+try{
   if(C.linkedin){
     trackingAttempted=true;
     window._linkedin_partner_id=C.linkedin;
+    window._linkedin_event_id=C.params.event_id;
     window._linkedin_data_partner_ids=window._linkedin_data_partner_ids||[];
     window._linkedin_data_partner_ids.push(C.linkedin);
     (function(l){if(!l){window.lintrk=function(a,b){window.lintrk.q.push([a,b])};

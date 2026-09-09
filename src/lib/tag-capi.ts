@@ -1,5 +1,6 @@
 import "server-only";
 import { logger } from "@/lib/logger";
+import { capiTestEventCode, normalizeMetaCookie } from "@/lib/meta-capi";
 
 /**
  * Generische Einzel-Event-Sender für die Conversion-APIs (Meta, TikTok),
@@ -42,11 +43,13 @@ export interface TagCapiEvent {
 
 /** Meta-Event-Name (Standardevent für Seitenaufrufe, sonst Custom). */
 function metaEventName(name: string): string {
+  if (name === "add_to_cart" || name === "addtocart") return "AddToCart";
   return name === "page_view" ? "PageView" : name;
 }
 
 /** TikTok-Event-Name (Standardevent "Pageview", sonst Custom). */
 function tiktokEventName(name: string): string {
+  if (name === "add_to_cart" || name === "addtocart") return "AddToCart";
   return name === "page_view" ? "Pageview" : name;
 }
 
@@ -59,8 +62,8 @@ export async function sendMetaCapiSingle(
   const userData: Record<string, string> = {};
   const ip = clip(event.clientIp);
   const ua = clip(event.clientUserAgent);
-  const fbp = clip(event.fbp);
-  const fbc = clip(event.fbc);
+  const fbp = normalizeMetaCookie(event.fbp, "fbp");
+  const fbc = normalizeMetaCookie(event.fbc, "fbc");
   if (ip) userData.client_ip_address = ip;
   if (ua) userData.client_user_agent = ua;
   if (fbp) userData.fbp = fbp;
@@ -79,12 +82,12 @@ export async function sendMetaCapiSingle(
       },
     ],
   };
-  const test = clip(testEventCode);
+  const test = capiTestEventCode(testEventCode);
   if (test) payload.test_event_code = test;
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
     const response = await fetch(
       `https://graph.facebook.com/${META_API_VERSION}/${encodeURIComponent(pixelId)}/events`,
       {
@@ -94,13 +97,16 @@ export async function sendMetaCapiSingle(
         signal: controller.signal,
       },
     );
-    clearTimeout(timeout);
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
+    const result = (await response.json().catch(() => null)) as {
+      events_received?: number;
+      error?: { code?: number };
+    } | null;
+    if (!response.ok || result?.events_received !== 1) {
       logger.error("tag_capi.meta_failed", {
         eventId: event.eventId,
         status: response.status,
-        body: body.slice(0, 300),
+        eventsReceived: result?.events_received ?? null,
+        apiCode: result?.error?.code ?? null,
       });
       return false;
     }
@@ -111,6 +117,8 @@ export async function sendMetaCapiSingle(
       message: error instanceof Error ? error.message : "unknown",
     });
     return false;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -144,12 +152,12 @@ export async function sendTikTokSingle(
       },
     ],
   };
-  const test = clip(testEventCode);
+  const test = capiTestEventCode(testEventCode);
   if (test) payload.test_event_code = test;
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
     const response = await fetch(TIKTOK_EVENTS_URL, {
       method: "POST",
       headers: {
@@ -159,13 +167,12 @@ export async function sendTikTokSingle(
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
-    clearTimeout(timeout);
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
+    const result = (await response.json().catch(() => null)) as { code?: number } | null;
+    if (!response.ok || result?.code !== 0) {
       logger.error("tag_capi.tiktok_failed", {
         eventId: event.eventId,
         status: response.status,
-        body: body.slice(0, 300),
+        apiCode: result?.code ?? null,
       });
       return false;
     }
@@ -176,5 +183,7 @@ export async function sendTikTokSingle(
       message: error instanceof Error ? error.message : "unknown",
     });
     return false;
+  } finally {
+    clearTimeout(timeout);
   }
 }

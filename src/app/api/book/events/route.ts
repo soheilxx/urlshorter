@@ -1,13 +1,16 @@
 import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { BOOK_IDENTIFIER_PATTERN, BOOK_PRODUCT } from "@/lib/book-conversion-events";
+import {
+  BOOK_IDENTIFIER_PATTERN,
+  BOOK_PRODUCT,
+  isBookPurchaseUrl,
+} from "@/lib/book-conversion-events";
 import { resolveBookSite, verifyBookConversionContext } from "@/lib/book-conversion-context";
 import { classifyRequest } from "@/lib/bot-detection";
 import { evaluateConsent } from "@/lib/consent";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
-import { AMAZON_PRODUCT_URL } from "@/lib/gewinnspiel-config";
 import { isValidLiFatId, sendLinkedInCapiEvent } from "@/lib/linkedin-capi";
 import { logger } from "@/lib/logger";
 import { deriveFbc } from "@/lib/meta-capi";
@@ -104,7 +107,7 @@ export async function POST(request: Request): Promise<Response> {
     if (age > 10 * 60 * 1_000 || age < -60_000) return done(400);
     if (
       input.type === "AddToCart" &&
-      (input.destination !== AMAZON_PRODUCT_URL || input.path === "/")
+      (!input.destination || !isBookPurchaseUrl(input.destination) || input.path === "/")
     )
       return done(400);
 
@@ -186,6 +189,7 @@ export async function POST(request: Request): Promise<Response> {
     const send = async () => {
       // Pixel-IDs/Tokens: Dashboard (Websites → lizenzzumerfolg) zuerst, Env als Fallback
       const site = await resolveBookSite();
+      if (!site.active) return;
       // Meta CAPI: PageView + AddToCart, dedupliziert über event_id (= Pixel eventID)
       if (site.metaPixelId && site.metaToken) {
         const ok = await sendMetaCapiSingle(

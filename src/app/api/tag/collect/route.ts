@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { after } from "next/server";
 import { classifyRequest } from "@/lib/bot-detection";
 import { prisma } from "@/lib/db";
@@ -28,6 +28,7 @@ import { createHmac } from "node:crypto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 15;
 
 const MAX_BODY_BYTES = 8_000;
 
@@ -46,6 +47,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Cache-Control": "no-store",
+    Vary: "Origin",
   };
 }
 
@@ -59,7 +61,7 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const rawText = await request.text();
-    if (rawText.length > MAX_BODY_BYTES) return done();
+    if (Buffer.byteLength(rawText) > MAX_BODY_BYTES) return done();
 
     let rawJson: unknown;
     try {
@@ -106,36 +108,36 @@ export async function POST(request: Request): Promise<Response> {
       : null;
 
     // Doppelte Beacons (Retry/Back-Forward-Cache) über die Event-ID abfangen
-    const eventId = /^[0-9a-f-]{36}$/i.test(data.eventId) ? data.eventId : randomUUID();
-    const existing = await prisma.tagEvent.findUnique({
-      where: { id: eventId },
-      select: { id: true },
-    });
-    if (existing) return done();
-
-    await prisma.tagEvent.create({
-      data: {
-        id: eventId,
-        siteId: data.siteId,
-        eventName: data.eventName,
-        url: data.url,
-        path: data.path,
-        referrer: data.referrer,
-        utmSource: data.utm.source,
-        utmMedium: data.utm.medium,
-        utmCampaign: data.utm.campaign,
-        utmContent: data.utm.content,
-        utmTerm: data.utm.term,
-        country: geo.country,
-        region: geo.region,
-        city: geo.city,
-        deviceType: ua.deviceType,
-        browser: ua.browser,
-        os: ua.os,
-        visitorHash,
-        cookieHash,
-      },
-    });
+    const eventId = data.eventId;
+    try {
+      await prisma.tagEvent.create({
+        data: {
+          id: eventId,
+          siteId: data.siteId,
+          eventName: data.eventName,
+          url: data.url,
+          path: data.path,
+          referrer: data.referrer,
+          utmSource: data.utm.source,
+          utmMedium: data.utm.medium,
+          utmCampaign: data.utm.campaign,
+          utmContent: data.utm.content,
+          utmTerm: data.utm.term,
+          country: geo.country,
+          region: geo.region,
+          city: geo.city,
+          deviceType: ua.deviceType,
+          browser: ua.browser,
+          os: ua.os,
+          visitorHash,
+          cookieHash,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
+        return done();
+      throw error;
+    }
 
     // Conversion-APIs nach der Response – mit den Tokens der jeweiligen Site
     const capiEvent: TagCapiEvent = {
@@ -149,6 +151,18 @@ export async function POST(request: Request): Promise<Response> {
       fbc: data.fbc,
       ttp: data.ttp,
       ttclid: data.ttclid,
+      customData: data.productParams,
+      properties: data.productParams
+        ? {
+            value: data.productParams.value,
+            currency: data.productParams.currency,
+            contents: data.productParams.content_ids?.map((id) => ({
+              content_id: id,
+              content_name: data.productParams?.content_name,
+              content_type: data.productParams?.content_type,
+            })),
+          }
+        : undefined,
     };
     await scheduleAfterResponse(async () => {
       if (site.pixels.meta && site.capi.metaToken) {

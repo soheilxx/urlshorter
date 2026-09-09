@@ -14,7 +14,22 @@ export const BOOK_SITE_ID = "lizenzzumerfolg";
 export async function resolveBookSite() {
   const env = getEnv();
   const site = await resolveTagSite(BOOK_SITE_ID).catch(() => null);
+  if (site?.active === false) {
+    return {
+      active: false,
+      metaPixelId: null,
+      metaToken: null,
+      metaTestEventCode: null,
+      tiktokPixelId: null,
+      tiktokToken: null,
+      tiktokTestEventCode: null,
+      ga4MeasurementId: null,
+      gtmContainerId: null,
+      linkedInPartnerId: null,
+    };
+  }
   return {
+    active: true,
     metaPixelId: site?.pixels.meta ?? env.META_PIXEL_ID ?? null,
     metaToken: site?.capi.metaToken ?? env.META_CAPI_ACCESS_TOKEN ?? null,
     metaTestEventCode: site?.capi.metaTestEventCode ?? env.META_CAPI_TEST_EVENT_CODE ?? null,
@@ -22,6 +37,8 @@ export async function resolveBookSite() {
     tiktokToken: site?.capi.tiktokToken ?? env.TIKTOK_EVENTS_API_TOKEN ?? null,
     tiktokTestEventCode: site?.capi.tiktokTestEventCode ?? env.TIKTOK_TEST_EVENT_CODE ?? null,
     linkedInPartnerId: site?.pixels.linkedin ?? env.LINKEDIN_PARTNER_ID ?? null,
+    ga4MeasurementId: site?.pixels.ga4 ?? env.GA4_MEASUREMENT_ID ?? null,
+    gtmContainerId: site?.pixels.gtm ?? env.GTM_CONTAINER_ID ?? null,
   };
 }
 
@@ -56,12 +73,32 @@ export async function createBookConversionConfig(
 ): Promise<BookConversionConfig | null> {
   const env = getEnv();
   const site = await resolveBookSite();
+  if (!site.active)
+    return {
+      enabled: false,
+      context: "",
+      path,
+      amazonUrl: AMAZON_PRODUCT_URL,
+      metaPixelId: null,
+      tiktokPixelId: null,
+      linkedInConversionId: null,
+      linkedInPartnerId: null,
+      ga4MeasurementId: null,
+      gtmContainerId: null,
+    };
   const metaPixelId = site.metaPixelId;
   const tiktokPixelId = site.tiktokPixelId;
   const liConversionId = site.linkedInPartnerId
     ? linkedInConversionId(env.LINKEDIN_CONVERSION_RULE_ID)
     : null;
-  if (!metaPixelId && !tiktokPixelId && !liConversionId) return null;
+  if (
+    !metaPixelId &&
+    !tiktokPixelId &&
+    !liConversionId &&
+    !site.ga4MeasurementId &&
+    !site.gtmContainerId
+  )
+    return null;
   try {
     const payload = Buffer.from(
       JSON.stringify({ path, consentMode, expires: Date.now() + 24 * 60 * 60 * 1000 }),
@@ -73,6 +110,9 @@ export async function createBookConversionConfig(
       metaPixelId,
       tiktokPixelId,
       linkedInConversionId: liConversionId,
+      linkedInPartnerId: site.linkedInPartnerId,
+      ga4MeasurementId: site.ga4MeasurementId,
+      gtmContainerId: site.gtmContainerId,
     };
   } catch {
     return null;

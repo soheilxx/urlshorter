@@ -82,6 +82,21 @@ function request(body: unknown, headers: Record<string, string> = {}) {
 }
 
 describe("Reddit-Kontext und Collect", () => {
+  it.each([
+    "https://www.amazon.de/dp/3690662508?tag=book",
+    "https://www.thalia.de/shop/home/artikeldetails/A1081265220",
+    "https://www.buecher.de/shop/home/artikeldetails/A1081265220",
+    "https://www.hugendubel.de/de/buch_kartoniert/soheil_hosseini-die_lizenz_zum_erfolg-54366155-produkt-details.html",
+  ])("akzeptiert bekannte Buchhändler mit derselben Event-ID: %s", async (destination) => {
+    const body = payload({ type: "AddToCart", destination });
+    expect((await POST(request(body))).status).toBe(204);
+    expect(prisma.tagEvent.create).toHaveBeenCalledTimes(1);
+    expect(sendRedditCapiEvents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        events: [expect.objectContaining({ type: "AddToCart", id: body.id })],
+      }),
+    );
+  });
   it("bindet Route, Pixel und Consent kryptografisch und läuft ab", () => {
     const config = createRedditTrackingConfig("/das-buch", "required")!;
     expect(verifyRedditContext(config.context)?.consentMode).toBe("required");

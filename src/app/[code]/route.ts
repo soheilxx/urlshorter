@@ -8,6 +8,8 @@ import {
   type LinkErrorKind,
 } from "@/lib/bridge-html";
 import { classifyRequest } from "@/lib/bot-detection";
+import { BOOK_PRODUCT, isBookPurchaseUrl } from "@/lib/book-conversion-events";
+import { resolveBookSite } from "@/lib/book-conversion-context";
 import { recordClickEvent } from "@/lib/click-recording";
 import { evaluateConsent } from "@/lib/consent";
 import { prisma } from "@/lib/db";
@@ -18,6 +20,7 @@ import { extractUtmParams, getClientIp, getGeoInfo, getReferrer } from "@/lib/re
 import { isValidLiFatId, sendLinkedInCapiEvent, type LinkedInCapiInput } from "@/lib/linkedin-capi";
 import { deriveFbc, sendMetaCapiEvents, type MetaCapiInput } from "@/lib/meta-capi";
 import { sendTikTokEvents, type TikTokEventsInput } from "@/lib/tiktok-events";
+import { sendRedditCapiEvents, type RedditCapiInput } from "@/lib/reddit-capi";
 import { getRedirectDelayMs } from "@/lib/settings";
 import { isValidShortCode } from "@/lib/shortcode";
 import { parseUserAgent } from "@/lib/ua-parser";
@@ -78,7 +81,13 @@ function parseCookies(header: string | null): Map<string, string> {
     if (idx > 0) {
       const name = part.slice(0, idx).trim();
       const value = part.slice(idx + 1).trim();
-      if (name) map.set(name, decodeURIComponent(value));
+      if (name) {
+        try {
+          map.set(name, decodeURIComponent(value));
+        } catch {
+          /* Ignore malformed cookies. */
+        }
+      }
     }
   }
   return map;
@@ -137,6 +146,13 @@ async function handle(request: Request, code: string): Promise<Response> {
 
     const appSecret = requireAppSecret();
     const eventId = randomUUID();
+    const isBook = isBookPurchaseUrl(destinationUrl);
+    // The dashboard configuration must target the same pixel on landing pages and shortlinks.
+    const bookSite = isBook ? await resolveBookSite() : null;
+    const metaPixelId = bookSite ? bookSite.metaPixelId : env.META_PIXEL_ID;
+    const metaToken = bookSite ? bookSite.metaToken : env.META_CAPI_ACCESS_TOKEN;
+    const tiktokPixelId = bookSite ? bookSite.tiktokPixelId : env.TIKTOK_PIXEL_ID;
+    const tiktokToken = bookSite ? bookSite.tiktokToken : env.TIKTOK_EVENTS_API_TOKEN;
 
     const visitorHash = bot.isBot
       ? null
@@ -178,16 +194,12 @@ async function handle(request: Request, code: string): Promise<Response> {
     // Marketing-Tracking erlaubt ist. IP/UA werden ausschließlich transient
     // für diesen Aufruf verwendet, nicht gespeichert.
     let metaCapiInput: MetaCapiInput | null = null;
-    if (
-      !bot.isBot &&
-      consent.hasMarketingConsent &&
-      env.META_PIXEL_ID &&
-      env.META_CAPI_ACCESS_TOKEN
-    ) {
+    if (!bot.isBot && consent.hasMarketingConsent && metaPixelId && metaToken) {
       metaCapiInput = {
-        pixelId: env.META_PIXEL_ID,
-        accessToken: env.META_CAPI_ACCESS_TOKEN,
-        testEventCode: env.META_CAPI_TEST_EVENT_CODE,
+        pixelId: metaPixelId,
+        accessToken: metaToken,
+        testEventCode: bookSite ? bookSite.metaTestEventCode : env.META_CAPI_TEST_EVENT_CODE,
+        outboundEventName: isBook ? "AddToCart" : "AmazonOutboundClick",
         eventId,
         eventTimeMs: Date.now(),
         eventSourceUrl: `${env.PUBLIC_BASE_URL}/${link.code}`,
@@ -203,6 +215,15 @@ async function handle(request: Request, code: string): Promise<Response> {
           campaign: link.campaign ?? "",
           content: link.content ?? "",
           destination_host: link.destination.host,
+          ...(isBook
+            ? {
+                content_name: BOOK_PRODUCT.name,
+                content_ids: [BOOK_PRODUCT.id],
+                content_type: "product",
+                value: BOOK_PRODUCT.value,
+                currency: BOOK_PRODUCT.currency,
+              }
+            : {}),
         },
       };
     }
@@ -210,16 +231,12 @@ async function handle(request: Request, code: string): Promise<Response> {
     // TikTok Events API: analoges Muster (ClickButton mit derselben event_id
     // wie das Browser-Pixel; TikTok dedupliziert).
     let tiktokInput: TikTokEventsInput | null = null;
-    if (
-      !bot.isBot &&
-      consent.hasMarketingConsent &&
-      env.TIKTOK_PIXEL_ID &&
-      env.TIKTOK_EVENTS_API_TOKEN
-    ) {
+    if (!bot.isBot && consent.hasMarketingConsent && tiktokPixelId && tiktokToken) {
       tiktokInput = {
-        pixelId: env.TIKTOK_PIXEL_ID,
-        accessToken: env.TIKTOK_EVENTS_API_TOKEN,
-        testEventCode: env.TIKTOK_TEST_EVENT_CODE,
+        pixelId: tiktokPixelId,
+        accessToken: tiktokToken,
+        testEventCode: bookSite ? bookSite.tiktokTestEventCode : env.TIKTOK_TEST_EVENT_CODE,
+        eventName: isBook ? "AddToCart" : "ClickButton",
         eventId,
         eventTimeMs: Date.now(),
         pageUrl: `${env.PUBLIC_BASE_URL}/${link.code}`,
@@ -233,7 +250,42 @@ async function handle(request: Request, code: string): Promise<Response> {
           short_code: link.code,
           campaign: link.campaign ?? "",
           destination_host: link.destination.host,
+          ...(isBook
+            ? {
+                value: BOOK_PRODUCT.value,
+                currency: BOOK_PRODUCT.currency,
+                contents: [
+                  {
+                    content_id: BOOK_PRODUCT.id,
+                    content_type: "product",
+                    content_name: BOOK_PRODUCT.name,
+                  },
+                ],
+              }
+            : {}),
         },
+      };
+    }
+
+    // Buch-Kurzlinks: derselbe AddToCart wie im Reddit-Pixel, ohne Testmodus.
+    let redditInput: RedditCapiInput | null = null;
+    if (
+      isBook &&
+      !bot.isBot &&
+      consent.hasMarketingConsent &&
+      bookSite?.active !== false &&
+      env.REDDIT_PIXEL_ID &&
+      env.REDDIT_CAPI_ACCESS_TOKEN
+    ) {
+      redditInput = {
+        pixelId: env.REDDIT_PIXEL_ID,
+        accessToken: env.REDDIT_CAPI_ACCESS_TOKEN,
+        events: [{ id: eventId, type: "AddToCart", timestamp: Date.now() }],
+        sourceUrl: `${env.PUBLIC_BASE_URL}/${link.code}`,
+        clickId: url.searchParams.get("rdt_cid") ?? cookies.get("_rdt_cid") ?? null,
+        uuid: cookies.get("_rdt_uuid") ?? null,
+        clientIp: getClientIp(headers),
+        clientUserAgent: userAgent,
       };
     }
 
@@ -244,6 +296,7 @@ async function handle(request: Request, code: string): Promise<Response> {
     if (
       !bot.isBot &&
       consent.hasMarketingConsent &&
+      bookSite?.active !== false &&
       env.LINKEDIN_CONVERSION_RULE_ID &&
       env.LINKEDIN_CAPI_ACCESS_TOKEN
     ) {
@@ -264,10 +317,13 @@ async function handle(request: Request, code: string): Promise<Response> {
     // Response (kein Await-Overhead); außerhalb des Next-Request-Kontexts
     // (Tests) wird direkt und vollständig awaited ausgeführt.
     await scheduleAfterResponse(async () => {
-      await recordClickEvent(clickData);
-      if (metaCapiInput) await sendMetaCapiEvents(metaCapiInput);
-      if (tiktokInput) await sendTikTokEvents(tiktokInput);
-      if (linkedInInput) await sendLinkedInCapiEvent(linkedInInput);
+      await Promise.allSettled([
+        recordClickEvent(clickData),
+        ...(metaCapiInput ? [sendMetaCapiEvents(metaCapiInput)] : []),
+        ...(tiktokInput ? [sendTikTokEvents(tiktokInput)] : []),
+        ...(redditInput ? [sendRedditCapiEvents(redditInput)] : []),
+        ...(linkedInInput ? [sendLinkedInCapiEvent(linkedInInput)] : []),
+      ]);
     });
 
     // HEAD-Anfragen: keine Weiterleitung, kein Body – nur Status + Header.
@@ -297,12 +353,12 @@ async function handle(request: Request, code: string): Promise<Response> {
       eventToken,
       hasMarketingConsent: consent.hasMarketingConsent,
       tracking: {
-        gtmContainerId: env.GTM_CONTAINER_ID,
-        ga4MeasurementId: env.GA4_MEASUREMENT_ID,
-        metaPixelId: env.META_PIXEL_ID,
-        redditPixelId: env.REDDIT_PIXEL_ID,
-        tiktokPixelId: env.TIKTOK_PIXEL_ID,
-        linkedInPartnerId: env.LINKEDIN_PARTNER_ID,
+        gtmContainerId: bookSite ? bookSite.gtmContainerId : env.GTM_CONTAINER_ID,
+        ga4MeasurementId: bookSite ? bookSite.ga4MeasurementId : env.GA4_MEASUREMENT_ID,
+        metaPixelId,
+        redditPixelId: bookSite?.active === false ? null : env.REDDIT_PIXEL_ID,
+        tiktokPixelId,
+        linkedInPartnerId: bookSite ? bookSite.linkedInPartnerId : env.LINKEDIN_PARTNER_ID,
       },
       eventParams: {
         event_id: eventId,
