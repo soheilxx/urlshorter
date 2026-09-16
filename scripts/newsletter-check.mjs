@@ -100,7 +100,7 @@ if (tds !== tdsClosed) fail(`Unausgeglichene Zellen: ${tds} <td> vs. ${tdsClosed
 const presentational = (html.match(/<table\b[^>]*role="presentation"/gi) ?? []).length;
 if (presentational < tables) warn(`${tables - presentational} Layout-Tabellen ohne role="presentation"`);
 else ok('Alle Tabellen mit role="presentation"');
-const width = /width="(\d+)"\s+class="fluid"/.exec(html)?.[1];
+const width = /width="(\d+)"\s+class="(?:fluid|w-full)"/.exec(html)?.[1];
 if (!width || Number(width) > 640) warn(`Container-Breite ${width ?? "unbekannt"} (empfohlen 600–640 px)`);
 else ok(`Container-Breite ${width} px`);
 
@@ -171,7 +171,7 @@ if (/color:#ffffff;[^"]*background-color:#ffffff/i.test(html)) warn("Weißer Tex
 
 // --- Textversion --------------------------------------------------------------------
 if (text) {
-  const textLinks = [...text.matchAll(/https?:\/\/\S+/g)].map((m) => m[0].replace(/[).,]+$/, ""));
+  const textLinks = [...text.matchAll(/https?:\/\/\S+/g)].map((m) => m[0].replace(/[).,;:]+$/, ""));
   const htmlTargets = new Set(uniqueLinks.map((l) => l.replace(/[?#].*$/, "")));
   const textTargets = new Set(textLinks.map((l) => l.replace(/[?#].*$/, "")));
   const missing = [...htmlTargets].filter((t) => !textTargets.has(t) && !t.includes("/newsletter/"));

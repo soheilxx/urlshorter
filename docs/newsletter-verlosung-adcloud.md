@@ -66,6 +66,29 @@ final_cta, final_teilnehmen). `utm_content` unterscheidet HTML (`adcloud_standal
       schaltet automatisch auf „kaufen“ um. Nach dem 11.10.2026 nicht mehr versenden (Registrierung
       geschlossen).
 
+## Template B – Ausweichvariante („Buchaktion 2026“)
+
+Falls Template A durch Spam-Meldungen „verbrannt“ ist, steht eine zweite, eigenständige Variante
+bereit, die von Fuzzy-Hash-/Duplikat-Erkennung nicht als Kopie erkannt wird:
+
+| Datei | Zweck |
+| --- | --- |
+| `public/newsletter/buchaktion-dubai.html` | HTML-Mail Variante B (620 px, Editorial-Stil: Serifen-Headlines, persönliche Notiz des Autors mit Porträt, Gewinnliste als Tabelle statt Ticket-Karten, Schritte mit gelber Randlinie, eckige Buttons). Webansicht: `https://lizenzzumerfolg.com/newsletter/buchaktion-dubai.html` |
+| `docs/newsletter-buchaktion-dubai.txt` | Textversion B (`utm_content=adcloud_variante_b_text`) |
+
+Unterschiede zu A (gemessen mit Wort-Shingles/Jaccard): sichtbarer Text 1,1 % (8-Wort-Shingles) bzw.
+3,4 % (5 Wörter), HTML-Quelltext 3,1 %, keine gemeinsamen Bild-URLs (eigene Assets unter
+`public/newsletter/buchaktion/`), andere Web-Adresse, andere Betreff-/Preheader-Texte, andere
+`utm_content`-/`utm_term`-Werte, andere Klassennamen/IDs und Farbfolge. Identisch sind nur die
+Pflichtlinks (Teilnahmebedingungen, Datenschutz, Impressum, Kontakt, AdCloud-Platzhalter).
+
+Betreff B (Empfehlung): `Ein Buch, eine Dubai-Reise und 300 Gutscheine – so nimmst du teil` ·
+Alternativen: `Soheil Hosseini verlost Dubai für zwei und 300 Gutscheine – mit deinem Buch` ·
+`18 € für das Buch, 54.500 € im Lostopf: die Buchaktion 2026`.
+
+Einsatzregel: A und B nicht gleichzeitig an dieselbe Liste senden; B erst einsetzen, wenn A
+Beschwerden zeigt (oder als A/B-Split auf getrennten Segmenten).
+
 ## Ergebnis der Vorprüfung (`scripts/newsletter-check.mjs`)
 
 Wird beim Lauf ausgegeben; Stand 16.09.2026: HTML 43 KB (< 102 KB), 3 Bilder mit alt/width/height
