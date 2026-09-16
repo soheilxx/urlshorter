@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 /**
- * Mobiler Sticky-Balken: knapper Kauf-CTA + klarer Weg zum Formular.
+ * Mobiler Sticky-Balken: direkter Amazon-Bestell-CTA + Sofortweg zum Formular (Dialog).
  * Erscheint erst, wenn der Hero aus dem Bild gescrollt ist; verschwindet,
  * solange ein Formularfeld fokussiert ist, und nie gleichzeitig mit dem
  * Consent-Banner (beides über html[data-*] in globals.css).
@@ -14,12 +14,14 @@ export function StickyCta({
   heroId,
   formId,
 }: {
-  primary: { label: string; href: string; event: string };
+  /** external: öffnet in neuem Tab (z. B. direkter Amazon-Link). */
+  primary: { label: string; href: string; event: string; external?: boolean; ctaId?: string };
   secondary: { label: string; href: string; event: string };
   heroId: string;
   formId: string;
 }) {
   const [visible, setVisible] = useState(false);
+  const [formVisible, setFormVisible] = useState(false);
 
   useEffect(() => {
     const hero = document.getElementById(heroId);
@@ -32,10 +34,54 @@ export function StickyCta({
     return () => observer.disconnect();
   }, [heroId]);
 
+  // Solange das Formular selbst den Bildschirm dominiert (≥ 40 % der Viewport-Höhe),
+  // braucht es keinen Balken darüber. Das <form> wird bei jeder Messung neu aufgelöst, weil
+  // EntryForm es nach Erfolg/„weitere Bestellnummer“ neu mountet; während des
+  // modalen Dialogs blendet CSS (html[data-dialog-open]) aus.
+  useEffect(() => {
+    const section = document.getElementById(formId);
+    if (!section) return;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      // Im modalen Dialog liegt das Formular im Top-Layer – das zählt nicht als „im Bild“.
+      if (document.documentElement.dataset.dialogOpen === "1") return setFormVisible(false);
+      const form = section.querySelector("form");
+      if (!form) return setFormVisible(false);
+      const rect = form.getBoundingClientRect();
+      const visible = Math.max(
+        0,
+        Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0),
+      );
+      setFormVisible(rect.height > 0 && visible / window.innerHeight >= 0.4);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    measure();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    // Nach dem Schließen des Dialogs (Attributwechsel am <html>) neu messen.
+    const attributes = new MutationObserver(schedule);
+    attributes.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-dialog-open"],
+    });
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      attributes.disconnect();
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [formId]);
+
   useEffect(() => {
     const form = document.getElementById(formId);
     if (!form) return;
     const onFocusIn = () => {
+      // Fokus im modalen Dialog zählt nicht als Inline-Formularfokus – sonst bliebe der
+      // Balken nach dem Schließen dauerhaft ausgeblendet (Fokus-Rückgabe an den Balken).
+      if (document.documentElement.dataset.dialogOpen === "1") return;
       document.documentElement.dataset.formFocus = "1";
     };
     const onFocusOut = (event: FocusEvent) => {
@@ -51,7 +97,7 @@ export function StickyCta({
     };
   }, [formId]);
 
-  if (!visible) return null;
+  if (!visible || formVisible) return null;
 
   return (
     <div className="vl-sticky px-3 pb-3" data-testid="sticky-cta">
@@ -59,9 +105,12 @@ export function StickyCta({
         <a
           href={primary.href}
           data-gw-event={primary.event}
+          data-cta-id={primary.ctaId}
+          {...(primary.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
           className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[var(--vl-yellow)] px-3 text-center text-sm font-semibold leading-tight text-[var(--vl-ink)] outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--vl-petrol)] focus-visible:ring-offset-2"
         >
           {primary.label}
+          {primary.external ? <span className="sr-only">(öffnet in neuem Tab)</span> : null}
         </a>
         <a
           href={secondary.href}

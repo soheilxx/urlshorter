@@ -63,15 +63,24 @@ test.describe("Kampagnenseite /verlosung", () => {
     await expect(page.getByText("Gewinne im Gesamtwert von 54.500 €")).toBeVisible();
     await expect(
       page.getByText(
-        "Erst das Buch kaufen, dann die Bestellnummer eintragen. Die Teilnahme erfolgt nicht automatisch.",
+        "Erst das Buch bestellen, dann die Bestellnummer eintragen. Die Teilnahme erfolgt nicht automatisch.",
       ),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: "Jetzt Buch vorbestellen" }).first()).toHaveAttribute(
-      "href",
-      "#buch-kaufen",
-    );
+    // Conversion-Regel: Bestell-Buttons führen direkt zu Amazon (neuer Tab), kein Seitensprung
+    const heroAmazon = page.getByRole("link", { name: /Jetzt bei Amazon bestellen/ }).first();
+    await expect(heroAmazon).toHaveAttribute("href", "https://link.amazon/B0eyhvaQw");
+    await expect(heroAmazon).toHaveAttribute("target", "_blank");
+    const amazonLinks = page.locator('a[href="https://link.amazon/B0eyhvaQw"]');
+    expect(await amazonLinks.count()).toBeGreaterThanOrEqual(4);
+    for (const link of await amazonLinks.all()) {
+      await expect(link).toHaveAttribute("target", "_blank");
+    }
+    expect(await page.locator('a[href="#buch-kaufen"]').count()).toBe(0);
+    // Sprungziele der Newsletter-Links bleiben bestehen
+    await expect(page.locator("section#buch-kaufen")).toHaveCount(1);
+    await expect(page.locator("section#teilnehmen")).toHaveCount(1);
     await expect(
-      page.getByRole("link", { name: "Bereits gekauft? Jetzt teilnehmen" }).first(),
+      page.getByRole("link", { name: "Schon bestellt? Bestellnummer eintragen" }).first(),
     ).toHaveAttribute("href", "#teilnehmen");
 
     // Los-Regel prominent in der Oberfläche
@@ -108,7 +117,7 @@ test.describe("Kampagnenseite /verlosung", () => {
     await expect(page.getByTestId("share-url").first()).toHaveText(CANONICAL);
 
     // Händlerlinks (Amazon primär) und Buchdaten aus der Konfiguration
-    await expect(page.getByRole("link", { name: /Bei Amazon vorbestellen/ })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /^Bei Amazon bestellen/ })).toHaveAttribute(
       "href",
       "https://link.amazon/B0eyhvaQw",
     );
@@ -129,11 +138,14 @@ test.describe("Kampagnenseite /verlosung", () => {
     context,
   }) => {
     await blockExternal(page);
-    const beacons: Array<{ type: string; status: number }> = [];
+    const beacons: Array<{ type: string; status: number; ctaId?: string }> = [];
     page.on("response", async (response) => {
       if (!response.url().endsWith("/api/book/events")) return;
-      const body = JSON.parse(response.request().postData() ?? "{}") as { type: string };
-      beacons.push({ type: body.type, status: response.status() });
+      const body = JSON.parse(response.request().postData() ?? "{}") as {
+        type: string;
+        ctaId?: string;
+      };
+      beacons.push({ type: body.type, status: response.status(), ctaId: body.ctaId });
     });
 
     await page.goto("/verlosung");
@@ -144,6 +156,24 @@ test.describe("Kampagnenseite /verlosung", () => {
     await acceptConsent(page);
     await expect.poll(() => beacons.length).toBe(1);
     expect(beacons[0]).toMatchObject({ type: "PageView", status: 204 });
+
+    // Amazon-Klick im Hero: genau ein AddToCart (Pixel + Beacon), kein Meta-Custom-Event
+    const popupPromise = page.waitForEvent("popup");
+    await page.getByRole("link", { name: /Jetzt bei Amazon bestellen/ }).first().click();
+    const popup = await popupPromise;
+    await popup.close();
+    await expect.poll(() => beacons.length).toBe(2);
+    expect(beacons[1]).toMatchObject({ type: "AddToCart", status: 204, ctaId: "hero_amazon" });
+    const calls = await fbqCalls(page);
+    expect(calls.filter((c) => c.includes("AddToCart"))).toHaveLength(1);
+    expect(calls.some((c) => c[0] === "trackCustom")).toBe(false);
+    // Formular öffnen ist nur ein Analytics-Event – kein Pixel-Aufruf
+    await page.getByRole("link", { name: "Schon bestellt? Bestellnummer eintragen" }).first().click();
+    await expect
+      .poll(() => page.evaluate(() => document.querySelector("dialog")?.matches(":modal") ?? false))
+      .toBe(true);
+    expect(JSON.stringify(await fbqCalls(page))).not.toContain("verlosung_formular_geoeffnet");
+    await page.keyboard.press("Escape");
     const consentCookie = (await context.cookies()).find((c) => c.name === "marketing_consent");
     expect(consentCookie?.value).toBe("accepted");
 
@@ -154,11 +184,52 @@ test.describe("Kampagnenseite /verlosung", () => {
     const revoked = (await context.cookies()).find((c) => c.name === "marketing_consent");
     expect(revoked?.value).toBe("denied");
 
-    // Neuer Aufruf mit Ablehnung: kein Beacon
+    // Neuer Aufruf mit Ablehnung: kein weiterer Beacon (PageView + AddToCart von oben bleiben)
     await page.goto("/verlosung");
     await page.waitForTimeout(1500);
-    expect(beacons).toHaveLength(1);
+    expect(beacons).toHaveLength(2);
     await expect(page.getByTestId("consent-banner")).toHaveCount(0);
+  });
+
+  test("Jeder Teilnahme-Button öffnet das Formular sofort im Dialog, ohne Seitensprung", async ({
+    page,
+  }) => {
+    await page.goto("/verlosung");
+    await acceptConsent(page);
+    const dialog = page.getByTestId("teilnahme-dialog");
+
+    // Eine einzige Formularinstanz: inline (nicht modal) – Eingaben überleben das Umschalten
+    const isModal = () => page.evaluate(() => document.querySelector("dialog")?.matches(":modal") ?? false);
+    expect(await isModal()).toBe(false);
+    await page.getByLabel("Vorname").fill("Erika");
+
+    // Hero-CTA → Dialog mit demselben Formular, kein Scrollen der Seite durch das Öffnen
+    const heroCta = page.getByRole("link", { name: "Schon bestellt? Bestellnummer eintragen" }).first();
+    await heroCta.scrollIntoViewIfNeeded();
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    await heroCta.click();
+    await expect.poll(isModal).toBe(true);
+    await expect(dialog.getByRole("heading", { name: "Bestellnummer eintragen" })).toBeVisible();
+    await expect(dialog.getByLabel("Vorname")).toHaveValue("Erika");
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+    expect(await page.getByLabel("Bestell- / Auftragsnummer").count()).toBe(1);
+
+    // Escape schließt: wieder inline, Eingabe bleibt erhalten
+    await page.keyboard.press("Escape");
+    await expect.poll(isModal).toBe(false);
+    await expect(page.getByLabel("Vorname")).toHaveValue("Erika");
+
+    // Abschluss-CTA ganz unten und Header-Button verhalten sich gleich
+    await page.getByRole("link", { name: "Schon bestellt? Bestellnummer eintragen" }).last().click();
+    await expect.poll(isModal).toBe(true);
+    await dialog.getByRole("button", { name: "Formular schließen" }).click();
+    await expect.poll(isModal).toBe(false);
+    await page.getByRole("link", { name: "Teilnehmen", exact: true }).click();
+    await expect.poll(isModal).toBe(true);
+
+    // Deep-Link aus dem Newsletter öffnet den Dialog direkt
+    await page.goto("/verlosung#teilnehmen");
+    await expect.poll(isModal).toBe(true);
   });
 
   test("Teilnahme direkt auf /verlosung: Erfolg, dedupliziertes Registrierungsevent, weitere Bestellnummer, Duplikat", async ({
@@ -169,6 +240,11 @@ test.describe("Kampagnenseite /verlosung", () => {
     await page.goto(`/verlosung${CAMPAIGN_QUERY}`);
     await acceptConsent(page);
 
+    // Über den Hero-CTA im Dialog teilnehmen (echter Kampagnenweg)
+    await page.getByRole("link", { name: "Schon bestellt? Bestellnummer eintragen" }).first().click();
+    await expect
+      .poll(() => page.evaluate(() => document.querySelector("dialog")?.matches(":modal") ?? false))
+      .toBe(true);
     await fillEntry(page, ORDER_A, "erika.verlosung@test.local");
     // Mindestalter des Formular-Tokens (Bot-Schutz)
     await page.waitForTimeout(3200);
@@ -324,6 +400,20 @@ test.describe("Kampagnenseite /verlosung", () => {
     // (vor dem Ganzseiten-Screenshot geprüft – dieser verändert kurz den Viewport)
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
+    await page.getByRole("heading", { name: "Häufige Fragen" }).scrollIntoViewIfNeeded();
+    await expect(page.getByTestId("sticky-cta")).toBeVisible();
+    // Sticky „Bestellnummer eintragen“ öffnet den Dialog sofort, Seite dahinter ist gesperrt
+    await page.getByTestId("sticky-cta").getByRole("link", { name: "Bestellnummer eintragen" }).click();
+    await expect
+      .poll(() => page.evaluate(() => document.querySelector("dialog")?.matches(":modal") ?? false))
+      .toBe(true);
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe("hidden");
+    await expect(page.getByTestId("sticky-cta")).toBeHidden();
+    await page.keyboard.press("Escape");
+    await expect
+      .poll(() => page.evaluate(() => document.querySelector("dialog")?.matches(":modal") ?? false))
+      .toBe(false);
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe("hidden");
     await page.getByRole("heading", { name: "Häufige Fragen" }).scrollIntoViewIfNeeded();
     await expect(page.getByTestId("sticky-cta")).toBeVisible();
     await page.getByLabel("Vorname").focus();

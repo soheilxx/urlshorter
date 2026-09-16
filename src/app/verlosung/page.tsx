@@ -14,6 +14,7 @@ import { ConsentBanner, ConsentSettingsButton } from "@/components/consent-banne
 import { DubaiSkyline } from "@/components/gewinn/dubai-skyline";
 import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import { Confetti } from "@/components/verlosung/confetti";
+import { ParticipationHost } from "@/components/verlosung/participation-host";
 import { ShareBox } from "@/components/verlosung/share-box";
 import { StickyCta } from "@/components/verlosung/sticky-cta";
 import { VerlosungEntry } from "@/components/verlosung/verlosung-entry";
@@ -29,6 +30,7 @@ import {
   BUCH_VERLAG,
   buchKaufLabels,
   SPENDEN_EMPFAENGER,
+  SPENDEN_HINWEIS,
 } from "@/lib/buch-config";
 import { resolveConsentCookie } from "@/lib/consent";
 import { getEnv } from "@/lib/env";
@@ -64,8 +66,12 @@ import { createRedditTrackingConfig } from "@/lib/reddit-context";
 import { createFormToken } from "@/lib/sweepstakes-crypto";
 
 /**
- * Kampagnen-Landingpage /verlosung (Adcloud-Mailing): Buch kaufen bzw.
- * vorbestellen und die Bestellnummer direkt hier registrieren. Zusätzlicher
+ * Kampagnen-Landingpage /verlosung (Adcloud-Mailing): Buch bei Amazon
+ * bestellen und die Bestellnummer direkt hier registrieren. Conversion-Regel
+ * (Soheil, 16.09.2026): KEIN CTA springt auf der Seite nach unten – jeder
+ * Bestell-Button führt direkt zu Amazon (neuer Tab), jeder Teilnahme-Button
+ * öffnet das Formular sofort im Dialog (ParticipationHost); dieselbe
+ * Formularinstanz liegt zusätzlich inline in der Sektion #teilnehmen. Zusätzlicher
  * Einstieg in den GEMEINSAMEN Lostopf von /gewinn – gleiche Server Action,
  * gleiche Validierung, gleiche Deduplizierung. Alle Zahlen kommen aus
  * gewinnspiel-config.ts / buch-config.ts.
@@ -109,7 +115,7 @@ export const metadata: Metadata = {
 };
 
 const BTN =
-  "inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl px-6 text-base font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--vl-petrol)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--vl-ivory)]";
+  "inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl px-6 text-center text-base leading-tight font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--vl-petrol)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--vl-ivory)]";
 const BTN_YELLOW = `${BTN} bg-[var(--vl-yellow)] text-[var(--vl-ink)] shadow-[0_16px_40px_-18px_rgba(7,62,67,0.6)] hover:brightness-105`;
 const BTN_OUTLINE = `${BTN} border-2 border-[var(--vl-petrol)] bg-transparent text-[var(--vl-petrol)] hover:bg-[var(--vl-petrol-soft)]`;
 const BTN_PETROL = `${BTN} bg-[var(--vl-petrol)] text-white hover:brightness-110`;
@@ -231,7 +237,7 @@ export default async function VerlosungPage({
   const FAQ: Array<{ q: string; a: React.ReactNode }> = [
     {
       q: "Wie nehme ich teil?",
-      a: `Bestelle „${BUCH_TITEL}“ bei einem Buchhändler, komm auf diese Seite zurück und trage deine Bestellnummer sowie deine Kontaktdaten in das Teilnahmeformular ein. Erst mit dem Absenden des Formulars bist du im Lostopf – der Kauf allein oder ein Klick zum Händler reicht nicht.`,
+      a: `Bestelle „${BUCH_TITEL}“ bei Amazon oder einem anderen Buchhändler und trage danach hier deine Bestellnummer sowie deine Kontaktdaten in das Teilnahmeformular ein. Erst mit dem Absenden des Formulars bist du im Lostopf – die Bestellung allein oder ein Klick zum Händler reicht nicht.`,
     },
     {
       q: "Gilt auch eine Vorbestellung?",
@@ -242,11 +248,11 @@ export default async function VerlosungPage({
       a: "In der Bestellbestätigung deines Buchhändlers (E-Mail oder Kundenkonto) – bei Amazon zum Beispiel eine Nummer im Format 306-1234567-1234567. Trage sie genau so ein, wie sie dort steht, inklusive Bindestrichen oder führender Nullen.",
     },
     {
-      q: "Bei welchen Händlern kann ich kaufen?",
+      q: "Bei welchen Händlern kann ich bestellen?",
       a: `Bei ${RETAILER_LINKS.map((r) => r.label).join(", ")} sowie bei jedem anderen Händler, der das Buch führt – wähle im Formular dann „Anderer Händler“ und trage den Namen ein.`,
     },
     {
-      q: "Ich habe bereits gekauft – kann ich mich noch anmelden?",
+      q: "Ich habe bereits bestellt – kann ich mich noch anmelden?",
       a: `Ja, solange deine Registrierung bis zum ${ENTRY_DEADLINE_LABEL} eingeht. Auch Bestellungen von vor dem Start dieser Aktion kannst du registrieren. Hast du deine Bestellnummer schon auf lizenzzumerfolg.com/gewinn eingetragen, ist sie bereits im gemeinsamen Lostopf – bitte nicht erneut anmelden.`,
     },
     {
@@ -267,7 +273,7 @@ export default async function VerlosungPage({
     },
     {
       q: `Wie funktioniert die Spende an den ${SPENDEN_EMPFAENGER}?`,
-      a: `${BUCH_AUTOR} spendet 100 % seiner Einnahmen als Autor aus diesem Buch an den ${SPENDEN_EMPFAENGER}. Gemeint sind die Autoreneinnahmen, nicht der gesamte Verkaufspreis. Du selbst tätigst mit dem Kauf keine eigene Spende und erhältst keine Spendenbescheinigung. Der ${SPENDEN_EMPFAENGER} ist nicht an der Verlosung beteiligt.`,
+      a: `${SPENDEN_HINWEIS} Gemeint sind die Autoreneinnahmen, nicht der gesamte Verkaufspreis. Du selbst tätigst mit deiner Bestellung keine eigene Spende und erhältst keine Spendenbescheinigung. Der ${SPENDEN_EMPFAENGER} ist nicht an der Verlosung beteiligt.`,
     },
     {
       q: "Wer darf teilnehmen?",
@@ -294,6 +300,7 @@ export default async function VerlosungPage({
 
       <a
         href="#teilnehmen"
+        data-no-dialog=""
         className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-[var(--vl-yellow)] focus:px-4 focus:py-2 focus:text-[var(--vl-ink)]"
       >
         Zum Teilnahmeformular springen
@@ -399,33 +406,35 @@ export default async function VerlosungPage({
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a
-                  href="#buch-kaufen"
-                  data-gw-event="verlosung_cta_kaufen_hero"
+                  href={amazon.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-cta-id="hero_amazon"
+                  data-gw-event="verlosung_amazon_klick"
                   className={`${BTN_YELLOW} sm:whitespace-nowrap`}
                 >
                   {kauf.primaryCta}
+                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                  <span className="sr-only">(öffnet in neuem Tab)</span>
                 </a>
                 <a
                   href="#teilnehmen"
                   data-gw-event="verlosung_cta_teilnehmen_hero"
                   className={`${BTN_OUTLINE} sm:whitespace-nowrap`}
                 >
-                  Bereits gekauft? Jetzt teilnehmen
+                  Schon bestellt? Bestellnummer eintragen
                 </a>
               </div>
               <p className="mt-3 text-sm text-[var(--vl-ink-mute)]">
-                Erst das Buch kaufen, dann die Bestellnummer eintragen. Die Teilnahme erfolgt nicht
-                automatisch.
+                Erst das Buch bestellen, dann die Bestellnummer eintragen. Die Teilnahme erfolgt nicht
+                automatisch. Amazon öffnet in einem neuen Tab – diese Seite bleibt für dich offen.
               </p>
               <p className="mt-5 inline-flex items-start gap-2 text-sm text-[var(--vl-ink-soft)]">
                 <HeartHandshake
                   className="mt-0.5 h-4 w-4 shrink-0 text-[var(--vl-petrol)]"
                   aria-hidden="true"
                 />
-                <span>
-                  {BUCH_AUTOR} spendet 100 % seiner Einnahmen aus diesem Buch an den{" "}
-                  {SPENDEN_EMPFAENGER}.
-                </span>
+                <span>{SPENDEN_HINWEIS}</span>
               </p>
             </div>
 
@@ -495,13 +504,13 @@ export default async function VerlosungPage({
               {[
                 {
                   icon: BookOpen,
-                  title: "Buch kaufen",
-                  text: `Bestelle „${BUCH_TITEL}“ bei einem teilnehmenden Buchhändler.`,
+                  title: "Buch bestellen",
+                  text: `Bestelle „${BUCH_TITEL}“ bei Amazon oder einem anderen teilnehmenden Buchhändler.`,
                 },
                 {
                   icon: ClipboardList,
                   title: "Bestellnummer eintragen",
-                  text: "Komm auf diese Seite zurück und fülle das Teilnahmeformular aus.",
+                  text: "Trage deine Bestellnummer hier auf der Seite ein – jeder Button „Bestellnummer eintragen“ öffnet das Formular sofort.",
                 },
                 {
                   icon: PartyPopper,
@@ -693,15 +702,24 @@ export default async function VerlosungPage({
             und Teilnahmebedingungen.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <a href="#buch-kaufen" data-gw-event="verlosung_cta_kaufen_gewinne" className={BTN_YELLOW}>
+            <a
+              href={amazon.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cta-id="gutscheine_amazon"
+              data-gw-event="verlosung_amazon_klick"
+              className={BTN_YELLOW}
+            >
               {kauf.primaryCta}
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              <span className="sr-only">(öffnet in neuem Tab)</span>
             </a>
             <a
               href="#teilnehmen"
               data-gw-event="verlosung_cta_teilnehmen_gewinne"
               className={`${TEXT_LINK} inline-flex min-h-[44px] items-center`}
             >
-              Bereits gekauft? Zum Teilnahmeformular
+              Schon bestellt? Bestellnummer eintragen
             </a>
           </div>
         </section>
@@ -725,7 +743,7 @@ export default async function VerlosungPage({
               className="mt-8"
               shareText={shareText}
               heading="Link zur Aktion"
-              intro="Für deine Freunde gelten dieselben Kauf- und Registrierungsbedingungen – Teilen allein ist keine Teilnahme."
+              intro="Für deine Freunde gelten dieselben Bestell- und Registrierungsbedingungen – Teilen allein ist keine Teilnahme."
             />
           </div>
         </section>
@@ -832,7 +850,7 @@ export default async function VerlosungPage({
                   data-gw-event="verlosung_cta_teilnehmen_buch"
                   className={`${TEXT_LINK} mt-3 inline-flex min-h-[44px] items-center`}
                 >
-                  Schon bestellt? Zum Teilnahmeformular
+                  Schon bestellt? Bestellnummer eintragen
                 </a>
               </div>
             </div>
@@ -859,9 +877,8 @@ export default async function VerlosungPage({
                 Eine Geschichte lesen. Kinder unterstützen.
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-[var(--vl-ink-soft)]">
-                {BUCH_AUTOR} spendet 100 % seiner Einnahmen aus diesem Buch an den {SPENDEN_EMPFAENGER}.
-                Mit deinem Buchkauf unterstützt du diese Spendenaktion – unabhängig davon, ob du bei
-                der Verlosung gewinnst.
+                {SPENDEN_HINWEIS} Mit deiner Bestellung unterstützt du diese Spendenaktion –
+                unabhängig davon, ob du bei der Verlosung gewinnst.
               </p>
               <p className="mt-3 text-sm text-[var(--vl-ink-mute)]">
                 Gemeint sind die Einnahmen des Autors, nicht der gesamte Verkaufspreis. Der{" "}
@@ -906,16 +923,23 @@ export default async function VerlosungPage({
             </p>
           </div>
           <div className="mt-6">
-            {open ? (
-              <VerlosungEntry
-                initialFormToken={formToken}
-                utm={utm}
-                privacyUrl={env.PRIVACY_URL ?? null}
-                shareText={shareText}
-              />
-            ) : (
-              <ClosedNotice phase={phase} />
-            )}
+            <ParticipationHost
+              enabled={open}
+              dialogTitle="Bestellnummer eintragen"
+              inlineLabelId="teilnehmen-heading"
+              form={
+                open ? (
+                  <VerlosungEntry
+                    initialFormToken={formToken}
+                    utm={utm}
+                    privacyUrl={env.PRIVACY_URL ?? null}
+                    shareText={shareText}
+                  />
+                ) : (
+                  <ClosedNotice phase={phase} />
+                )
+              }
+            />
           </div>
           <p className="mt-4 text-center text-xs text-[var(--vl-ink-mute)]">
             Registrierungsschluss: {ENTRY_DEADLINE_LABEL} (MESZ) · Teilnahme ab {MIN_AGE} Jahren mit
@@ -967,11 +991,20 @@ export default async function VerlosungPage({
               Gewinnerinnen und Gewinner. Gewinnerbekanntgabe am {ANNOUNCEMENT_DATETIME_LABEL}.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <a href="#buch-kaufen" data-gw-event="verlosung_cta_kaufen_footer" className={BTN_YELLOW}>
+              <a
+                href={amazon.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-cta-id="abschluss_amazon"
+                data-gw-event="verlosung_amazon_klick"
+                className={BTN_YELLOW}
+              >
                 {kauf.primaryCta}
+                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only">(öffnet in neuem Tab)</span>
               </a>
               <a href="#teilnehmen" data-gw-event="verlosung_cta_teilnehmen_footer" className={BTN_PETROL}>
-                Bereits gekauft? Jetzt teilnehmen
+                Schon bestellt? Bestellnummer eintragen
               </a>
             </div>
           </div>
@@ -1051,8 +1084,14 @@ export default async function VerlosungPage({
       <StickyCta
         heroId="hero"
         formId="teilnehmen"
-        primary={{ label: kauf.primaryCta, href: "#buch-kaufen", event: "verlosung_sticky_kaufen" }}
-        secondary={{ label: "Teilnehmen", href: "#teilnehmen", event: "verlosung_sticky_teilnehmen" }}
+        primary={{
+          label: kauf.primaryCta,
+          href: amazon.url,
+          event: "verlosung_amazon_klick",
+          external: true,
+          ctaId: "sticky_amazon",
+        }}
+        secondary={{ label: "Bestellnummer eintragen", href: "#teilnehmen", event: "verlosung_sticky_teilnehmen" }}
       />
     </div>
   );

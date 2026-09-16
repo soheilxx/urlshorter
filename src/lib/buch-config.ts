@@ -32,20 +32,24 @@ export const BUCH_ERSCHEINT_ISO = "2026-10-06";
 /** Erscheinungstag als Zeitpunkt (Europe/Berlin, MESZ) – für zeitabhängige Kauf-Copy. */
 export const BUCH_ERSCHEINT_AT = new Date(`${BUCH_ERSCHEINT_ISO}T00:00:00+02:00`);
 
-/** Ist das Buch bereits erschienen? Steuert „vorbestellen“ vs. „kaufen“. */
+/** Ist das Buch bereits erschienen? Steuert nur noch den Verfügbarkeitsstatus. */
 export function isBookReleased(now: Date = new Date()): boolean {
   return now >= BUCH_ERSCHEINT_AT;
 }
 
-/** Zeitabhängige Kauf-Labels (vor Erscheinen „vorbestellen“, danach „kaufen“). */
+/** Bestell-Labels für die Buchseiten (Wortlaut fest, nur `availability` ist zeitabhängig). */
 export function buchKaufLabels(now: Date = new Date()) {
   const released = isBookReleased(now);
   return {
     released,
-    /** Verb für Fließtext, z. B. „Jetzt Buch vorbestellen“. */
-    verb: released ? "kaufen" : "vorbestellen",
-    primaryCta: released ? "Jetzt Buch kaufen" : "Jetzt Buch vorbestellen",
-    amazonCta: released ? "Bei Amazon kaufen" : "Bei Amazon vorbestellen",
+    /**
+     * Bestell-Labels – bewusst ohne „kaufen/vorbestellen“ (Vorgabe von Soheil:
+     * Bestell-Sprache, kein Kaufzwang-Eindruck); eine Vorbestellung ist ebenfalls
+     * eine Bestellung mit gültiger Bestellnummer. Nur `availability` ist zeitabhängig.
+     */
+    verb: "bestellen",
+    primaryCta: "Jetzt bei Amazon bestellen",
+    amazonCta: "Bei Amazon bestellen",
     /** Kurzstatus neben dem Preis. */
     availability: released ? "jetzt erhältlich" : `erscheint am ${BUCH_ERSCHEINT_LABEL}`,
   };

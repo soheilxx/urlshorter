@@ -376,8 +376,32 @@ html {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 html[data-consent-open="1"] .vl-sticky,
-html[data-form-focus="1"] .vl-sticky {
+html[data-form-focus="1"] .vl-sticky,
+html[data-dialog-open="1"] .vl-sticky {
   display: none;
+}
+
+/* Teilnahmeformular (ParticipationHost): dasselbe <dialog> läuft inline im
+   Seitenfluss (data-inline) oder modal – inline wird die Dialog-Optik neutralisiert. */
+.verlosung-theme dialog[data-inline] {
+  position: static;
+  display: block;
+  inset: auto;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  overflow: visible;
+}
+html[data-dialog-open="1"] {
+  overflow: hidden;
+  scrollbar-gutter: stable; /* Desktop mit klassischer Scrollleiste: kein Breitensprung */
 }
 @media (min-width: 768px) {
   .vl-sticky {

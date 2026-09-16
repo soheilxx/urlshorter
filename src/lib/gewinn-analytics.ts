@@ -3,7 +3,11 @@
  * Es werden ausschließlich Event-NAMEN übermittelt – niemals Formulardaten,
  * Bestellnummern, Referenzen oder sonstige personenbezogene Inhalte.
  */
-const AMAZON_CLICK_EVENTS = new Set(["gewinnspiel_amazon_klick", "buch_amazon_klick"]);
+const AMAZON_CLICK_EVENTS = new Set([
+  "gewinnspiel_amazon_klick",
+  "buch_amazon_klick",
+  "verlosung_amazon_klick",
+]);
 
 /**
  * Hilfsaktionen (Link kopieren, Teilen-Dialog) sind Interesse, keine
@@ -13,6 +17,7 @@ const ANALYTICS_ONLY_EVENTS = new Set([
   "verlosung_link_kopiert",
   "verlosung_teilen_geoeffnet",
   "verlosung_weitere_bestellnummer",
+  "verlosung_formular_geoeffnet",
 ]);
 
 type TrackingWindow = Window & {

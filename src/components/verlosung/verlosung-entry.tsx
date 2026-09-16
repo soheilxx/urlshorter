@@ -37,7 +37,8 @@ export function VerlosungEntry({
   // Nach einem neuen Vorgang das erste Feld fokussieren (Tastatur/Screenreader).
   useEffect(() => {
     if (instance === 0) return;
-    document.getElementById("teilnehmen")?.scrollIntoView({ block: "start" });
+    // Funktioniert inline wie im Dialog: das erste Feld in den sichtbaren Bereich holen.
+    document.getElementById("retailer")?.scrollIntoView({ block: "center" });
     document.getElementById("retailer")?.focus();
   }, [instance]);
 

@@ -8,7 +8,7 @@ Stand: 16.09.2026 · Briefing: „Dubai für zwei. Und 300 Gutscheine zu gewinne
 
 | Bereich | Wiederverwendet | Geändert / neu |
 | --- | --- | --- |
-| Konfiguration | `src/lib/gewinnspiel-config.ts`, `src/lib/buch-config.ts` | `VOUCHER_BRANDS` (9 Staffeln, Summen berechnet), `TOTAL_PRIZE_VALUE_*`, `PRIZE_SCOPE`, `ENTRY_PATHS`, `VERLOSUNG_URL`, Share-Texte, `RETAILER_LINKS`, `ELIGIBLE_COUNTRY_ALIASES`, `TERMS_VERSION` → 1.3; `buchKaufLabels()` (vorbestellen/kaufen zeitabhängig) |
+| Konfiguration | `src/lib/gewinnspiel-config.ts`, `src/lib/buch-config.ts` | `VOUCHER_BRANDS` (9 Staffeln, Summen berechnet), `TOTAL_PRIZE_VALUE_*`, `PRIZE_SCOPE`, `ENTRY_PATHS`, `VERLOSUNG_URL`, Share-Texte, `RETAILER_LINKS`, `ELIGIBLE_COUNTRY_ALIASES`, `TERMS_VERSION` → 1.3; `buchKaufLabels()` (CTA-Wortlaut „Jetzt bei Amazon bestellen“ – bewusst ohne vorbestellen/kaufen) |
 | Formular | `src/components/gewinn/entry-form.tsx` (Felder, Fehler, Honeypot, Token) | Props `landingPath`, `submitLabel`, `termsHref`, `submitHint`, `renderSuccess`; Farben nur über `--gw-*`-Variablen; Registrierungsevent nur mit Server-Ereignis-ID |
 | Server Action | `src/actions/sweepstakes-actions.ts` → `submitSweepstakesAction` | liest `landingPath`, gibt `trackingEventId` zurück, startet Server-Registrierungsevent in `after()`; neu `newFormTokenAction` |
 | Kernlogik | `src/lib/sweepstakes.ts` → `submitSweepstakesEntry` | validiert `landingPath` gegen `ENTRY_PATHS`, Land gegen DE/AT/CH-Werteliste, speichert `landingPath` + `prizeScope`, Rückgabe `persisted`/`trackingEventId` |
@@ -22,7 +22,7 @@ Stand: 16.09.2026 · Briefing: „Dubai für zwei. Und 300 Gutscheine zu gewinne
 | Browser-Pixel | `src/components/book-conversion-tracking.tsx` | ein PageView je Seitenaufruf auch bei Consent-Widerruf/-Neuzustimmung (`__lzeBookPageViews`) |
 | Consent | `src/lib/consent.ts` | Konstanten + `resolveConsentCookie`, `readCookieValue`, `consentDecisionFromValue`; neu `src/components/consent-banner.tsx` |
 | Registrierungsevent | – | neu `src/lib/registration-conversion.ts`, `trackRegistrationCompleted()` in `src/lib/gewinn-analytics.ts` |
-| Seite | `src/app/gewinn/page.tsx` als technische Referenz | neu `src/app/verlosung/page.tsx`, `src/components/verlosung/{share-box,sticky-cta,confetti,verlosung-entry}.tsx`, `.verlosung-theme` in `globals.css` |
+| Seite | `src/app/gewinn/page.tsx` als technische Referenz | neu `src/app/verlosung/page.tsx`, `src/components/verlosung/{share-box,sticky-cta,confetti,verlosung-entry,participation-host}.tsx` (participation-host: jeder `#teilnehmen`-Link öffnet das eine Formular sofort im Dialog; alle Bestell-CTAs verlinken direkt zu Amazon – Conversion-Regel vom 16.09.2026: kein CTA springt auf der Seite), `.verlosung-theme` in `globals.css` |
 
 ## 2. Tracking-/CAPI-Integrationsmatrix für `/verlosung`
 
@@ -38,7 +38,7 @@ Teilnahme funktioniert unabhängig davon.
 | TikTok Pixel + Events API | dieselben Module | `Pageview`, `AddToCart`, `CompleteRegistration` (`ttq.track`) | Events API `AddToCart`, `CompleteRegistration` mit `event_id` | Cookie erforderlich | wie links | Unit (Mocks), E2E-Bootstrap; live nach Deploy per Log `registration_capi.tiktok_sent` |
 | LinkedIn Insight Tag + CAPI | `gewinn-tracking.tsx`, `/api/book/events`, `linkedin-capi.ts` | Insight Tag, Conversion beim Händlerklick | CAPI nur mit `li_fat_id` | Cookie erforderlich | Händlerklick (bestehende Regel 30352953) | unverändert; Registrierung bewusst **nicht** (bräuchte eigene Conversion-Regel, s. offene Punkte) |
 | Reddit Pixel + CAPI | `reddit-tracking.tsx`, `/api/reddit/events` | `PageVisit`, Amazon-Outbound | CAPI mit `event_id` | Cookie erforderlich | Landingpage-Aufruf, Amazon-Klick | Allowlist-Unit-Test; Route unverändert |
-| GA4 / GTM | `gewinn-tracking.tsx` | dataLayer `verlosung_seite`, CTA-Events (`verlosung_cta_*`, `verlosung_sticky_*`), `gewinnspiel_formular_start`, `gewinnspiel_teilnahme` (+`event_id`), `verlosung_link_kopiert`, `verlosung_teilen_geoeffnet`, `verlosung_weitere_bestellnummer` | – | Cookie erforderlich | nur Event-Namen, keine Formulardaten | nicht live (keine GA4/GTM-ID in Produktion gesetzt) |
+| GA4 / GTM | `gewinn-tracking.tsx` | dataLayer `verlosung_seite`, CTA-Events (`verlosung_cta_*`, `verlosung_sticky_*`), `gewinnspiel_formular_start`, `gewinnspiel_teilnahme` (+`event_id`), `verlosung_formular_geoeffnet`, `verlosung_link_kopiert`, `verlosung_teilen_geoeffnet`, `verlosung_weitere_bestellnummer` | – | Cookie erforderlich | nur Event-Namen, keine Formulardaten | nicht live (keine GA4/GTM-ID in Produktion gesetzt) |
 | First-Party | `TagEvent` | Beacons | `book_page_view`, `book_add_to_cart`, `sweepstakes_registration`, `reddit_*` | wie oben | – | Unit + Integration + E2E |
 
 Semantik: Händlerklick = `AddToCart` (bestehender Kaufinteresse-Proxy, kein
