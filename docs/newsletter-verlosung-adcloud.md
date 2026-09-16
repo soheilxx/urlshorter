@@ -11,7 +11,24 @@ Stand: 16.09.2026 · Zielseite: `https://lizenzzumerfolg.com/verlosung` · Versa
 | `docs/newsletter-verlosung-adcloud.txt` | Textversion (Multipart-Alternative) mit `utm_content=adcloud_text`. |
 | `scripts/newsletter-check.mjs` | Zustellbarkeits-/Spam-Vorprüfung: `node scripts/newsletter-check.mjs public/newsletter/verlosung-adcloud.html docs/newsletter-verlosung-adcloud.txt` |
 
-## Betreff und Preheader (Empfehlung, A/B-fähig)
+## Betreffzeilen – Ranking nach erwarteter Öffnungsrate (Nr. 1 = beste)
+
+| # | Betreff | Zeichen | Preheader dazu |
+| --- | --- | ---: | --- |
+| 1 | `Dubai für zwei + 300 Gutscheine – für ein Buch à 18 €` | 52 | Bestellnummer eintragen, dabei sein: Gewinne im Wert von 54.500 €. Bis 11.10.2026. |
+| 2 | `300 Gutscheine und eine Dubai-Reise: dein Buch ist das Los` | 57 | Amazon, Wiresoft, Bikinilista – plus 5 Tage Dubai für zwei. Buch für 18 € vorbestellen. |
+| 3 | `Neues Buch, 54.500 € Gewinne – dein Einsatz: 18 €` | 49 | Dubai-Reise für zwei und 300 Gutscheine werden verlost. Jede Bestellnummer zählt als Los. |
+| 4 | `Bis 11.10.: Dubai-Reise + 300 Gutscheine für Buchkäufer` | 55 | Buch bestellen, Bestellnummer registrieren, fertig. Vorbestellung zählt bereits. |
+| 5 | `Was ein 18-€-Buch mit Dubai zu tun hat` | 38 | 5 Tage Dubai für zwei und 300 Gutscheine – nur für Leserinnen und Leser von „Die Lizenz zum Erfolg“. |
+| 6 | `Soheil Hosseini verlost Dubai für zwei – dein Buch ist dabei` | 59 | Dazu 300 Gutscheine im Wert von 34.500 €. Anmeldung in zwei Minuten, bis 11.10.2026. |
+| 7 | `Jede Bestellnummer ist ein Los: Dubai & 300 Gutscheine` | 54 | Mehrere Bücher, mehrere Lose. Buch für 18 € vorbestellen und Bestellnummer eintragen. |
+| 8 | `Buch bestellen, Nummer eintragen, Dubai-Reise gewinnen` | 54 | 300 Gutscheine von Amazon, Wiresoft und Bikinilista gibt es obendrauf. |
+
+Regeln: keine Markennamen (Amazon) im Betreff selbst (Phishing-Verdacht bei Filtern), keine
+Emojis, keine Großschreibung, keine Ausrufezeichen, kein „gewonnen“/„Gewinner“ im Betreff.
+Empfehlung: Nr. 1 gegen Nr. 2 als A/B-Test auf je 10 % der Liste, Gewinner an den Rest.
+
+## Betreff und Preheader (ursprüngliche Vorschläge)
 
 | Variante | Betreff | Zeichen |
 | --- | --- | --- |
