@@ -11,7 +11,29 @@ Stand: 16.09.2026 · Zielseite: `https://lizenzzumerfolg.com/verlosung` · Versa
 | `docs/newsletter-verlosung-adcloud.txt` | Textversion (Multipart-Alternative) mit `utm_content=adcloud_text`. |
 | `scripts/newsletter-check.mjs` | Zustellbarkeits-/Spam-Vorprüfung: `node scripts/newsletter-check.mjs public/newsletter/verlosung-adcloud.html docs/newsletter-verlosung-adcloud.txt` |
 
-## Betreffzeilen – Ranking nach erwarteter Öffnungsrate (Nr. 1 = beste)
+## Betreffzeilen – forschungsbasiertes Ranking (Nr. 1 = beste)
+
+Abgeleitet aus Feldstudien und Lehrbüchern (Details im Chat-Protokoll vom 16.09.2026):
+Nutzen und Zahlen in die ersten ~30 Zeichen (Return Path: < 49 Zeichen +12,5 % Opens; Mobil
+zeigt 25–35 Zeichen), Spezifität vor Cleverness (Caples, Hopkins, Ogilvy; Conductor: Zahlen
++36 %), großer Gewinn + hohe Anzahl (Prospect Theory: Möglichkeitseffekt; Numerositäts-
+Heuristik), Anker 54.500 € vs. 18 € (Tversky/Kahneman), Dringlichkeit als „noch bis“ statt
+„letzte Chance“ (Return Path: „still time“ bestes Wort), Vorname wenn verfügbar (Sahni/Wheeler/
+Chintagunta 2018: +20 % Opens, −17 % Abmeldungen), kleine Wissenslücke für Re-Sends
+(Loewenstein 1994), keine Spam-Signale.
+
+| # | Betreff | Zeichen | Einsatz | Preheader |
+| --- | --- | ---: | --- | --- |
+| 1 | `Dubai für zwei + 300 Gutscheine – für ein Buch à 18 €` (mit Vorname, falls AdCloud-Token vorhanden: `{Vorname}, Dubai für zwei + 300 Gutscheine – für ein Buch à 18 €`) | 52 | Erstversand, Hauptvariante | Bestellnummer eintragen, dabei sein: Gewinne im Wert von 54.500 €. Bis 11.10.2026. |
+| 2 | `Für 18 € im Lostopf: Dubai für zwei und 300 Gutscheine` | 51 | Erstversand, A/B-Gegner | 5 Tage Dubai, Emirates Business Class – plus Gutscheine von Amazon, Wiresoft, Bikinilista. |
+| 3 | `300 Gutscheine + Dubai: dein Buch ist das Los` | 44 | Erstversand, Listen mit Gutschein-Fokus | Jede Bestellnummer zählt als ein Los. Buch für 18 € vorbestellen, Nummer eintragen. |
+| 4 | `Noch bis 11.10.: Dubai für zwei + 300 Gutscheine` | 47 | Zweitversand / letzte Woche | Buch bestellen, Bestellnummer registrieren – zwei Minuten. Vorbestellung zählt. |
+| 5 | `Was ein 18-€-Buch mit Dubai zu tun hat` | 38 | Re-Send an Nicht-Öffner | 5 Tage Dubai für zwei und 300 Gutscheine – für Leserinnen und Leser von „Die Lizenz zum Erfolg“. |
+| 6 | `54.500 € Gewinne, 18 € Einsatz – die Buchaktion 2026` | 48 | Variante B | Dubai-Reise für zwei und 300 Gutscheine werden verlost. Anmeldung in zwei Minuten. |
+| 7 | `Ein Buch, zwei Minuten, Dubai im Lostopf` | 40 | Variante B / Re-Send | Plus 300 Gutscheine von Amazon, Wiresoft und Bikinilista. Bis 11.10.2026. |
+| 8 | `Soheil Hosseini verlost Dubai für zwei – dein Buch ist dabei` | 59 | Reserve | Dazu 300 Gutscheine im Wert von 34.500 €. Anmeldung bis 11.10.2026. |
+
+## Betreffzeilen – erstes Ranking (16.09.2026, vor der Quellenanalyse)
 
 | # | Betreff | Zeichen | Preheader dazu |
 | --- | --- | ---: | --- |
