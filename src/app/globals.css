@@ -288,6 +288,34 @@ html {
   padding: 0 0.15em;
 }
 
+/* Gutschein-Karten in Ticket-Optik: seitliche „Abriss“-Kerben am Übergang Kopf/Körper */
+.vl-ticket {
+  position: relative;
+}
+/* Die Kerben sitzen auf der gestrichelten Trennlinie – unabhängig von der Kopfhöhe */
+.vl-ticket-divider {
+  position: relative;
+  border-top: 2px dashed var(--vl-border);
+}
+.vl-ticket-divider::before,
+.vl-ticket-divider::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--vl-ivory);
+  border: 1px solid var(--vl-border);
+  transform: translateY(-50%);
+}
+.vl-ticket-divider::before {
+  left: -12px;
+}
+.vl-ticket-divider::after {
+  right: -12px;
+}
+
 /* Statische Konfetti-Elemente (wenige CSS-Formen, rein dekorativ) */
 .vl-confetti {
   position: absolute;

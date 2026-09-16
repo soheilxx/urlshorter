@@ -319,14 +319,17 @@ test.describe("Kampagnenseite /verlosung", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({ path: "test-results/verlosung-390-hero.png", fullPage: false });
     await acceptConsent(page);
-    await page.screenshot({ path: "test-results/verlosung-390-full.png", fullPage: true });
 
     // Sticky-CTA erst nach dem Hero, nicht bei fokussiertem Formular
+    // (vor dem Ganzseiten-Screenshot geprüft – dieser verändert kurz den Viewport)
+    await page.evaluate(() => window.scrollTo(0, 0));
     await expect(page.getByTestId("sticky-cta")).toHaveCount(0);
     await page.getByRole("heading", { name: "Häufige Fragen" }).scrollIntoViewIfNeeded();
     await expect(page.getByTestId("sticky-cta")).toBeVisible();
     await page.getByLabel("Vorname").focus();
     await expect(page.getByTestId("sticky-cta")).toBeHidden();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: "test-results/verlosung-390-full.png", fullPage: true });
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/verlosung");

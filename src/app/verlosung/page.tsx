@@ -442,6 +442,10 @@ export default async function VerlosungPage({
                 />
                 <Confetti variant="spread" className="opacity-80" count={7} />
                 <DubaiSkyline className="absolute inset-x-0 bottom-0 h-40 w-full sm:h-52" />
+                {/* Preisschild-Tag: Gutscheine als zweiter Blickfang */}
+                <p className="absolute top-5 left-5 z-10 rotate-[-4deg] rounded-lg bg-[var(--vl-yellow)] px-3 py-1.5 text-sm font-bold text-[var(--vl-ink)] shadow-[0_10px_24px_-10px_rgba(0,0,0,0.6)] sm:text-base">
+                  + {VOUCHER_TOTAL_COUNT} Gutscheine · {VOUCHER_TOTAL_LABEL}
+                </p>
                 <div className="relative grid min-h-[300px] grid-cols-[auto_minmax(0,1fr)] items-end gap-5 p-6 sm:min-h-[420px] sm:p-8 lg:min-h-[520px]">
                   <div className="w-32 rotate-[-4deg] sm:w-44 lg:w-52">
                     <Image
@@ -640,33 +644,46 @@ export default async function VerlosungPage({
             title={`${VOUCHER_TOTAL_COUNT} Gutscheine. Drei Marken. Viele Wünsche.`}
             intro={`Zusätzlich zur Dubai-Reise verlosen wir Gutscheine im Gesamtwert von ${VOUCHER_TOTAL_LABEL}.`}
           />
-          <ul className="mt-10 grid gap-4 md:grid-cols-3" aria-label="Gutschein-Gewinne nach Marke">
+          <ul className="mt-10 grid gap-5 md:grid-cols-3" aria-label="Gutschein-Gewinne nach Marke">
             {VOUCHER_BRANDS.map((brand) => (
               <li
                 key={brand.id}
                 data-testid={`voucher-card-${brand.id}`}
-                className="flex flex-col rounded-2xl border gw-hairline bg-white p-6 shadow-[0_20px_50px_-30px_rgba(7,62,67,0.4)]"
+                className="vl-ticket flex flex-col rounded-2xl border gw-hairline bg-white shadow-[0_24px_50px_-30px_rgba(7,62,67,0.45)]"
               >
-                <p className="text-2xl font-semibold tracking-tight text-[var(--vl-petrol)]">
-                  {brand.name}
-                </p>
-                <p className="mt-1 text-sm text-[var(--vl-ink-soft)]">{brand.purpose}</p>
-                <ul className="mt-5 divide-y divide-[var(--vl-border-soft)] border-y border-[var(--vl-border-soft)]">
+                {/* Markenkopf (Ticket-Kopf) */}
+                <div className="flex min-h-24 items-center justify-between gap-3 rounded-t-2xl bg-[var(--vl-petrol)] px-6 py-4 text-white">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-semibold tracking-tight">{brand.name}</p>
+                    <p className="mt-0.5 text-sm text-white/80">{brand.purpose}</p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-[var(--vl-yellow)] px-3 py-1 text-xs font-bold tracking-wide text-[var(--vl-ink)] uppercase">
+                    Gutschein
+                  </span>
+                </div>
+                <div className="vl-ticket-divider" aria-hidden="true" />
+                {/* Staffeln */}
+                <ul className="divide-y divide-[var(--vl-border-soft)] px-6">
                   {brand.tiers.map((t) => (
                     <li
                       key={t.valueEur}
-                      className="flex items-baseline justify-between py-2.5 text-[var(--vl-ink)]"
+                      className="flex items-baseline justify-between py-3 text-[var(--vl-ink)]"
                     >
-                      <span className="text-sm font-medium">{t.count} ×</span>
-                      <span className="text-xl font-semibold">
+                      <span className="text-sm font-medium">
+                        <span className="text-lg font-semibold">{t.count}</span> × Gutschein
+                      </span>
+                      <span className="text-2xl font-bold tracking-tight">
                         <span className="vl-mark">{t.valueLabel}</span>
                       </span>
                     </li>
                   ))}
                 </ul>
-                <p className="mt-5 text-sm font-semibold text-[var(--vl-ink)]">
-                  {voucherBrandCount(brand)} Gutscheine · Gesamtwert {formatEur(voucherBrandTotalEur(brand))}
-                </p>
+                {/* Summe als Wert-Badge */}
+                <div className="mt-auto px-6 pt-4 pb-6">
+                  <p className="inline-flex w-full items-center justify-center rounded-full bg-[var(--vl-yellow)] px-4 py-2.5 text-center text-sm font-bold text-[var(--vl-ink)]">
+                    {voucherBrandCount(brand)} Gutscheine · Gesamtwert {formatEur(voucherBrandTotalEur(brand))}
+                  </p>
+                </div>
               </li>
             ))}
           </ul>
