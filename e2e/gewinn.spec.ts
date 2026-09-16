@@ -176,12 +176,18 @@ test.describe("Gewinnspiel-Landingpage", () => {
     expect(beacons[1]).toMatchObject({ type: "AddToCart", status: 204 });
     await popup.close();
 
+    // Das Pixel sendet pixelgebunden per trackSingle(pixelId, name, data, {eventID});
+    // ein einfaches track(name, data, {eventID}) wird ebenfalls akzeptiert.
     const pixel = await page.evaluate(() => {
       const queue = (window as Window & { fbq?: { queue?: unknown[][] } }).fbq?.queue ?? [];
       return queue
         .map((entry) => Array.from(entry as unknown[]))
-        .filter((entry) => entry[0] === "track")
-        .map((entry) => [entry[1], (entry[3] as { eventID?: string } | undefined)?.eventID]);
+        .filter((entry) => entry[0] === "track" || entry[0] === "trackSingle")
+        .map((entry) =>
+          entry[0] === "trackSingle"
+            ? [entry[2], (entry[4] as { eventID?: string } | undefined)?.eventID]
+            : [entry[1], (entry[3] as { eventID?: string } | undefined)?.eventID],
+        );
     });
     expect(pixel).toEqual([
       ["PageView", beacons[0]!.id],

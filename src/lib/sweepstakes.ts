@@ -1,12 +1,16 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import {
+  type EntryPath,
   getSweepstakesPhase,
+  isEntryPath,
   isRetailerId,
   MAX_FORM_HOURS,
   MIN_FORM_SECONDS,
   PRIVACY_VERSION,
+  PRIZE_SCOPE,
   SUBMISSION_RATE_LIMIT,
   TERMS_VERSION,
 } from "@/lib/gewinnspiel-config";
@@ -20,6 +24,8 @@ import {
   verifyFormToken,
 } from "@/lib/sweepstakes-crypto";
 import {
+  COUNTRY_NOT_ELIGIBLE_MESSAGE,
+  normalizeCountry,
   normalizeOrderNumber,
   normalizePhone,
   sweepstakesInputSchema,
@@ -49,11 +55,24 @@ export interface SubmitContext {
   };
   referrer: string | null;
   landingHost: string | null;
+  /**
+   * Teilnahmeweg aus dem Formular; wird serverseitig gegen ENTRY_PATHS geprüft
+   * und nur als gültiger Wert gespeichert (sonst null).
+   */
+  landingPath?: string | null;
   now?: Date;
 }
 
 export type SubmitResult =
-  | { ok: true; referenceNumber: string }
+  | {
+      ok: true;
+      referenceNumber: string;
+      /** false beim Honeypot-Scheinerfolg: nichts gespeichert, kein Conversion-Event. */
+      persisted: boolean;
+      /** Ereignis-ID für Browser- und Server-Registrierungsevent (nur wenn persisted). */
+      trackingEventId: string | null;
+      landingPath: EntryPath | null;
+    }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
 const DUPLICATE_MESSAGE =
@@ -74,6 +93,7 @@ export async function submitSweepstakesEntry(
   ctx: SubmitContext,
 ): Promise<SubmitResult> {
   const now = ctx.now ?? new Date();
+  const landingPath: EntryPath | null = isEntryPath(ctx.landingPath) ? ctx.landingPath : null;
 
   // 1) Phase prüfen (zeitlich zentral konfiguriert)
   const phase = getSweepstakesPhase(now);
@@ -85,9 +105,16 @@ export async function submitSweepstakesEntry(
   }
 
   // 2) Honeypot: still akzeptieren, aber nichts speichern (Bots erfahren nichts).
+  //    Kein Conversion-Event – es gibt keine Teilnahme, die gezählt werden dürfte.
   if (ctx.honeypot && ctx.honeypot.trim().length > 0) {
     logger.warn("sweepstakes.honeypot_tripped", {});
-    return { ok: true, referenceNumber: generateReferenceNumber() };
+    return {
+      ok: true,
+      referenceNumber: generateReferenceNumber(),
+      persisted: false,
+      trackingEventId: null,
+      landingPath,
+    };
   }
 
   // 3) Formular-Token (Mindest-/Höchstalter)
@@ -156,7 +183,7 @@ export async function submitSweepstakesEntry(
     };
   }
 
-  // 6) Normalisierung Bestellnummer + Telefon
+  // 6) Normalisierung Bestellnummer, Telefon und Wohnsitzland (Werteliste DE/AT/CH)
   const order = normalizeOrderNumber(input.orderNumber);
   if (!order.ok) {
     return {
@@ -171,6 +198,14 @@ export async function submitSweepstakesEntry(
       ok: false,
       error: "Bitte prüfe die markierten Felder.",
       fieldErrors: { phone: phone.error ?? "Ungültige Telefonnummer." },
+    };
+  }
+  const country = normalizeCountry(input.country);
+  if (!country) {
+    return {
+      ok: false,
+      error: "Bitte prüfe die markierten Felder.",
+      fieldErrors: { country: COUNTRY_NOT_ELIGIBLE_MESSAGE },
     };
   }
 
@@ -206,7 +241,7 @@ export async function submitSweepstakesEntry(
           houseNumber: input.houseNumber,
           postalCode: input.postalCode,
           city: input.city,
-          country: input.country,
+          country: country.label,
           email: input.email,
           phone: phone.value,
           confirmedAccuracyAt: now,
@@ -221,6 +256,8 @@ export async function submitSweepstakesEntry(
           utmTerm: trimOrNull(ctx.utm.term, 120),
           referrer: trimOrNull(ctx.referrer, 300),
           landingHost: trimOrNull(ctx.landingHost, 120),
+          landingPath,
+          prizeScope: PRIZE_SCOPE,
           submissionIdentifier: ctx.submissionIdentifier,
         },
         select: { id: true, referenceNumber: true, email: true, firstName: true },
@@ -240,7 +277,15 @@ export async function submitSweepstakesEntry(
       }
 
       logger.info("sweepstakes.entry_created", { reference: entry.referenceNumber });
-      return { ok: true, referenceNumber: entry.referenceNumber };
+      return {
+        ok: true,
+        referenceNumber: entry.referenceNumber,
+        persisted: true,
+        // Eigene UUID (nicht die Teilnahme-ID): Pixel und Conversion-APIs erhalten
+        // damit keinen Bezug zum Datensatz.
+        trackingEventId: randomUUID(),
+        landingPath,
+      };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         const target = String(error.meta?.target ?? "");

@@ -269,10 +269,60 @@ Die Teilnahmebedingungen (Version in `TERMS_VERSION`) sind unter
 `/gewinn/teilnahmebedingungen` veröffentlicht; Veranstalter ist die Wiresoft
 Portal Ltd. (DIFC, Dubai). Registrierungsschluss ist der 11.10.2026, 23:59 Uhr
 (`ENTRY_DEADLINE`), die Gewinnerbekanntgabe erfolgt am 12.10.2026 um 12 Uhr
-(`ANNOUNCEMENT_DATE`); neben der Dubai-Reise werden 100 Wertgutscheine für den
-Wiresoft Software Shop verlost (`SECONDARY_PRIZES`). Eine automatische
-Gewinnerziehung ist bewusst nicht implementiert (Ziehung erfolgt manuell,
-Status „Gewinner“ wird im Admin gepflegt).
+(`ANNOUNCEMENT_DATE`); neben der Dubai-Reise werden 300 Wertgutscheine von
+Wiresoft, Bikinilista und Amazon verlost (`VOUCHER_BRANDS`, Summen werden
+daraus berechnet; `SECONDARY_PRIZES` zeigt weiterhin die Wiresoft-Staffeln für
+die `/gewinn`-Texte). Eine automatische Gewinnerziehung ist bewusst nicht
+implementiert (Ziehung erfolgt manuell, Status „Gewinner“ wird im Admin
+gepflegt).
+
+## Kampagnenseite (/verlosung)
+
+`https://lizenzzumerfolg.com/verlosung` ist der Kampagneneinstieg für das
+Adcloud-Mailing („Dubai für zwei. Und 300 Gutscheine zu gewinnen.“) – ein
+**zusätzlicher Weg in denselben Lostopf** wie `/gewinn`, keine zweite
+Verlosung. Beispiel-Link mit bereinigten Kampagnenparametern:
+`/verlosung?utm_source=adcloud&utm_medium=email&utm_campaign=buch_verlosung_2026&utm_content=angebote_email`.
+
+- **Seite**: [`src/app/verlosung/page.tsx`](src/app/verlosung/page.tsx),
+  helles Theme `.verlosung-theme` (Petrol/Elfenbein/Gelb, `globals.css`);
+  Komponenten unter `src/components/verlosung/` (Teilen-Box mit kopierbarer
+  URL `VERLOSUNG_URL`, Sticky-CTA mobil, statisches Konfetti, Teilnahmebereich).
+- **Formular/Backend**: dasselbe `EntryForm` (`src/components/gewinn/entry-form.tsx`,
+  jetzt themebar und mit Erfolgs-Render-Prop), dieselbe Server Action
+  `submitSweepstakesAction` und Kernlogik `submitSweepstakesEntry`. Neu je
+  Teilnahme gespeichert: `landingPath` (serverseitig gegen `ENTRY_PATHS`
+  validiert, sonst `null`) und `prizeScope` (`PRIZE_SCOPE`); das Wohnsitzland
+  wird gegen die Werteliste DE/AT/CH geprüft (`normalizeCountry`). Beides ist
+  im Admin (Liste, Filter „Teilnahmeweg“, Detail) und im CSV-Export sichtbar.
+  „Weitere Bestellnummer registrieren“ holt per `newFormTokenAction` ein
+  frisches Formular-Token und startet einen neuen Vorgang.
+- **Bedingungen**: `TERMS_VERSION` 1.3 (16.09.2026) – Bikinilista/Amazon
+  ergänzt, `/verlosung` als Teilnahmeweg; ältere gespeicherte Versionen bleiben
+  unverändert.
+- **Consent**: Die Seite läuft im Modus `required` mit eigenem First-Party-
+  Banner ([`src/components/consent-banner.tsx`](src/components/consent-banner.tsx),
+  Cookie `lze_marketing_consent` = `accepted`/`denied`, 180 Tage; ein per
+  `CONSENT_COOKIE_NAME`/`CONSENT_COOKIE_ACCEPTED_VALUE` konfigurierter Cookie
+  hat Vorrang). `GewinnTracking` reagiert auf das Event `lze-consent-change`
+  ohne Reload; `/api/book/events`, `/api/reddit/events` und das
+  Server-Registrierungsevent prüfen denselben Cookie. Footer-Link
+  „Cookie-Einstellungen“ öffnet das Banner erneut.
+- **Registrierungsevent**: Nach tatsächlicher Speicherung liefert die Action
+  eine `trackingEventId` (UUID, nicht die Datensatz-ID; beim Honeypot-
+  Scheinerfolg `null`). Browser: `fbq('track','CompleteRegistration',…,{eventID})`
+  und `ttq.track('CompleteRegistration',…,{event_id})`; Server
+  ([`src/lib/registration-conversion.ts`](src/lib/registration-conversion.ts),
+  in `after()`): `TagEvent` `sweepstakes_registration` (Unique-Key =
+  Idempotenz) → Meta CAPI + TikTok Events API mit derselben ID. Keine
+  Formulardaten in Payloads. Consent je Weg: `/verlosung` nur mit Cookie,
+  `/gewinn` gemäß Betreiber-Entscheidung `not-required`.
+- **Tests**: `e2e/verlosung.spec.ts` (Seite, Consent, Teilnahme + Dedup,
+  Honeypot, Admin, Kopieren, 320-px-Overflow, Screenshots in
+  `test-results/`), `src/tests/unit/registration-conversion.test.ts`,
+  `src/tests/unit/verlosung-consent.test.ts`, Erweiterungen in
+  `sweepstakes.test.ts` (Unit + Integration) und `consent.test.ts`.
+  Offene Geschäftsangaben: [`docs/verlosung-kampagne.md`](docs/verlosung-kampagne.md).
 
 ## Zentrales Tracking-Snippet (t.js)
 
@@ -628,7 +678,7 @@ Klick-Event-ID (Deduplication).
 
 Logs: `linkedin_capi.sent` / `linkedin_capi.send_failed`.
 
-### Buchseiten: Meta/TikTok/LinkedIn Pixel + Conversion-APIs (`/gewinn`, `/das-buch`, `/gutschein`, `/`)
+### Buchseiten: Meta/TikTok/LinkedIn Pixel + Conversion-APIs (`/gewinn`, `/verlosung`, `/das-buch`, `/gutschein`, `/`)
 
 Die Buch-Landingpages nutzen `src/components/book-conversion-tracking.tsx`
 nach demselben Muster wie die Reddit-Anbindung (`docs/reddit-capi-setup.md`):
@@ -642,10 +692,14 @@ Server-Event damit selbst. Der signierte Kontext (`book-conversion-context.ts`,
 | ------------------------------- | ----------------- | ------------------------- | ----------------------------- | ------------- | ------------------ |
 | Sichtbarer Seitenaufruf         | `PageView`        | `Pageview` (nur Pixel)    | Insight Tag                   | Seiten-Event  | `book_page_view`   |
 | Klick auf einen Amazon-Buchlink | `AddToCart`       | `AddToCart`               | Conversion (nur `li_fat_id`)  | `add_to_cart` | `book_add_to_cart` |
+| Gewinnspiel-Teilnahme gespeichert (`/gewinn`, `/verlosung`) | `CompleteRegistration` | `CompleteRegistration` | – (eigene Regel nötig) | `gewinnspiel_teilnahme` | `sweepstakes_registration` |
 
 `AddToCart` trägt `content_ids` = ISBN, `value` 18, `currency` EUR
 (Kauf-Proxy auf ausdrücklichen Wunsch – kein Umsatz, kein Purchase). Der
 Amazon-Klick erzeugt bei Meta **kein** zusätzliches Custom-Event mehr.
+`CompleteRegistration` bedeutet „Anmeldung eingegangen“ – keine
+Kaufverifikation, kein Wert; es wird nur nach tatsächlicher Speicherung mit
+der vom Server vergebenen Ereignis-ID gesendet (Honeypot-Scheinerfolg: nichts).
 Benötigte Variablen: `META_PIXEL_ID` + `META_CAPI_ACCESS_TOKEN`,
 `TIKTOK_PIXEL_ID` + `TIKTOK_EVENTS_API_TOKEN`, optional `LINKEDIN_PARTNER_ID`
 + `LINKEDIN_CONVERSION_RULE_ID` + `LINKEDIN_CAPI_ACCESS_TOKEN`. Ohne Token
@@ -691,9 +745,17 @@ Modi (`TRACKING_CONSENT_MODE`):
 - **`not-required`:** Pixel feuern immer. Nur verwenden, wenn eine eigene
   rechtliche Bewertung dies deckt.
 
-Da `lizenzzumerfolg.com` ausschließlich als Tracking-/Redirect-Domain dient,
-gibt es dort keinen klassischen Cookie-Banner-Flow: Besucher sind nur wenige
-Hundert Millisekunden auf der Seite. Im Modus `required` ohne gesetzten
+Für die Kampagnenseite `/verlosung` gibt es ein eigenes First-Party-Banner
+(`src/components/consent-banner.tsx`): Ohne Env-Konfiguration nutzt es den
+Cookie `lze_marketing_consent` (`accepted`/`denied`, 180 Tage); ist
+`CONSENT_COOKIE_NAME`/`CONSENT_COOKIE_ACCEPTED_VALUE` gesetzt, schreibt und
+prüft das Banner genau diesen Cookie, sodass eine externe Consent-Lösung
+nahtlos angeschlossen werden kann. Browser (`GewinnTracking`), Collector-Routen
+und das Server-Registrierungsevent werten denselben Cookie aus.
+
+Für die Kurzlink-Bridge-Pages dient `lizenzzumerfolg.com` als
+Tracking-/Redirect-Domain ohne klassischen Cookie-Banner-Flow: Besucher sind
+nur wenige Hundert Millisekunden auf der Seite. Im Modus `required` ohne gesetzten
 Consent-Cookie werden daher praktisch nie Marketing-Pixel gefeuert (nur die
 eigene serverseitige Zählung läuft). Wer Pixel einsetzen will, muss entweder
 eine Consent-Lösung vorschalten, die den Cookie auf dieser Domain setzt, oder

@@ -1,7 +1,7 @@
 import "server-only";
 import { Prisma, type SweepstakesEntryStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { isRetailerId } from "@/lib/gewinnspiel-config";
+import { isEntryPath, isRetailerId } from "@/lib/gewinnspiel-config";
 import { hashOrderNumber } from "@/lib/sweepstakes-crypto";
 import { normalizeOrderNumber } from "@/lib/sweepstakes-validation";
 
@@ -22,6 +22,8 @@ export interface SweepstakesFilters {
   from?: string;
   to?: string;
   utm?: string;
+  /** Teilnahmeweg ("/gewinn" | "/verlosung" | "none" für Alt-Teilnahmen ohne Pfad). */
+  path?: string;
   page: number;
 }
 
@@ -55,6 +57,7 @@ export function parseSweepstakesFilters(
     from: str("from") || undefined,
     to: str("to") || undefined,
     utm: str("utm") || undefined,
+    path: str("path") || undefined,
     page: Number.isFinite(pageRaw) && pageRaw > 0 ? Math.min(pageRaw, 10_000) : 1,
   };
 }
@@ -100,6 +103,11 @@ export function buildSweepstakesWhere(
         { utmCampaign: { contains: filters.utm, mode: "insensitive" } },
       ],
     });
+  }
+  if (filters.path === "none") {
+    and.push({ landingPath: null });
+  } else if (isEntryPath(filters.path)) {
+    and.push({ landingPath: filters.path });
   }
   if (and.length > 0) where.AND = and;
   return where;

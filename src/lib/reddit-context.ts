@@ -7,7 +7,15 @@ import { REDDIT_PIXEL_PATTERN, type RedditTrackingConfig } from "@/lib/reddit-ev
 import type { ConsentMode } from "@/lib/consent";
 
 const contextSchema = z.object({
-  path: z.enum(["/", "/das-buch", "/gutschein", "/gewinn", "/buch-reddit", "/buch-inbox"]),
+  path: z.enum([
+    "/",
+    "/das-buch",
+    "/gutschein",
+    "/gewinn",
+    "/verlosung",
+    "/buch-reddit",
+    "/buch-inbox",
+  ]),
   pixelId: z.string().regex(REDDIT_PIXEL_PATTERN),
   consentMode: z.enum(["required", "not-required"]),
   expires: z.number().int(),

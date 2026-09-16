@@ -70,6 +70,12 @@ export interface SweepstakesActionState {
   error: string | null;
   fieldErrors: Record<string, string> | null;
   referenceNumber: string | null;
+  /**
+   * Ereignis-ID der tatsächlich gespeicherten Teilnahme für das deduplizierte
+   * Browser-/Server-Registrierungsevent. null bei Fehlern UND beim
+   * Honeypot-Scheinerfolg (dort wird nichts gespeichert – kein Conversion-Nachweis).
+   */
+  trackingEventId: string | null;
 }
 
 export const EMPTY_SWEEPSTAKES_STATE: SweepstakesActionState = {
@@ -77,6 +83,7 @@ export const EMPTY_SWEEPSTAKES_STATE: SweepstakesActionState = {
   error: null,
   fieldErrors: null,
   referenceNumber: null,
+  trackingEventId: null,
 };
 
 export interface VoucherActionState {

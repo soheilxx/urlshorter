@@ -46,7 +46,10 @@ const HEADER = [
   "UTM Source",
   "UTM Medium",
   "UTM Kampagne",
+  "UTM Content",
   "Referrer",
+  "Teilnahmeweg",
+  "Gewinnumfang",
   "Interne Notiz",
 ];
 
@@ -101,7 +104,10 @@ export async function GET(request: Request): Promise<Response> {
             csvCell(e.utmSource),
             csvCell(e.utmMedium),
             csvCell(e.utmCampaign),
+            csvCell(e.utmContent),
             csvCell(e.referrer),
+            csvCell(e.landingPath),
+            csvCell(e.prizeScope),
             csvCell(e.internalNote),
           ].join(";");
           chunk += "\r\n";

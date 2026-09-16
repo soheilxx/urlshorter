@@ -1,13 +1,29 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import {
   getSweepstakesPhase,
+  isEntryPath,
+  PRIZE_VALUE_EUR,
+  SECONDARY_PRIZES,
   SECONDARY_PRIZES_COUNT,
   SECONDARY_PRIZES_TOTAL_EUR,
   SECONDARY_PRIZES_TOTAL_LABEL,
+  TERMS_VERSION,
+  TOTAL_PRIZE_VALUE_EUR,
+  TOTAL_PRIZE_VALUE_LABEL,
+  VERLOSUNG_SHARE_TEXT,
+  VERLOSUNG_URL,
+  VOUCHER_BRANDS,
+  VOUCHER_TOTAL_COUNT,
+  VOUCHER_TOTAL_EUR,
+  VOUCHER_TOTAL_LABEL,
+  voucherBrandCount,
+  voucherBrandTotalEur,
+  voucherTiersLabel,
 } from "@/lib/gewinnspiel-config";
 import {
   csvCell,
   maskEmail,
+  normalizeCountry,
   normalizeEmail,
   normalizeOrderNumber,
   normalizePhone,
@@ -144,6 +160,66 @@ describe("Zusatzgewinne (SECONDARY_PRIZES)", () => {
     expect(SECONDARY_PRIZES_COUNT).toBe(100);
     expect(SECONDARY_PRIZES_TOTAL_EUR).toBe(13_500);
     expect(SECONDARY_PRIZES_TOTAL_LABEL).toBe("13.500 €");
+  });
+  it("sind exakt die Wiresoft-Staffeln der Kampagne (nicht doppelt konfiguriert)", () => {
+    expect(SECONDARY_PRIZES).toBe(VOUCHER_BRANDS[0]!.tiers);
+    expect(VOUCHER_BRANDS.filter((b) => b.id === "wiresoft")).toHaveLength(1);
+  });
+});
+
+describe("Kampagne /verlosung: 300 Gutscheine (VOUCHER_BRANDS)", () => {
+  it("enthält genau neun Staffeln in der Reihenfolge Wiresoft, Bikinilista, Amazon", () => {
+    expect(VOUCHER_BRANDS.map((b) => b.id)).toEqual(["wiresoft", "bikinilista", "amazon"]);
+    expect(VOUCHER_BRANDS.flatMap((b) => b.tiers)).toHaveLength(9);
+    expect(VOUCHER_BRANDS.map((b) => b.tiers.map((t) => [t.count, t.valueEur]))).toEqual([
+      [[10, 500], [40, 150], [50, 50]],
+      [[10, 500], [40, 150], [50, 50]],
+      [[10, 250], [40, 100], [50, 20]],
+    ]);
+  });
+  it("berechnet je Marke 100 Gutscheine mit 13.500 / 13.500 / 7.500 €", () => {
+    expect(VOUCHER_BRANDS.map(voucherBrandCount)).toEqual([100, 100, 100]);
+    expect(VOUCHER_BRANDS.map(voucherBrandTotalEur)).toEqual([13_500, 13_500, 7_500]);
+    expect(voucherTiersLabel(VOUCHER_BRANDS[2]!)).toBe("10 × 250 € · 40 × 100 € · 50 × 20 €");
+  });
+  it("summiert 300 Gutscheine, 34.500 € und mit der Reise 54.500 €", () => {
+    expect(VOUCHER_TOTAL_COUNT).toBe(300);
+    expect(VOUCHER_TOTAL_EUR).toBe(34_500);
+    expect(VOUCHER_TOTAL_LABEL).toBe("34.500 €");
+    expect(PRIZE_VALUE_EUR).toBe(20_000);
+    expect(TOTAL_PRIZE_VALUE_EUR).toBe(54_500);
+    expect(TOTAL_PRIZE_VALUE_LABEL).toBe("54.500 €");
+  });
+  it("hat Teilnahmebedingungen in Version 1.3 und die kanonische Teilen-URL ohne Parameter", () => {
+    expect(TERMS_VERSION.startsWith("1.3")).toBe(true);
+    expect(VERLOSUNG_URL).toBe("https://lizenzzumerfolg.com/verlosung");
+    expect(VERLOSUNG_SHARE_TEXT).toContain("300 Gutscheine");
+    expect(VERLOSUNG_SHARE_TEXT.endsWith(VERLOSUNG_URL)).toBe(true);
+    expect(VERLOSUNG_SHARE_TEXT).not.toContain("utm_");
+  });
+  it("kennt nur die beiden Teilnahmewege", () => {
+    expect(isEntryPath("/verlosung")).toBe(true);
+    expect(isEntryPath("/gewinn")).toBe(true);
+    expect(isEntryPath("/admin")).toBe(false);
+    expect(isEntryPath("verlosung")).toBe(false);
+    expect(isEntryPath(null)).toBe(false);
+  });
+});
+
+describe("normalizeCountry (Werteliste DE/AT/CH)", () => {
+  it("erkennt zulässige Länder tolerant und liefert das kanonische Label", () => {
+    expect(normalizeCountry("Deutschland")).toEqual({ code: "DE", label: "Deutschland" });
+    expect(normalizeCountry("  germany ")).toEqual({ code: "DE", label: "Deutschland" });
+    expect(normalizeCountry("österreich")).toEqual({ code: "AT", label: "Österreich" });
+    expect(normalizeCountry("OESTERREICH")).toEqual({ code: "AT", label: "Österreich" });
+    expect(normalizeCountry("Schweiz")).toEqual({ code: "CH", label: "Schweiz" });
+    expect(normalizeCountry("CH")).toEqual({ code: "CH", label: "Schweiz" });
+  });
+  it("lehnt andere Länder und leere Eingaben ab", () => {
+    expect(normalizeCountry("Frankreich")).toBeNull();
+    expect(normalizeCountry("Deutschland/Frankreich")).toBeNull();
+    expect(normalizeCountry("")).toBeNull();
+    expect(normalizeCountry("   ")).toBeNull();
   });
 });
 

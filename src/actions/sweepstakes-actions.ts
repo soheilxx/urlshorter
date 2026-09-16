@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import {
   EMPTY_SWEEPSTAKES_STATE,
@@ -14,8 +15,10 @@ import { requireRoleOrThrow } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { requireAppSecret } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { sendRegistrationConversion } from "@/lib/registration-conversion";
 import { getClientIp } from "@/lib/request-info";
 import { submitSweepstakesEntry } from "@/lib/sweepstakes";
+import { createFormToken } from "@/lib/sweepstakes-crypto";
 import { computeRateLimitIdentifier } from "@/lib/visitor-hash";
 
 /**
@@ -48,6 +51,13 @@ export async function submitSweepstakesAction(
       userAgent: h.get("user-agent"),
     });
 
+    const utm = {
+      source: optional(formData, "utm_source"),
+      medium: optional(formData, "utm_medium"),
+      campaign: optional(formData, "utm_campaign"),
+      content: optional(formData, "utm_content"),
+      term: optional(formData, "utm_term"),
+    };
     const result = await submitSweepstakesEntry(
       {
         retailer: str(formData, "retailer"),
@@ -68,15 +78,10 @@ export async function submitSweepstakesAction(
         submissionIdentifier,
         honeypot: optional(formData, "website"),
         formToken: optional(formData, "formToken"),
-        utm: {
-          source: optional(formData, "utm_source"),
-          medium: optional(formData, "utm_medium"),
-          campaign: optional(formData, "utm_campaign"),
-          content: optional(formData, "utm_content"),
-          term: optional(formData, "utm_term"),
-        },
+        utm,
         referrer: optional(formData, "clientReferrer"),
         landingHost: h.get("host"),
+        landingPath: optional(formData, "landingPath"),
       },
     );
 
@@ -87,7 +92,34 @@ export async function submitSweepstakesAction(
         fieldErrors: result.fieldErrors ?? null,
       };
     }
-    return { ...EMPTY_SWEEPSTAKES_STATE, ok: true, referenceNumber: result.referenceNumber };
+
+    // Serverseitiges Registrierungsevent (Meta CAPI / TikTok Events API) nur für
+    // tatsächlich gespeicherte Teilnahmen mit bekanntem Teilnahmeweg; Consent
+    // wird im Modul geprüft. Läuft nach der Antwort, blockiert das Formular nicht.
+    if (result.persisted && result.trackingEventId && result.landingPath) {
+      const conversion = {
+        eventId: result.trackingEventId,
+        landingPath: result.landingPath,
+        eventTimeMs: Date.now(),
+        clientIp: getClientIp(h),
+        userAgent: h.get("user-agent"),
+        cookieHeader: h.get("cookie"),
+        utm,
+      };
+      const send = () => sendRegistrationConversion(conversion).then(() => undefined);
+      try {
+        after(send);
+      } catch {
+        await send();
+      }
+    }
+
+    return {
+      ...EMPTY_SWEEPSTAKES_STATE,
+      ok: true,
+      referenceNumber: result.referenceNumber,
+      trackingEventId: result.persisted ? result.trackingEventId : null,
+    };
   } catch (error) {
     logger.error("sweepstakes.action_failed", {
       message: error instanceof Error ? error.message : "unknown",
@@ -98,6 +130,14 @@ export async function submitSweepstakesAction(
         "Deine Teilnahme konnte gerade nicht gespeichert werden. Bitte versuche es in einem Moment erneut.",
     };
   }
+}
+
+/**
+ * Frisches Formular-Token für „Weitere Bestellnummer registrieren“ – ein neuer
+ * Vorgang mit eigener Mindest-/Höchstdauer, ohne Seiten-Reload.
+ */
+export async function newFormTokenAction(): Promise<string> {
+  return createFormToken();
 }
 
 const STATUS_VALUES = [

@@ -2,7 +2,7 @@ import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { classifyRequest } from "@/lib/bot-detection";
-import { evaluateConsent } from "@/lib/consent";
+import { evaluateConsent, readCookieValue, resolveConsentCookie } from "@/lib/consent";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { isBookPurchaseUrl } from "@/lib/book-conversion-events";
@@ -66,29 +66,20 @@ export async function POST(request: Request): Promise<Response> {
     )
       return done(400);
     const env = getEnv();
-    const cookieName =
-      env.CONSENT_COOKIE_NAME ?? (context.path === "/buch-reddit" ? "lze_reddit_consent" : null);
-    const acceptedValue =
-      env.CONSENT_COOKIE_ACCEPTED_VALUE ?? (context.path === "/buch-reddit" ? "yes" : null);
-    let consentCookie: string | null = null;
-    if (cookieName) {
-      for (const part of (request.headers.get("cookie") ?? "").split(";")) {
-        const [key, ...value] = part.trim().split("=");
-        if (key === cookieName) {
-          try {
-            consentCookie = decodeURIComponent(value.join("="));
-          } catch {
-            /* denied */
-          }
-        }
-      }
-    }
+    // Consent-Cookie: Env zuerst; /buch-reddit behält sein eigenes Banner-Cookie,
+    // alle anderen Seiten nutzen das First-Party-Cookie des Consent-Banners.
+    const fallback =
+      context.path === "/buch-reddit"
+        ? { name: "lze_reddit_consent", acceptedValue: "yes" }
+        : resolveConsentCookie(env);
+    const cookieName = env.CONSENT_COOKIE_NAME ?? fallback.name;
+    const acceptedValue = env.CONSENT_COOKIE_ACCEPTED_VALUE ?? fallback.acceptedValue;
     if (
       !evaluateConsent({
         mode: context.consentMode,
         cookieName,
         acceptedValue,
-        cookieValue: consentCookie,
+        cookieValue: readCookieValue(request.headers.get("cookie"), cookieName),
       }).hasMarketingConsent
     )
       return done();

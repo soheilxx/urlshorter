@@ -215,8 +215,162 @@ html {
   --gw-ink: #f6f1e6;
   --gw-ink-soft: #c9c0ac;
   --gw-ink-mute: #948a76;
+  /* Formular-Details (EntryForm) – identische Werte wie vor der Theme-Trennung */
+  --gw-input-bg: rgba(255, 255, 255, 0.04);
+  --gw-error-bg: #2a1510;
+  --gw-error-border: rgba(138, 74, 56, 0.6);
+  --gw-error-ink: #e8a08a;
+  --gw-error-ink-strong: #f0c0b0;
+  --gw-cta-ink: #181207;
+  --gw-shadow: rgba(0, 0, 0, 0.4);
+  --gw-link-hover: #ecd096;
   background-color: var(--gw-bg);
   color: var(--gw-ink);
+}
+
+/* ---------------------------------------------------------------------------
+ * Kampagnen-Landingpage /verlosung – helles Theme
+ * (Petrol, Ivory, Gelb für CTAs/Beträge, dunkler Text). Die --gw-*-Variablen
+ * werden hier neu belegt, damit das gemeinsame Teilnahmeformular (EntryForm)
+ * ohne Änderung im Light-Theme funktioniert.
+ * ------------------------------------------------------------------------- */
+.verlosung-theme {
+  color-scheme: light;
+  --vl-petrol: #073e43;
+  --vl-petrol-deep: #052d31;
+  --vl-petrol-soft: rgba(7, 62, 67, 0.08);
+  --vl-ivory: #fff9ee;
+  --vl-ivory-deep: #fbefd8;
+  --vl-yellow: #ffd83d;
+  --vl-yellow-deep: #f0c400;
+  --vl-yellow-soft: rgba(255, 216, 61, 0.28);
+  --vl-ink: #102d32;
+  --vl-ink-soft: #3b5a5e;
+  --vl-ink-mute: #5c777a;
+  --vl-surface: #ffffff;
+  --vl-border: rgba(7, 62, 67, 0.16);
+  --vl-border-soft: rgba(7, 62, 67, 0.09);
+  --vl-coral: #ff7a59;
+  --vl-sky: #8fd3e8;
+
+  --gw-bg: var(--vl-ivory);
+  --gw-bg-soft: var(--vl-ivory-deep);
+  --gw-surface: var(--vl-surface);
+  --gw-surface-2: #fff6df;
+  --gw-border: var(--vl-border);
+  --gw-border-soft: var(--vl-border-soft);
+  --gw-gold: var(--vl-petrol);
+  --gw-gold-strong: var(--vl-yellow);
+  --gw-gold-deep: var(--vl-yellow-deep);
+  --gw-ink: var(--vl-ink);
+  --gw-ink-soft: var(--vl-ink-soft);
+  --gw-ink-mute: var(--vl-ink-mute);
+  --gw-input-bg: #ffffff;
+  --gw-error-bg: #fdecea;
+  --gw-error-border: #e0776a;
+  --gw-error-ink: #9b2c1f;
+  --gw-error-ink-strong: #7f2217;
+  --gw-cta-ink: var(--vl-ink);
+  --gw-shadow: rgba(7, 62, 67, 0.18);
+  --gw-link-hover: var(--vl-petrol);
+  background-color: var(--vl-ivory);
+  color: var(--vl-ink);
+}
+
+/* Hairlines im Light-Theme */
+.verlosung-theme .gw-hairline {
+  border-color: var(--vl-border);
+}
+
+/* Gelbe Betrags-/Akzentmarkierung (kein Verlauf – bleibt auch bei Zoom kontrastreich) */
+.vl-mark {
+  background: linear-gradient(transparent 55%, var(--vl-yellow) 55%, var(--vl-yellow) 92%, transparent 92%);
+  padding: 0 0.15em;
+}
+
+/* Statische Konfetti-Elemente (wenige CSS-Formen, rein dekorativ) */
+.vl-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.vl-confetti i {
+  position: absolute;
+  display: block;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0.85;
+}
+.vl-confetti i.round {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.vl-confetti i.bar {
+  width: 6px;
+  height: 18px;
+}
+@keyframes vl-confetti-drop {
+  0% {
+    transform: translateY(-36px) rotate(0deg);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(70px) rotate(220deg);
+    opacity: 0;
+  }
+}
+/* Kurze Erfolgsanimation: nur einmalig, ohne Wiederholung */
+.vl-confetti.burst i {
+  animation: vl-confetti-drop 1.6s cubic-bezier(0.2, 0.6, 0.3, 1) both;
+}
+.vl-confetti.burst i:nth-child(2n) {
+  animation-delay: 0.12s;
+}
+.vl-confetti.burst i:nth-child(3n) {
+  animation-delay: 0.24s;
+}
+.vl-confetti.burst i:nth-child(4n) {
+  animation-duration: 1.9s;
+}
+
+/* Mobiler Sticky-CTA: nie zusammen mit dem Consent-Banner, nie ab Tablet */
+.vl-sticky {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+html[data-consent-open="1"] .vl-sticky,
+html[data-form-focus="1"] .vl-sticky {
+  display: none;
+}
+@media (min-width: 768px) {
+  .vl-sticky {
+    display: none;
+  }
+}
+
+/* Consent-Banner (First-Party, nicht blockierend) */
+.lze-consent {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vl-confetti.burst i {
+    animation: none;
+    opacity: 0.85;
+  }
 }
 
 /* Fallback für Browser, die das Select-Popup trotz color-scheme hell rendern */

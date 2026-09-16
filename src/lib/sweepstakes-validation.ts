@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ELIGIBLE_COUNTRY_ALIASES } from "@/lib/gewinnspiel-config";
 
 /**
  * Normalisierung + Validierung der Gewinnspiel-Eingaben.
@@ -77,6 +78,41 @@ export function normalizePhone(raw: string): NormalizeResult {
     };
   }
   return { ok: true, value: `+${digits}`, error: null };
+}
+
+export const ELIGIBLE_COUNTRY_LABELS: Record<keyof typeof ELIGIBLE_COUNTRY_ALIASES, string> = {
+  DE: "Deutschland",
+  AT: "Österreich",
+  CH: "Schweiz",
+};
+
+export const COUNTRY_NOT_ELIGIBLE_MESSAGE =
+  "Die Teilnahme ist nur mit Wohnsitz in Deutschland, Österreich oder der Schweiz möglich.";
+
+/**
+ * Wohnsitzland gegen die Werteliste der teilnahmeberechtigten Länder prüfen.
+ * Tolerant gegenüber Schreibweise (Groß-/Kleinschreibung, Akzente, Kürzel);
+ * liefert das kanonische Label oder null, wenn kein zulässiges Land erkannt wird.
+ */
+export function normalizeCountry(raw: string): { code: "DE" | "AT" | "CH"; label: string } | null {
+  const value = raw
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[.\s]+/g, " ")
+    .trim();
+  if (!value) return null;
+  for (const code of Object.keys(ELIGIBLE_COUNTRY_ALIASES) as Array<"DE" | "AT" | "CH">) {
+    const aliases = ELIGIBLE_COUNTRY_ALIASES[code].map((a) =>
+      a
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, ""),
+    );
+    if (aliases.includes(value)) return { code, label: ELIGIBLE_COUNTRY_LABELS[code] };
+  }
+  return null;
 }
 
 const nameField = (label: string) =>

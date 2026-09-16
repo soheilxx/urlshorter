@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
+import { PRIZE_SCOPE, TERMS_VERSION } from "@/lib/gewinnspiel-config";
 import { createFormToken, decryptOrderNumber } from "@/lib/sweepstakes-crypto";
 import { submitSweepstakesEntry, type SubmitContext } from "@/lib/sweepstakes";
 
@@ -152,5 +153,87 @@ describe("submitSweepstakesEntry", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toContain("beendet");
     expect(await prisma.sweepstakesEntry.count()).toBe(0);
+  });
+});
+
+describe("Kampagnenweg /verlosung (gemeinsamer Lostopf)", () => {
+  it("speichert den serverseitig validierten Teilnahmeweg, den Gewinnumfang und die Bedingungen 1.3", async () => {
+    const r = await submitSweepstakesEntry(validInput(), ctx({ landingPath: "/verlosung" }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.persisted).toBe(true);
+    expect(r.landingPath).toBe("/verlosung");
+    expect(r.trackingEventId).toMatch(/^[0-9a-f-]{36}$/);
+    const row = await prisma.sweepstakesEntry.findUnique({
+      where: { referenceNumber: r.referenceNumber },
+    });
+    expect(row?.landingPath).toBe("/verlosung");
+    expect(row?.prizeScope).toBe(PRIZE_SCOPE);
+    expect(row?.termsVersion).toBe(TERMS_VERSION);
+    expect(row?.termsVersion.startsWith("1.3")).toBe(true);
+    // Die Ereignis-ID ist bewusst NICHT die Datensatz-ID (kein Bezug für Werbeplattformen)
+    expect(r.trackingEventId).not.toBe(row?.id);
+  });
+
+  it("übernimmt keinen frei behaupteten Client-Pfad", async () => {
+    const r = await submitSweepstakesEntry(
+      validInput(),
+      ctx({ landingPath: "/admin/../evil?x=1" }),
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const row = await prisma.sweepstakesEntry.findUnique({
+      where: { referenceNumber: r.referenceNumber },
+    });
+    expect(row?.landingPath).toBeNull();
+  });
+
+  it("Honeypot-Scheinerfolg liefert KEINE Ereignis-ID (kein Conversion-Nachweis)", async () => {
+    const r = await submitSweepstakesEntry(
+      validInput(),
+      ctx({ honeypot: "http://spam", landingPath: "/verlosung" }),
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.persisted).toBe(false);
+    expect(r.trackingEventId).toBeNull();
+    expect(await prisma.sweepstakesEntry.count()).toBe(0);
+  });
+
+  it("validiert das Wohnsitzland gegen die Werteliste DE/AT/CH", async () => {
+    const fr = await submitSweepstakesEntry(validInput({ country: "Frankreich" }), ctx());
+    expect(fr.ok).toBe(false);
+    if (!fr.ok) expect(fr.fieldErrors?.country).toContain("Deutschland, Österreich oder der Schweiz");
+    expect(await prisma.sweepstakesEntry.count()).toBe(0);
+
+    const at = await submitSweepstakesEntry(validInput({ country: "  österreich " }), ctx());
+    expect(at.ok).toBe(true);
+    if (!at.ok) return;
+    const row = await prisma.sweepstakesEntry.findUnique({
+      where: { referenceNumber: at.referenceNumber },
+    });
+    expect(row?.country).toBe("Österreich");
+  });
+
+  it("dieselbe Person kann zwei verschiedene Bestellnummern registrieren – dieselbe nur einmal, egal über welchen Weg", async () => {
+    const first = await submitSweepstakesEntry(
+      validInput({ orderNumber: "306-1111111-2222222" }),
+      ctx({ landingPath: "/verlosung" }),
+    );
+    const second = await submitSweepstakesEntry(
+      validInput({ orderNumber: "306-3333333-4444444" }),
+      ctx({ landingPath: "/verlosung" }),
+    );
+    expect(first.ok && second.ok).toBe(true);
+    if (first.ok && second.ok) expect(first.trackingEventId).not.toBe(second.trackingEventId);
+    expect(await prisma.sweepstakesEntry.count()).toBe(2);
+
+    const viaGewinn = await submitSweepstakesEntry(
+      validInput({ orderNumber: "306-1111111-2222222", email: "zweite@beispiel.de" }),
+      ctx({ landingPath: "/gewinn", submissionIdentifier: "anderer-client" }),
+    );
+    expect(viaGewinn.ok).toBe(false);
+    if (!viaGewinn.ok) expect(viaGewinn.fieldErrors?.orderNumber).toContain("bereits");
+    expect(await prisma.sweepstakesEntry.count()).toBe(2);
   });
 });

@@ -252,6 +252,11 @@ model SweepstakesEntry {
   utmTerm     String?
   referrer    String?
   landingHost String?
+  /// Teilnahmeweg, serverseitig gegen ENTRY_PATHS validiert ("/gewinn" | "/verlosung");
+  /// null bei Teilnahmen vor Einführung des Feldes.
+  landingPath String?
+  /// Geltender Gewinnumfang zum Zeitpunkt der Teilnahme (PRIZE_SCOPE der Konfiguration).
+  prizeScope  String?
 
   /// Nicht rückrechenbarer HMAC-Hash (IP + User-Agent) für Rate Limiting
   /// und Duplikat-Indizien – bewusst keine IP-Speicherung.
@@ -269,6 +274,7 @@ model SweepstakesEntry {
   @@index([email])
   @@index([lastName])
   @@index([submissionIdentifier, createdAt])
+  @@index([landingPath])
 }
 
 /// Gutscheincode der Newsletter-Aktion (50 % Wiresoft-Shop). Codes werden

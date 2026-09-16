@@ -49,7 +49,15 @@ export async function resolveBookSite() {
  */
 
 const contextSchema = z.object({
-  path: z.enum(["/", "/das-buch", "/gutschein", "/gewinn", "/buch-reddit", "/buch-inbox"]),
+  path: z.enum([
+    "/",
+    "/das-buch",
+    "/gutschein",
+    "/gewinn",
+    "/verlosung",
+    "/buch-reddit",
+    "/buch-inbox",
+  ]),
   consentMode: z.enum(["required", "not-required"]),
   expires: z.number().int(),
 });

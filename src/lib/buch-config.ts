@@ -29,6 +29,27 @@ export const BUCH_PREIS_SCHEMA = "18.00"; // für JSON-LD (Book/Offer)
 export const BUCH_ISBN13 = "9783690662505";
 export const BUCH_ERSCHEINT_LABEL = "06.10.2026";
 export const BUCH_ERSCHEINT_ISO = "2026-10-06";
+/** Erscheinungstag als Zeitpunkt (Europe/Berlin, MESZ) – für zeitabhängige Kauf-Copy. */
+export const BUCH_ERSCHEINT_AT = new Date(`${BUCH_ERSCHEINT_ISO}T00:00:00+02:00`);
+
+/** Ist das Buch bereits erschienen? Steuert „vorbestellen“ vs. „kaufen“. */
+export function isBookReleased(now: Date = new Date()): boolean {
+  return now >= BUCH_ERSCHEINT_AT;
+}
+
+/** Zeitabhängige Kauf-Labels (vor Erscheinen „vorbestellen“, danach „kaufen“). */
+export function buchKaufLabels(now: Date = new Date()) {
+  const released = isBookReleased(now);
+  return {
+    released,
+    /** Verb für Fließtext, z. B. „Jetzt Buch vorbestellen“. */
+    verb: released ? "kaufen" : "vorbestellen",
+    primaryCta: released ? "Jetzt Buch kaufen" : "Jetzt Buch vorbestellen",
+    amazonCta: released ? "Bei Amazon kaufen" : "Bei Amazon vorbestellen",
+    /** Kurzstatus neben dem Preis. */
+    availability: released ? "jetzt erhältlich" : `erscheint am ${BUCH_ERSCHEINT_LABEL}`,
+  };
+}
 
 /** Musikvideo zum Buch (YouTube) und Song (Spotify) – beide heißen wie das Buch. */
 export const YOUTUBE_VIDEO_ID = "TeSglGnghVE";

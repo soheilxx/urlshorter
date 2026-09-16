@@ -2,6 +2,7 @@
 
 import Script from "next/script";
 import { useEffect, useState } from "react";
+import { CONSENT_CHANGE_EVENT } from "@/lib/consent";
 import { trackGewinnEvent } from "@/lib/gewinn-analytics";
 import { BookConversionTracking } from "@/components/book-conversion-tracking";
 import { RedditTracking } from "@/components/reddit-tracking";
@@ -62,8 +63,13 @@ export function GewinnTracking(config: GewinnTrackingConfig) {
   const ga4MeasurementId = config.bookConversion?.ga4MeasurementId ?? config.ga4MeasurementId;
   const linkedInPartnerId = config.bookConversion?.linkedInPartnerId ?? config.linkedInPartnerId;
 
+  // Consent beim Mount prüfen und auf Entscheidungen des Consent-Banners
+  // (Zustimmung/Widerruf) ohne Reload reagieren.
   useEffect(() => {
-    setAllowed(hasMarketingConsent(config));
+    const update = () => setAllowed(hasMarketingConsent(config));
+    update();
+    window.addEventListener(CONSENT_CHANGE_EVENT, update);
+    return () => window.removeEventListener(CONSENT_CHANGE_EVENT, update);
     // config ist ein statisches Server-Prop-Objekt
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

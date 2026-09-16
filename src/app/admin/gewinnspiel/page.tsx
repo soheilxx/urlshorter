@@ -12,6 +12,7 @@ import { Table, TableWrapper, Td, Th, Thead } from "@/components/ui/table";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
+  ENTRY_PATHS,
   RETAILERS,
   retailerLabel,
   SWEEPSTAKES_STATUS_LABELS,
@@ -68,6 +69,7 @@ export default async function SweepstakesAdminPage({
         status: true,
         utmSource: true,
         utmCampaign: true,
+        landingPath: true,
       },
     }),
   ]);
@@ -89,6 +91,7 @@ export default async function SweepstakesAdminPage({
     filters.ref,
     filters.order,
     filters.utm,
+    filters.path,
     filters.retailer,
     filters.status,
     filters.from,
@@ -99,7 +102,7 @@ export default async function SweepstakesAdminPage({
     <div className="space-y-6">
       <PageHeader
         title="Gewinnspiel"
-        description="Teilnahmen der Dubai-Verlosung (lizenzzumerfolg.com/gewinn) · nur für Admins"
+        description="Teilnahmen der Dubai-Verlosung – gemeinsamer Lostopf von lizenzzumerfolg.com/gewinn und /verlosung · nur für Admins"
       >
         <a href={exportHref} className="w-full md:w-auto">
           <Button variant="secondary" size="sm" className="w-full md:w-auto">
@@ -172,6 +175,18 @@ export default async function SweepstakesAdminPage({
               </Select>
             </div>
             <div>
+              <Label htmlFor="f-path">Teilnahmeweg</Label>
+              <Select id="f-path" name="path" defaultValue={filters.path ?? ""}>
+                <option value="">Alle Wege</option>
+                {ENTRY_PATHS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+                <option value="none">ohne Angabe (Alt-Teilnahmen)</option>
+              </Select>
+            </div>
+            <div>
               <Label htmlFor="f-from">Von (Datum)</Label>
               <Input id="f-from" name="from" type="date" defaultValue={filters.from ?? ""} />
             </div>
@@ -207,6 +222,7 @@ export default async function SweepstakesAdminPage({
                 <Th>E-Mail</Th>
                 <Th>Händler</Th>
                 <Th>Quelle</Th>
+                <Th>Weg</Th>
                 <Th>Status</Th>
                 <Th>Aktionen</Th>
               </tr>
@@ -214,7 +230,7 @@ export default async function SweepstakesAdminPage({
             <tbody>
               {entries.length === 0 ? (
                 <tr>
-                  <Td colSpan={8} className="py-10 text-center text-zinc-400">
+                  <Td colSpan={9} className="py-10 text-center text-zinc-400">
                     Keine Teilnahmen für die aktuelle Filterung.
                   </Td>
                 </tr>
@@ -237,6 +253,7 @@ export default async function SweepstakesAdminPage({
                     <Td className="max-w-[120px] truncate text-zinc-500">
                       {entry.utmSource ?? entry.utmCampaign ?? "–"}
                     </Td>
+                    <Td className="font-mono text-xs text-zinc-500">{entry.landingPath ?? "–"}</Td>
                     <Td>
                       <Badge variant={STATUS_BADGES[entry.status] ?? "muted"}>
                         {SWEEPSTAKES_STATUS_LABELS[entry.status] ?? entry.status}
@@ -293,6 +310,7 @@ export default async function SweepstakesAdminPage({
                     {entry.utmSource ?? entry.utmCampaign
                       ? ` · ${entry.utmSource ?? entry.utmCampaign}`
                       : ""}
+                    {entry.landingPath ? ` · ${entry.landingPath}` : ""}
                   </p>
                 </Link>
               </li>

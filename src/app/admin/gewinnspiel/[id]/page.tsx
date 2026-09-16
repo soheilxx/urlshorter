@@ -138,6 +138,11 @@ export default async function SweepstakesEntryPage({
                 <Row label="Referrer" value={entry.referrer ?? "–"} />
                 <Row label="Landing-Host" value={entry.landingHost ?? "–"} />
                 <Row
+                  label="Teilnahmeweg"
+                  value={entry.landingPath ?? "– (vor Einführung des Feldes)"}
+                />
+                <Row label="Gewinnumfang" value={entry.prizeScope ?? "–"} />
+                <Row
                   label="Bestätigungs-E-Mail"
                   value={
                     entry.emailConfirmationSentAt

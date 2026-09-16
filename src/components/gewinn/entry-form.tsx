@@ -5,19 +5,28 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { EMPTY_SWEEPSTAKES_STATE } from "@/actions/action-states";
 import { submitSweepstakesAction } from "@/actions/sweepstakes-actions";
-import { trackGewinnEvent } from "@/lib/gewinn-analytics";
-import { ANNOUNCEMENT_DATETIME_LABEL, RETAILERS } from "@/lib/gewinnspiel-config";
+import { trackGewinnEvent, trackRegistrationCompleted } from "@/lib/gewinn-analytics";
+import {
+  ANNOUNCEMENT_DATETIME_LABEL,
+  type EntryPath,
+  RETAILERS,
+} from "@/lib/gewinnspiel-config";
 import { cn } from "@/lib/utils";
 
 /**
- * Teilnahmeformular des Gewinnspiels.
+ * Teilnahmeformular des Gewinnspiels (gemeinsam für /gewinn und /verlosung).
  * - Ein Feld pro Zeile auf Mobilgeräten, sinnvolle Gruppierung ab sm:
  * - Sichtbare Labels, Inline-Fehler mit aria-describedby, Fokus-Ringe
  * - Honeypot + signiertes Formular-Token gegen Bots
- * - Erfolgsansicht ersetzt das Formular (mit Teilnahme-Referenz)
+ * - Erfolgsansicht ersetzt das Formular (mit Teilnahme-Referenz); Seiten
+ *   können über renderSuccess eine eigene Erfolgsansicht liefern.
+ * - Farben ausschließlich über --gw-*-Variablen (Dark-Theme /gewinn,
+ *   Light-Theme /verlosung).
+ * - Keine Browser-Persistenz der Eingaben (kein localStorage, autoComplete
+ *   nur für die Eingabehilfe des Browsers).
  */
 
-interface UtmParams {
+export interface UtmParams {
   utm_source?: string;
   utm_medium?: string;
   utm_campaign?: string;
@@ -26,9 +35,12 @@ interface UtmParams {
 }
 
 const inputClass =
-  "w-full rounded-xl border border-[var(--gw-border-soft)] bg-white/[0.04] px-4 py-3 text-base text-[var(--gw-ink)] placeholder:text-[var(--gw-ink-mute)] outline-none transition-colors focus:border-[var(--gw-gold)] focus:ring-2 focus:ring-[var(--gw-gold)]/30";
+  "w-full rounded-xl border border-[var(--gw-border-soft)] bg-[var(--gw-input-bg)] px-4 py-3 text-base text-[var(--gw-ink)] placeholder:text-[var(--gw-ink-mute)] outline-none transition-colors focus:border-[var(--gw-gold)] focus:ring-2 focus:ring-[var(--gw-gold)]/30";
 
 const labelClass = "mb-1.5 block text-sm font-medium text-[var(--gw-ink-soft)]";
+
+const linkClass =
+  "underline decoration-[var(--gw-gold)]/50 underline-offset-2 hover:text-[var(--gw-link-hover)]";
 
 function Field({
   id,
@@ -50,7 +62,7 @@ function Field({
       </label>
       {children}
       {error ? (
-        <p id={`${id}-error`} className="mt-1.5 text-sm text-[#e8a08a]">
+        <p id={`${id}-error`} className="mt-1.5 text-sm text-[var(--gw-error-ink)]">
           {error}
         </p>
       ) : null}
@@ -58,23 +70,55 @@ function Field({
   );
 }
 
+export interface EntryFormProps {
+  formToken: string;
+  utm: UtmParams;
+  privacyUrl: string | null;
+  /** Teilnahmeweg – wird serverseitig validiert und je Teilnahme gespeichert. */
+  landingPath?: EntryPath;
+  /** Beschriftung des Absende-Buttons. */
+  submitLabel?: string;
+  /** Link zu den Teilnahmebedingungen (Standard: /gewinn/teilnahmebedingungen). */
+  termsHref?: string;
+  /** Kurzer Hinweis unter dem Absende-Button (Standard: Gewinnerbekanntgabe). */
+  submitHint?: React.ReactNode;
+  /** Eigene Erfolgsansicht (Standard: Dankestext der /gewinn-Seite). */
+  renderSuccess?: (info: { referenceNumber: string }) => React.ReactNode;
+}
+
 export function EntryForm({
   formToken,
   utm,
   privacyUrl,
-}: {
-  formToken: string;
-  utm: UtmParams;
-  privacyUrl: string | null;
-}) {
+  landingPath = "/gewinn",
+  submitLabel = "Verbindlich am Gewinnspiel teilnehmen",
+  termsHref = "/gewinn/teilnahmebedingungen",
+  submitHint,
+  renderSuccess,
+}: EntryFormProps) {
   const [state, formAction, pending] = useActionState(
     submitSweepstakesAction,
     EMPTY_SWEEPSTAKES_STATE,
   );
   const [retailer, setRetailer] = useState<string>("");
+  /**
+   * Zuletzt abgesendete Eingaben (nur im Speicher, keine Browser-Persistenz):
+   * React setzt Formulare nach einer Server Action zurück – damit Eingaben bei
+   * Validierungs-, Netzwerk- oder Duplikatfehlern erhalten bleiben, dienen sie
+   * als defaultValue der Felder.
+   */
+  const [draft, setDraft] = useState<Record<string, string>>({});
   const referrerRef = useRef<HTMLInputElement>(null);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const formStartTracked = useRef(false);
+
+  const rememberDraft = (form: HTMLFormElement) => {
+    const next: Record<string, string> = {};
+    for (const [key, value] of new FormData(form).entries()) {
+      if (typeof value === "string" && key !== "website") next[key] = value;
+    }
+    setDraft(next);
+  };
 
   // Ursprünglichen Referrer clientseitig erfassen (nur serverseitig gespeichert)
   useEffect(() => {
@@ -88,15 +132,21 @@ export function EntryForm({
     if (state.error) errorSummaryRef.current?.focus();
   }, [state]);
 
-  // Nicht-personenbezogene Tracking-Events (nur Event-Namen, keine Inhalte)
+  // Nicht-personenbezogene Tracking-Events (nur Event-Namen bzw. Ereignis-ID).
+  // Das Registrierungsevent feuert NUR mit der Server-Ereignis-ID, also nur
+  // für tatsächlich gespeicherte Teilnahmen (Honeypot-Scheinerfolg: keine ID).
   useEffect(() => {
-    if (state.ok) trackGewinnEvent("gewinnspiel_teilnahme");
-    else if (state.error) trackGewinnEvent("gewinnspiel_formular_fehler");
+    if (state.ok) {
+      if (state.trackingEventId) trackRegistrationCompleted(state.trackingEventId);
+    } else if (state.error) {
+      trackGewinnEvent("gewinnspiel_formular_fehler");
+    }
   }, [state]);
 
   const fe = state.fieldErrors ?? {};
 
   if (state.ok && state.referenceNumber) {
+    if (renderSuccess) return <>{renderSuccess({ referenceNumber: state.referenceNumber })}</>;
     return (
       <div
         role="status"
@@ -122,7 +172,7 @@ export function EntryForm({
           </p>
           <p className="mt-4 font-medium text-[var(--gw-ink)]">Soheil Hosseini</p>
 
-          <div className="mt-8 rounded-xl border gw-hairline bg-white/[0.04] px-5 py-4">
+          <div className="mt-8 rounded-xl border gw-hairline bg-[var(--gw-input-bg)] px-5 py-4">
             <p className="text-sm text-[var(--gw-ink-mute)]">Deine Teilnahme-Referenz</p>
             <p
               data-testid="teilnahme-referenz"
@@ -143,6 +193,7 @@ export function EntryForm({
     <form
       action={formAction}
       noValidate={false}
+      onSubmit={(e) => rememberDraft(e.currentTarget)}
       onFocusCapture={() => {
         if (!formStartTracked.current) {
           formStartTracked.current = true;
@@ -157,6 +208,7 @@ export function EntryForm({
         <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
       <input type="hidden" name="formToken" value={formToken} />
+      <input type="hidden" name="landingPath" value={landingPath} />
       <input type="hidden" name="utm_source" value={utm.utm_source ?? ""} />
       <input type="hidden" name="utm_medium" value={utm.utm_medium ?? ""} />
       <input type="hidden" name="utm_campaign" value={utm.utm_campaign ?? ""} />
@@ -169,7 +221,7 @@ export function EntryForm({
           ref={errorSummaryRef}
           tabIndex={-1}
           role="alert"
-          className="mb-6 rounded-xl border border-[#8a4a38]/60 bg-[#2a1510] px-4 py-3 text-sm text-[#f0c0b0]"
+          className="mb-6 rounded-xl border border-[var(--gw-error-border)] bg-[var(--gw-error-bg)] px-4 py-3 text-sm text-[var(--gw-error-ink-strong)]"
         >
           {state.error}
         </div>
@@ -213,6 +265,7 @@ export function EntryForm({
               maxLength={60}
               autoComplete="off"
               spellCheck={false}
+              defaultValue={draft.orderNumber ?? ""}
               placeholder="z. B. 306-1234567-1234567"
               aria-invalid={fe.orderNumber ? true : undefined}
               aria-describedby={fe.orderNumber ? "orderNumber-error" : undefined}
@@ -232,6 +285,7 @@ export function EntryForm({
                 type="text"
                 required
                 maxLength={120}
+                defaultValue={draft.retailerOther ?? ""}
                 placeholder="z. B. Osiander"
                 aria-invalid={fe.retailerOther ? true : undefined}
                 aria-describedby={fe.retailerOther ? "retailerOther-error" : undefined}
@@ -257,6 +311,7 @@ export function EntryForm({
               type="text"
               required
               maxLength={100}
+              defaultValue={draft.firstName ?? ""}
               autoComplete="given-name"
               aria-invalid={fe.firstName ? true : undefined}
               aria-describedby={fe.firstName ? "firstName-error" : undefined}
@@ -270,6 +325,7 @@ export function EntryForm({
               type="text"
               required
               maxLength={100}
+              defaultValue={draft.lastName ?? ""}
               autoComplete="family-name"
               aria-invalid={fe.lastName ? true : undefined}
               aria-describedby={fe.lastName ? "lastName-error" : undefined}
@@ -284,6 +340,7 @@ export function EntryForm({
                 type="text"
                 required
                 maxLength={100}
+                defaultValue={draft.street ?? ""}
                 autoComplete="address-line1"
                 aria-invalid={fe.street ? true : undefined}
                 aria-describedby={fe.street ? "street-error" : undefined}
@@ -297,6 +354,7 @@ export function EntryForm({
                 type="text"
                 required
                 maxLength={20}
+                defaultValue={draft.houseNumber ?? ""}
                 autoComplete="address-line2"
                 aria-invalid={fe.houseNumber ? true : undefined}
                 aria-describedby={fe.houseNumber ? "houseNumber-error" : undefined}
@@ -312,6 +370,7 @@ export function EntryForm({
               required
               maxLength={12}
               inputMode="numeric"
+              defaultValue={draft.postalCode ?? ""}
               autoComplete="postal-code"
               aria-invalid={fe.postalCode ? true : undefined}
               aria-describedby={fe.postalCode ? "postalCode-error" : undefined}
@@ -325,20 +384,21 @@ export function EntryForm({
               type="text"
               required
               maxLength={100}
+              defaultValue={draft.city ?? ""}
               autoComplete="address-level2"
               aria-invalid={fe.city ? true : undefined}
               aria-describedby={fe.city ? "city-error" : undefined}
               className={inputClass}
             />
           </Field>
-          <Field id="country" label="Land" error={fe.country}>
+          <Field id="country" label="Land (Deutschland, Österreich oder Schweiz)" error={fe.country}>
             <input
               id="country"
               name="country"
               type="text"
               required
               maxLength={56}
-              defaultValue="Deutschland"
+              defaultValue={draft.country ?? "Deutschland"}
               autoComplete="country-name"
               aria-invalid={fe.country ? true : undefined}
               aria-describedby={fe.country ? "country-error" : undefined}
@@ -352,6 +412,7 @@ export function EntryForm({
               type="email"
               required
               maxLength={200}
+              defaultValue={draft.email ?? ""}
               autoComplete="email"
               inputMode="email"
               placeholder="name@beispiel.de"
@@ -372,6 +433,7 @@ export function EntryForm({
               type="tel"
               required
               maxLength={30}
+              defaultValue={draft.phone ?? ""}
               autoComplete="tel"
               inputMode="tel"
               placeholder="+49 151 12345678"
@@ -391,25 +453,21 @@ export function EntryForm({
           <CheckboxRow
             id="consent"
             error={fe.consent}
+            defaultChecked={draft.consent === "on"}
             label={
               <>
                 Ich bestätige, dass meine Angaben vollständig und korrekt sind, akzeptiere die{" "}
                 <Link
-                  href="/gewinn/teilnahmebedingungen"
+                  href={termsHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline decoration-[var(--gw-gold)]/50 underline-offset-2 hover:text-[var(--gw-gold-strong)]"
+                  className={linkClass}
                 >
                   Teilnahmebedingungen
                 </Link>{" "}
                 und habe die{" "}
                 {privacyUrl ? (
-                  <a
-                    href={privacyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline decoration-[var(--gw-gold)]/50 underline-offset-2 hover:text-[var(--gw-gold-strong)]"
-                  >
+                  <a href={privacyUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
                     Datenschutzhinweise
                   </a>
                 ) : (
@@ -426,12 +484,12 @@ export function EntryForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex min-h-[52px] w-full items-center justify-center rounded-xl bg-gradient-to-b from-[var(--gw-gold-strong)] to-[var(--gw-gold-deep)] px-6 py-3.5 text-base font-semibold text-[#181207] shadow-lg shadow-black/40 transition-transform outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-surface)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+          className="inline-flex min-h-[52px] w-full items-center justify-center rounded-xl bg-gradient-to-b from-[var(--gw-gold-strong)] to-[var(--gw-gold-deep)] px-6 py-3.5 text-base font-semibold text-[var(--gw-cta-ink)] shadow-lg shadow-(color:--gw-shadow) transition-transform outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--gw-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gw-surface)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
         >
-          {pending ? "Wird übermittelt …" : "Verbindlich am Gewinnspiel teilnehmen"}
+          {pending ? "Wird übermittelt …" : submitLabel}
         </button>
         <p className="mt-3 text-sm text-[var(--gw-ink-mute)]">
-          Die Gewinnerbekanntgabe erfolgt am {ANNOUNCEMENT_DATETIME_LABEL}.
+          {submitHint ?? <>Die Gewinnerbekanntgabe erfolgt am {ANNOUNCEMENT_DATETIME_LABEL}.</>}
         </p>
       </div>
     </form>
@@ -442,10 +500,12 @@ function CheckboxRow({
   id,
   label,
   error,
+  defaultChecked,
 }: {
   id: string;
   label: React.ReactNode;
   error?: string;
+  defaultChecked?: boolean;
 }) {
   return (
     <div>
@@ -455,14 +515,15 @@ function CheckboxRow({
           name={id}
           type="checkbox"
           required
+          defaultChecked={defaultChecked}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
-          className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer appearance-auto rounded border-[var(--gw-border)] bg-white/[0.06] accent-[var(--gw-gold)]"
+          className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer appearance-auto rounded border-[var(--gw-border)] bg-[var(--gw-input-bg)] accent-[var(--gw-gold)]"
         />
         <span className="text-sm leading-relaxed text-[var(--gw-ink-soft)]">{label}</span>
       </label>
       {error ? (
-        <p id={`${id}-error`} className="mt-1 pl-8 text-sm text-[#e8a08a]">
+        <p id={`${id}-error`} className="mt-1 pl-8 text-sm text-[var(--gw-error-ink)]">
           {error}
         </p>
       ) : null}

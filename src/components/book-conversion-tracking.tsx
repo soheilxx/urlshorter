@@ -55,6 +55,8 @@ type TrackingWindow = Window & {
   __lzeMetaPixels?: Set<string>;
   __lzeTikTokPixels?: Set<string>;
   __lzeBookTrackingPath?: string;
+  /** Pfade, für die in dieser Seitensitzung bereits ein PageView gesendet wurde. */
+  __lzeBookPageViews?: Set<string>;
 };
 
 function cookie(name: string): string | undefined {
@@ -234,6 +236,10 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
 
     function pageView() {
       if (document.visibilityState !== "visible" || pageSent.current) return;
+      // Auch nach Consent-Widerruf und erneuter Zustimmung (Remount) nur ein PageView je Seitenaufruf.
+      w.__lzeBookPageViews ??= new Set();
+      if (w.__lzeBookPageViews.has(config.path)) return;
+      w.__lzeBookPageViews.add(config.path);
       pageSent.current = true;
       const id = crypto.randomUUID();
       attempt(() => {
