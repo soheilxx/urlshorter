@@ -300,14 +300,15 @@ Verlosung. Beispiel-Link mit bereinigten Kampagnenparametern:
 - **Bedingungen**: `TERMS_VERSION` 1.3 (16.09.2026) – Bikinilista/Amazon
   ergänzt, `/verlosung` als Teilnahmeweg; ältere gespeicherte Versionen bleiben
   unverändert.
-- **Consent**: Die Seite läuft im Modus `required` mit eigenem First-Party-
+- **Consent**: Betreiber-Entscheidung (17.09.2026): Die Seite läuft wie
+  `/gewinn` im Modus `not-required` – GA4, Meta, TikTok, Reddit, LinkedIn und
+  das Server-Registrierungsevent feuern ohne Consent-Gate. Das First-Party-
   Banner ([`src/components/consent-banner.tsx`](src/components/consent-banner.tsx),
-  Cookie `lze_marketing_consent` = `accepted`/`denied`, 180 Tage; ein per
-  `CONSENT_COOKIE_NAME`/`CONSENT_COOKIE_ACCEPTED_VALUE` konfigurierter Cookie
-  hat Vorrang). `GewinnTracking` reagiert auf das Event `lze-consent-change`
-  ohne Reload; `/api/book/events`, `/api/reddit/events` und das
-  Server-Registrierungsevent prüfen denselben Cookie. Footer-Link
-  „Cookie-Einstellungen“ öffnet das Banner erneut.
+  Cookie `lze_marketing_consent`) bleibt im Code; mit `consentMode="required"`
+  auf der Seite und `ENTRY_PATH_CONSENT_MODE` in
+  `src/lib/registration-conversion.ts` lässt sich das Gate wieder einschalten
+  (`GewinnTracking` reagiert dann auf `lze-consent-change` ohne Reload,
+  Collector-Routen und Server-Event prüfen denselben Cookie).
 - **Registrierungsevent**: Nach tatsächlicher Speicherung liefert die Action
   eine `trackingEventId` (UUID, nicht die Datensatz-ID; beim Honeypot-
   Scheinerfolg `null`). Browser: `fbq('track','CompleteRegistration',…,{eventID})`

@@ -9,6 +9,7 @@ import { isBookPurchaseUrl } from "@/lib/book-conversion-events";
 import { logger } from "@/lib/logger";
 import { sendRedditCapiEvents } from "@/lib/reddit-capi";
 import { verifyRedditContext } from "@/lib/reddit-context";
+import { isSameOrigin } from "@/lib/same-origin";
 import { REDDIT_IDENTIFIER_PATTERN } from "@/lib/reddit-events";
 import { getClientIp } from "@/lib/request-info";
 
@@ -42,8 +43,7 @@ function done(status = 204) {
 
 export async function POST(request: Request): Promise<Response> {
   try {
-    const origin = new URL(request.url).origin;
-    if (request.headers.get("origin") !== origin) return done(403);
+    if (!isSameOrigin(request, getEnv().PUBLIC_BASE_URL)) return done(403);
     if (Number(request.headers.get("content-length")) > 8_000) return done(413);
     const text = await request.text();
     if (Buffer.byteLength(text) > 8_000) return done(413);

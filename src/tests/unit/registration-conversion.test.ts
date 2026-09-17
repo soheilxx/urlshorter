@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { evaluateConsent, readCookieValue } from "@/lib/consent";
 import { resetEnvCache } from "@/lib/env";
 import {
   hasRegistrationTrackingConsent,
@@ -54,39 +55,43 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("Registrierungsevent (Server): Consent-Bindung je Teilnahmeweg", () => {
-  it("/verlosung ohne Cookie-Entscheidung: kein Event, nichts gespeichert", async () => {
-    expect(hasRegistrationTrackingConsent("/verlosung", null)).toBe(false);
+describe("Registrierungsevent (Server): Consent-Modus je Teilnahmeweg", () => {
+  it("Betreiber-Entscheidung: /verlosung und /gewinn senden ohne Cookie-Entscheidung (not-required)", async () => {
+    expect(hasRegistrationTrackingConsent("/verlosung", null)).toBe(true);
+    expect(hasRegistrationTrackingConsent("/gewinn", null)).toBe(true);
     const r = await sendRegistrationConversion(input({ cookieHeader: null }));
-    expect(r).toEqual({ sent: false, reason: "no-consent" });
-    expect(prisma.tagEvent.create).not.toHaveBeenCalled();
-    expect(sendMetaCapiSingle).not.toHaveBeenCalled();
-    expect(sendTikTokSingle).not.toHaveBeenCalled();
+    expect(r).toEqual({ sent: true });
+    expect(prisma.tagEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ path: "/verlosung" }) }),
+    );
   });
 
-  it("/verlosung mit Ablehnung: kein Event (CAPI ersetzt keine Einwilligung)", async () => {
+  it("auch ein abgelehnter Consent-Cookie stoppt das Event im Modus not-required nicht", async () => {
     const r = await sendRegistrationConversion(
       input({ cookieHeader: "lze_marketing_consent=denied; _fbp=fb.1.1.1" }),
     );
-    expect(r.sent).toBe(false);
-    expect(prisma.tagEvent.create).not.toHaveBeenCalled();
-  });
-
-  it("/gewinn folgt der Betreiber-Entscheidung 'not-required' und sendet auch ohne Cookie", async () => {
-    expect(hasRegistrationTrackingConsent("/gewinn", null)).toBe(true);
-    const r = await sendRegistrationConversion(input({ landingPath: "/gewinn", cookieHeader: null }));
     expect(r.sent).toBe(true);
-    expect(prisma.tagEvent.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ path: "/gewinn" }) }),
-    );
+    expect(sendMetaCapiSingle).toHaveBeenCalledTimes(1);
   });
 
-  it("Env-Cookie hat Vorrang vor dem Banner-Default", async () => {
-    vi.stubEnv("CONSENT_COOKIE_NAME", "cmp");
-    vi.stubEnv("CONSENT_COOKIE_ACCEPTED_VALUE", "yes");
-    resetEnvCache();
-    expect(hasRegistrationTrackingConsent("/verlosung", "lze_marketing_consent=accepted")).toBe(false);
-    expect(hasRegistrationTrackingConsent("/verlosung", "cmp=yes")).toBe(true);
+  it("der Consent-Cookie wird ausgewertet, sobald ein Weg auf 'required' steht", () => {
+    // Mechanik bleibt erhalten: mit "required" würde nur der akzeptierte Cookie freigeben.
+    expect(
+      evaluateConsent({
+        mode: "required",
+        cookieName: "lze_marketing_consent",
+        acceptedValue: "accepted",
+        cookieValue: readCookieValue("lze_marketing_consent=accepted", "lze_marketing_consent"),
+      }).hasMarketingConsent,
+    ).toBe(true);
+    expect(
+      evaluateConsent({
+        mode: "required",
+        cookieName: "lze_marketing_consent",
+        acceptedValue: "accepted",
+        cookieValue: readCookieValue("lze_marketing_consent=denied", "lze_marketing_consent"),
+      }).hasMarketingConsent,
+    ).toBe(false);
   });
 });
 

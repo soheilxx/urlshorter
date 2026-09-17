@@ -15,6 +15,7 @@ import { isValidLiFatId, sendLinkedInCapiEvent } from "@/lib/linkedin-capi";
 import { logger } from "@/lib/logger";
 import { deriveFbc } from "@/lib/meta-capi";
 import { getClientIp } from "@/lib/request-info";
+import { isSameOrigin } from "@/lib/same-origin";
 import { sendMetaCapiSingle, sendTikTokSingle } from "@/lib/tag-capi";
 
 /**
@@ -59,31 +60,6 @@ const bodySchema = z.object({
 
 function done(status = 204) {
   return new Response(null, { status, headers: { "Cache-Control": "no-store" } });
-}
-
-/**
- * Same-Origin-Prüfung des Beacons. `request.url` trägt hinter Proxys (Vercel)
- * bzw. bei lokalem `next start` nicht immer den vom Browser gesehenen Host,
- * deshalb zählen zusätzlich der Host-Header (inkl. x-forwarded-*) und die
- * kanonische PUBLIC_BASE_URL. Die eigentliche Absicherung ist der signierte Kontext.
- */
-function isSameOrigin(request: Request, publicBaseUrl: string): boolean {
-  const origin = request.headers.get("origin");
-  if (!origin) return false;
-  const url = new URL(request.url);
-  const allowed = new Set<string>([url.origin]);
-  const proto =
-    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
-    url.protocol.replace(":", "");
-  const host =
-    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || request.headers.get("host");
-  if (host) allowed.add(`${proto}://${host}`);
-  try {
-    allowed.add(new URL(publicBaseUrl).origin);
-  } catch {
-    /* ungültige Basis-URL zählt nicht */
-  }
-  return allowed.has(origin);
 }
 
 export async function POST(request: Request): Promise<Response> {

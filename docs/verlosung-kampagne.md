@@ -26,19 +26,33 @@ Stand: 16.09.2026 · Briefing: „Dubai für zwei. Und 300 Gutscheine zu gewinne
 
 ## 2. Tracking-/CAPI-Integrationsmatrix für `/verlosung`
 
-Consent-Modus der Seite: **`required`** – Marketing-Pixel und Server-Events
-laufen nur mit Cookie `lze_marketing_consent=accepted` (bzw. dem per Env
-konfigurierten Cookie). Ohne Entscheidung oder bei „Nur notwendige“ wird
-kein Drittanbieter-Skript geladen und kein Beacon/CAPI-Event gesendet; die
-Teilnahme funktioniert unabhängig davon.
+Consent-Modus der Seite: **`not-required`** – Entscheidung des Betreibers
+(Wiresoft Portal Ltd., 17.09.2026: „Alle Events müssen immer feuern“). Alle
+Browser-Pixel, Beacons, CAPI-Sendungen und das Server-Registrierungsevent
+laufen ohne Consent-Gate, wie auf /gewinn. Das First-Party-Banner
+(`src/components/consent-banner.tsx`) bleibt im Code und lässt sich mit
+`consentMode="required"` in `src/app/verlosung/page.tsx` sowie
+`ENTRY_PATH_CONSENT_MODE` in `src/lib/registration-conversion.ts` wieder
+aktivieren (bis 16.09.2026 war das der Stand).
+
+GA4: Property lizenzzumerfolg.com, Measurement-ID `G-4EK7Q83FJ6` als
+Code-Standard (`src/lib/env.ts`), per `GA4_MEASUREMENT_ID` oder Dashboard →
+Websites überschreibbar; kein GTM gesetzt, daher lädt `GewinnTracking` gtag.js
+direkt. Events: `page_view` (gtag config), dataLayer `verlosung_seite`,
+`verlosung_cta_*`/`verlosung_sticky_*` (gtag event), `verlosung_formular_geoeffnet`,
+`gewinnspiel_formular_start`, `gewinnspiel_teilnahme` (+`event_id`),
+`add_to_cart` bei jedem Klick auf einen Amazon-/Händler-Button (Hero,
+Gutschein-Sektion, Buch, Abschluss, Sticky – Kauf-Proxy, nie `purchase`),
+`verlosung_link_kopiert`, `verlosung_teilen_geoeffnet`,
+`verlosung_weitere_bestellnummer`.
 
 | Anbieter | Modul | Browserpfad | Serverpfad | Consent | Events | Teststatus |
 | --- | --- | --- | --- | --- | --- | --- |
-| Meta Pixel + CAPI | `book-conversion-tracking.tsx`, `/api/book/events`, `registration-conversion.ts`, `tag-capi.ts` | `PageView`, `AddToCart` (Händlerklick, Kauf-Proxy), `CompleteRegistration` (`fbq('track')`) | `TagEvent` + CAPI mit identischer `event_id` | Cookie erforderlich | PageView / AddToCart / CompleteRegistration | Unit (Mocks), E2E (First-Party-Kette, Pixel-Queue-Abgleich der Event-IDs); Live-CAPI mit Produktions-Token nach Deploy per Logs `book_capi.meta_sent` / `registration_capi.meta_sent` verifizieren |
-| TikTok Pixel + Events API | dieselben Module | `Pageview`, `AddToCart`, `CompleteRegistration` (`ttq.track`) | Events API `AddToCart`, `CompleteRegistration` mit `event_id` | Cookie erforderlich | wie links | Unit (Mocks), E2E-Bootstrap; live nach Deploy per Log `registration_capi.tiktok_sent` |
-| LinkedIn Insight Tag + CAPI | `gewinn-tracking.tsx`, `/api/book/events`, `linkedin-capi.ts` | Insight Tag, Conversion beim Händlerklick | CAPI nur mit `li_fat_id` | Cookie erforderlich | Händlerklick (bestehende Regel 30352953) | unverändert; Registrierung bewusst **nicht** (bräuchte eigene Conversion-Regel, s. offene Punkte) |
-| Reddit Pixel + CAPI | `reddit-tracking.tsx`, `/api/reddit/events` | `PageVisit`, Amazon-Outbound | CAPI mit `event_id` | Cookie erforderlich | Landingpage-Aufruf, Amazon-Klick | Allowlist-Unit-Test; Route unverändert |
-| GA4 / GTM | `gewinn-tracking.tsx` | dataLayer `verlosung_seite`, CTA-Events (`verlosung_cta_*`, `verlosung_sticky_*`), `gewinnspiel_formular_start`, `gewinnspiel_teilnahme` (+`event_id`), `verlosung_formular_geoeffnet`, `verlosung_link_kopiert`, `verlosung_teilen_geoeffnet`, `verlosung_weitere_bestellnummer` | – | Cookie erforderlich | nur Event-Namen, keine Formulardaten | nicht live (keine GA4/GTM-ID in Produktion gesetzt) |
+| Meta Pixel + CAPI | `book-conversion-tracking.tsx`, `/api/book/events`, `registration-conversion.ts`, `tag-capi.ts` | `PageView`, `AddToCart` (Händlerklick, Kauf-Proxy), `CompleteRegistration` (`fbq('track')`) | `TagEvent` + CAPI mit identischer `event_id` | ohne Consent-Gate | PageView / AddToCart / CompleteRegistration | Unit (Mocks), E2E (First-Party-Kette, Pixel-Queue-Abgleich der Event-IDs); Live-CAPI mit Produktions-Token nach Deploy per Logs `book_capi.meta_sent` / `registration_capi.meta_sent` verifizieren |
+| TikTok Pixel + Events API | dieselben Module | `Pageview`, `AddToCart`, `CompleteRegistration` (`ttq.track`) | Events API `AddToCart`, `CompleteRegistration` mit `event_id` | ohne Consent-Gate | wie links | Unit (Mocks), E2E-Bootstrap; live nach Deploy per Log `registration_capi.tiktok_sent` |
+| LinkedIn Insight Tag + CAPI | `gewinn-tracking.tsx`, `/api/book/events`, `linkedin-capi.ts` | Insight Tag, Conversion beim Händlerklick | CAPI nur mit `li_fat_id` | ohne Consent-Gate | Händlerklick (bestehende Regel 30352953) | unverändert; Registrierung bewusst **nicht** (bräuchte eigene Conversion-Regel, s. offene Punkte) |
+| Reddit Pixel + CAPI | `reddit-tracking.tsx`, `/api/reddit/events` | `PageVisit`, Amazon-Outbound | CAPI mit `event_id` | ohne Consent-Gate | Landingpage-Aufruf, Amazon-Klick | Allowlist-Unit-Test; Route unverändert |
+| GA4 / GTM | `gewinn-tracking.tsx` | dataLayer `verlosung_seite`, CTA-Events (`verlosung_cta_*`, `verlosung_sticky_*`), `gewinnspiel_formular_start`, `gewinnspiel_teilnahme` (+`event_id`), `verlosung_formular_geoeffnet`, `verlosung_link_kopiert`, `verlosung_teilen_geoeffnet`, `verlosung_weitere_bestellnummer` | – | ohne Consent-Gate | nur Event-Namen, keine Formulardaten | live: gtag.js mit `G-4EK7Q83FJ6` (Code-Standard, kein GTM), E2E prüft config/Seiten-Event/CTA/`add_to_cart` im dataLayer |
 | First-Party | `TagEvent` | Beacons | `book_page_view`, `book_add_to_cart`, `sweepstakes_registration`, `reddit_*` | wie oben | – | Unit + Integration + E2E |
 
 Semantik: Händlerklick = `AddToCart` (bestehender Kaufinteresse-Proxy, kein
@@ -58,8 +72,8 @@ Ereignis-ID → weder Browser- noch Server-Event.
 | 5 | **Bestätigungs-E-Mail**: `src/lib/mailer.ts` ist ein Stub | `MAIL_FROM` + `RESEND_API_KEY` oder `SMTP_URL` + echte Implementierung | Seite verspricht keinen Versand; Referenz wird angezeigt und ist kopierbar |
 | 6 | **LinkedIn-Conversion für Registrierungen** | neue Conversion-Regel im LinkedIn Campaign Manager, dann `registration-conversion.ts` erweitern | nicht gesendet (Regel 30352953 bildet den Händlerklick ab) |
 | 7 | **LinkedIn-CAPI-Token** läuft ca. Ende Oktober 2026 ab | Vercel Env `LINKEDIN_CAPI_ACCESS_TOKEN` | unverändert |
-| 8 | **GA4/GTM** für `/verlosung` | `GA4_MEASUREMENT_ID` / `GTM_CONTAINER_ID` oder Dashboard → Websites | nicht gesetzt → dataLayer-Events ohne Empfänger |
-| 9 | **Consent-Modus `/gewinn` und `/buch-inbox`** weiterhin `not-required` (Betreiber-Entscheidung 28.08.2026) | `src/app/gewinn/page.tsx`, `src/app/buch-inbox/page.tsx` | unverändert; das neue Banner + `required` ließe sich dort mit zwei Zeilen übernehmen |
+| 8 | **GA4 Key Events** in der GA4-Property markieren (`gewinnspiel_teilnahme`, `add_to_cart`) und ggf. Google-Ads-Verknüpfung | GA4-Admin (Property lizenzzumerfolg.com) | Events kommen an; Markierung als Schlüsselereignis erfolgt in der GA4-Oberfläche |
+| 9 | **Consent-Modus** aller Kampagnenseiten `not-required` (Betreiber-Entscheidung 28.08./17.09.2026) – rechtliche Bewertung liegt beim Betreiber | `src/app/verlosung/page.tsx`, `src/app/gewinn/page.tsx`, `src/lib/registration-conversion.ts` | Banner-Komponente vorhanden, nicht eingebunden |
 | 10 | **Datenschutzerklärung** (extern, `PRIVACY_URL`) sollte das First-Party-Consent-Cookie `lze_marketing_consent` und die Pixel-Anbieter nennen | externe Seite soheil-hosseini.de/datenschutz | Banner verlinkt die bestehende Erklärung |
 
 ## 4. Prüfungen (siehe Abschlussbericht im Chat / CI)

@@ -32,13 +32,14 @@ export const REGISTRATION_EVENT_NAME = "sweepstakes_registration";
 export const REGISTRATION_STANDARD_EVENT = "CompleteRegistration";
 
 /**
- * Consent-Modus je Teilnahmeweg. /gewinn: Entscheidung des Betreibers
- * (28.08.2026) – Tracking ohne Consent-Gate. /verlosung: nur mit wirksamer
- * Einwilligung über das Consent-Banner der Seite.
+ * Consent-Modus je Teilnahmeweg – Entscheidung des Betreibers (Wiresoft Portal
+ * Ltd.): /gewinn seit 28.08.2026 und /verlosung seit 17.09.2026 ohne
+ * Consent-Gate ("Alle Events müssen immer feuern"). Für ein Consent-Gate hier
+ * "required" setzen; dann gilt der Cookie aus resolveConsentCookie().
  */
 export const ENTRY_PATH_CONSENT_MODE: Record<EntryPath, ConsentMode> = {
   "/gewinn": "not-required",
-  "/verlosung": "required",
+  "/verlosung": "not-required",
 };
 
 export interface RegistrationConversionInput {

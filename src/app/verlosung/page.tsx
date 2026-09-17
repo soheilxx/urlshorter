@@ -10,7 +10,6 @@ import {
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ConsentBanner, ConsentSettingsButton } from "@/components/consent-banner";
 import { DubaiSkyline } from "@/components/gewinn/dubai-skyline";
 import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import { Confetti } from "@/components/verlosung/confetti";
@@ -32,7 +31,6 @@ import {
   SPENDEN_EMPFAENGER,
   SPENDEN_HINWEIS,
 } from "@/lib/buch-config";
-import { resolveConsentCookie } from "@/lib/consent";
 import { getEnv } from "@/lib/env";
 import {
   ANNOUNCEMENT_DATETIME_LABEL,
@@ -76,8 +74,11 @@ import { createFormToken } from "@/lib/sweepstakes-crypto";
  * gleiche Validierung, gleiche Deduplizierung. Alle Zahlen kommen aus
  * gewinnspiel-config.ts / buch-config.ts.
  *
- * Tracking: GewinnTracking im Consent-Modus "required" – Marketing-Pixel und
- * Server-Events laufen nur mit Zustimmung über das Consent-Banner der Seite.
+ * Tracking: Entscheidung des Betreibers (Wiresoft Portal Ltd., 17.09.2026):
+ * Alle Events (GA4, Meta, TikTok, Reddit, LinkedIn, Server-Registrierungsevent)
+ * feuern ohne Consent-Gate ("not-required") – wie auf /gewinn. Das
+ * First-Party-Consent-Banner (src/components/consent-banner.tsx) bleibt im
+ * Code erhalten und kann mit consentMode="required" wieder eingebunden werden.
  */
 
 export const dynamic = "force-dynamic";
@@ -229,7 +230,6 @@ export default async function VerlosungPage({
   const kauf = buchKaufLabels(now);
   const formToken = createFormToken();
   const env = getEnv();
-  const consentCookie = resolveConsentCookie(env);
   const shareText = open ? VERLOSUNG_SHARE_TEXT : VERLOSUNG_SHARE_TEXT_CLOSED;
   const amazon = RETAILER_LINKS.find((r) => r.primary) ?? RETAILER_LINKS[0]!;
   const otherRetailers = RETAILER_LINKS.filter((r) => !r.primary);
@@ -289,12 +289,12 @@ export default async function VerlosungPage({
         metaPixelId={env.META_PIXEL_ID ?? null}
         tiktokPixelId={env.TIKTOK_PIXEL_ID ?? null}
         redditPixelId={env.REDDIT_PIXEL_ID ?? null}
-        redditTracking={createRedditTrackingConfig("/verlosung", "required")}
-        bookConversion={await createBookConversionConfig("/verlosung", "required")}
+        redditTracking={createRedditTrackingConfig("/verlosung", "not-required")}
+        bookConversion={await createBookConversionConfig("/verlosung", "not-required")}
         linkedInPartnerId={env.LINKEDIN_PARTNER_ID ?? null}
-        consentMode="required"
-        consentCookieName={consentCookie.name}
-        consentAcceptedValue={consentCookie.acceptedValue}
+        consentMode="not-required"
+        consentCookieName={env.CONSENT_COOKIE_NAME ?? null}
+        consentAcceptedValue={env.CONSENT_COOKIE_ACCEPTED_VALUE ?? null}
         pageEventName="verlosung_seite"
       />
 
@@ -1066,21 +1066,12 @@ export default async function VerlosungPage({
                     </a>
                   </li>
                 ) : null}
-                <li>
-                  <ConsentSettingsButton className="inline-flex min-h-[44px] items-center hover:text-[var(--vl-petrol)]" />
-                </li>
               </ul>
             </nav>
           </div>
         </div>
       </footer>
 
-      {/* Consent-Banner am Ende der Tab-Reihenfolge (Skip-Link und Inhalt zuerst) */}
-      <ConsentBanner
-        cookieName={consentCookie.name}
-        acceptedValue={consentCookie.acceptedValue}
-        privacyUrl={env.PRIVACY_URL ?? null}
-      />
       <StickyCta
         heroId="hero"
         formId="teilnehmen"

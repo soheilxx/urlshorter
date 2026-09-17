@@ -3,8 +3,9 @@ import { loginAsAdmin } from "./helpers";
 
 /**
  * E2E: Kampagnen-Landingpage /verlosung (gemeinsamer Lostopf mit /gewinn).
- * Läuft gegen den Produktions-Build mit .env.test (Consent-Cookie
- * marketing_consent=accepted, Test-Pixel-IDs, echte Test-Datenbank).
+ * Läuft gegen den Produktions-Build mit .env.test (Test-Pixel-IDs, echte
+ * Test-Datenbank). Tracking auf /verlosung läuft ohne Consent-Gate
+ * (Betreiber-Entscheidung 17.09.2026).
  */
 
 const STAMP = Date.now().toString().slice(-7);
@@ -20,11 +21,6 @@ async function blockExternal(page: Page) {
   await page.route("**/*", (route) =>
     new URL(route.request().url()).hostname === "127.0.0.1" ? route.continue() : route.abort(),
   );
-}
-
-async function acceptConsent(page: Page) {
-  await page.getByRole("button", { name: "Alle akzeptieren" }).click();
-  await expect(page.getByTestId("consent-banner")).toHaveCount(0);
 }
 
 async function fillEntry(page: Page, orderNumber: string, email: string, retailer = "amazon") {
@@ -127,75 +123,94 @@ test.describe("Kampagnenseite /verlosung", () => {
     );
     await expect(page.getByText("9783690662505")).toBeVisible();
 
-    // Consent-Banner vor Entscheidung sichtbar, Formular trotzdem bedienbar
-    await expect(page.getByTestId("consent-banner")).toBeVisible();
+    // Betreiber-Entscheidung: kein Consent-Banner, Formular sofort bedienbar
+    await expect(page.getByTestId("consent-banner")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Cookie-Einstellungen" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Teilnahme absenden" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Buch bestellt? Jetzt bist du dran." })).toBeVisible();
   });
 
-  test("Consent: kein Beacon vor der Entscheidung, genau ein PageView nach Zustimmung, keiner nach Ablehnung", async ({
+  test("Tracking feuert ohne Consent-Gate: PageView-Beacons, GA4-gtag, Amazon-Klick als AddToCart, Formular-Event", async ({
     page,
-    context,
   }) => {
     await blockExternal(page);
-    const beacons: Array<{ type: string; status: number; ctaId?: string }> = [];
+    const beacons: Array<{ endpoint: string; type: string; status: number; ctaId?: string }> = [];
     page.on("response", async (response) => {
-      if (!response.url().endsWith("/api/book/events")) return;
-      const body = JSON.parse(response.request().postData() ?? "{}") as {
-        type: string;
-        ctaId?: string;
-      };
-      beacons.push({ type: body.type, status: response.status(), ctaId: body.ctaId });
+      const url = response.url();
+      if (!url.endsWith("/api/book/events") && !url.endsWith("/api/reddit/events")) return;
+      const body = JSON.parse(response.request().postData() ?? "{}") as { type?: string; ctaId?: string };
+      beacons.push({
+        endpoint: url.endsWith("/api/book/events") ? "book" : "reddit",
+        type: body.type ?? "?",
+        status: response.status(),
+        ctaId: body.ctaId,
+      });
     });
+    const dataLayer = () =>
+      page.evaluate(() =>
+        ((window as Window & { dataLayer?: unknown[] }).dataLayer ?? []).map((entry) =>
+          entry && typeof (entry as { length?: unknown }).length === "number"
+            ? JSON.stringify(Array.from(entry as ArrayLike<unknown>))
+            : JSON.stringify(entry),
+        ),
+      );
 
-    await page.goto("/verlosung");
-    await page.waitForTimeout(1500);
-    expect(beacons).toHaveLength(0);
-    expect(await fbqCalls(page)).toHaveLength(0);
+    await page.goto(`/verlosung${CAMPAIGN_QUERY}`);
+    // Ohne Cookie-Entscheidung: Buch-PageView (Meta/TikTok/GA4-Kette) und Reddit-PageVisit sofort
+    await expect.poll(() => beacons.filter((b) => b.endpoint === "book").length).toBe(1);
+    expect(beacons.find((b) => b.endpoint === "book")).toMatchObject({ type: "PageView", status: 204 });
+    await expect.poll(() => beacons.filter((b) => b.endpoint === "reddit").length).toBe(1);
+    expect(beacons.find((b) => b.endpoint === "reddit")).toMatchObject({ type: "PageVisit", status: 204 });
 
-    await acceptConsent(page);
-    await expect.poll(() => beacons.length).toBe(1);
-    expect(beacons[0]).toMatchObject({ type: "PageView", status: 204 });
+    // GA4: gtag.js mit Measurement-ID eingebunden, config + Seiten-Event im dataLayer
+    await expect(page.locator('script[src*="googletagmanager.com/gtag/js?id=G-"]')).toHaveCount(1);
+    const before = await dataLayer();
+    expect(before.some((e) => e.includes('"config"') && e.includes('"G-'))).toBe(true);
+    expect(before.some((e) => e.includes("verlosung_seite"))).toBe(true);
 
-    // Amazon-Klick im Hero: genau ein AddToCart (Pixel + Beacon), kein Meta-Custom-Event
+    // Amazon-Button im Hero: AddToCart bei Buch- UND Reddit-Collector (204), GA4 add_to_cart, kein Custom-Event
     const popupPromise = page.waitForEvent("popup");
     await page.getByRole("link", { name: /Jetzt bei Amazon bestellen/ }).first().click();
     const popup = await popupPromise;
     await popup.close();
-    await expect.poll(() => beacons.length).toBe(2);
-    expect(beacons[1]).toMatchObject({ type: "AddToCart", status: 204, ctaId: "hero_amazon" });
+    await expect.poll(() => beacons.filter((b) => b.type === "AddToCart").length).toBe(2);
+    expect(
+      beacons
+        .filter((b) => b.type === "AddToCart")
+        .map((b) => `${b.endpoint}:${b.status}`)
+        .sort(),
+    ).toEqual(["book:204", "reddit:204"]);
+    expect(beacons.find((b) => b.endpoint === "book" && b.type === "AddToCart")?.ctaId).toBe("hero_amazon");
     const calls = await fbqCalls(page);
     expect(calls.filter((c) => c.includes("AddToCart"))).toHaveLength(1);
     expect(calls.some((c) => c[0] === "trackCustom")).toBe(false);
-    // Formular öffnen ist nur ein Analytics-Event – kein Pixel-Aufruf
+    const afterAmazon = await dataLayer();
+    expect(afterAmazon.some((e) => e.startsWith('["event","add_to_cart"'))).toBe(true);
+    expect(afterAmazon.join("
+").toLowerCase()).not.toContain("purchase");
+
+    // Teilnahme-Button: Dialog öffnet sofort, GA4-Events für CTA und Formular – kein Pixel-Aufruf
     await page.getByRole("link", { name: "Schon bestellt? Bestellnummer eintragen" }).first().click();
     await expect
       .poll(() => page.evaluate(() => document.querySelector("dialog")?.matches(":modal") ?? false))
       .toBe(true);
+    await expect
+      .poll(async () => {
+        const entries = await dataLayer();
+        return (
+          entries.some((e) => e.includes("verlosung_cta_teilnehmen_hero")) &&
+          entries.some((e) => e.includes("verlosung_formular_geoeffnet"))
+        );
+      })
+      .toBe(true);
     expect(JSON.stringify(await fbqCalls(page))).not.toContain("verlosung_formular_geoeffnet");
     await page.keyboard.press("Escape");
-    const consentCookie = (await context.cookies()).find((c) => c.name === "marketing_consent");
-    expect(consentCookie?.value).toBe("accepted");
-
-    // Widerruf über den Footer-Link → Cookie "denied", danach keine weiteren Events
-    await page.getByRole("button", { name: "Cookie-Einstellungen" }).click();
-    await expect(page.getByTestId("consent-banner")).toBeVisible();
-    await page.getByRole("button", { name: "Nur notwendige" }).click();
-    const revoked = (await context.cookies()).find((c) => c.name === "marketing_consent");
-    expect(revoked?.value).toBe("denied");
-
-    // Neuer Aufruf mit Ablehnung: kein weiterer Beacon (PageView + AddToCart von oben bleiben)
-    await page.goto("/verlosung");
-    await page.waitForTimeout(1500);
-    expect(beacons).toHaveLength(2);
-    await expect(page.getByTestId("consent-banner")).toHaveCount(0);
   });
 
   test("Jeder Teilnahme-Button öffnet das Formular sofort im Dialog, ohne Seitensprung", async ({
     page,
   }) => {
     await page.goto("/verlosung");
-    await acceptConsent(page);
     const dialog = page.getByTestId("teilnahme-dialog");
 
     // Eine einzige Formularinstanz: inline (nicht modal) – Eingaben überleben das Umschalten
@@ -238,7 +253,6 @@ test.describe("Kampagnenseite /verlosung", () => {
     await blockExternal(page);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`/verlosung${CAMPAIGN_QUERY}`);
-    await acceptConsent(page);
 
     // Über den Hero-CTA im Dialog teilnehmen (echter Kampagnenweg)
     await page.getByRole("link", { name: "Schon bestellt? Bestellnummer eintragen" }).first().click();
@@ -312,7 +326,6 @@ test.describe("Kampagnenseite /verlosung", () => {
   test("Honeypot-Scheinerfolg löst kein Registrierungsevent aus", async ({ page }) => {
     await blockExternal(page);
     await page.goto("/verlosung");
-    await acceptConsent(page);
     await fillEntry(page, ORDER_HONEYPOT, "bot@test.local");
     await page.evaluate(() => {
       (document.getElementById("website") as HTMLInputElement).value = "http://spam.example";
@@ -394,7 +407,6 @@ test.describe("Kampagnenseite /verlosung", () => {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({ path: "test-results/verlosung-390-hero.png", fullPage: false });
-    await acceptConsent(page);
 
     // Sticky-CTA erst nach dem Hero, nicht bei fokussiertem Formular
     // (vor dem Ganzseiten-Screenshot geprüft – dieser verändert kurz den Viewport)
