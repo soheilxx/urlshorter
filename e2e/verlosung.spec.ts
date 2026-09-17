@@ -186,8 +186,7 @@ test.describe("Kampagnenseite /verlosung", () => {
     expect(calls.some((c) => c[0] === "trackCustom")).toBe(false);
     const afterAmazon = await dataLayer();
     expect(afterAmazon.some((e) => e.startsWith('["event","add_to_cart"'))).toBe(true);
-    expect(afterAmazon.join("
-").toLowerCase()).not.toContain("purchase");
+    expect(afterAmazon.join(" ").toLowerCase()).not.toContain("purchase");
 
     // Teilnahme-Button: Dialog öffnet sofort, GA4-Events für CTA und Formular – kein Pixel-Aufruf
     await page.getByRole("link", { name: "Schon bestellt? Bestellnummer eintragen" }).first().click();
@@ -425,7 +424,10 @@ test.describe("Kampagnenseite /verlosung", () => {
     await expect
       .poll(() => page.evaluate(() => document.querySelector("dialog")?.matches(":modal") ?? false))
       .toBe(false);
-    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe("hidden");
+    // Die Scroll-Sperre fällt im (asynchronen) close-Event – daher pollen statt sofort lesen
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).overflow))
+      .not.toBe("hidden");
     await page.getByRole("heading", { name: "Häufige Fragen" }).scrollIntoViewIfNeeded();
     await expect(page.getByTestId("sticky-cta")).toBeVisible();
     await page.getByLabel("Vorname").focus();
