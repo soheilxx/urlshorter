@@ -268,8 +268,14 @@ export const GEWINN_URL = "https://lizenzzumerfolg.com/gewinn";
 /** Öffentliche URL der Kampagnen-Landingpage (Canonical/OG/Teilen). */
 export const VERLOSUNG_URL = "https://lizenzzumerfolg.com/verlosung";
 
-/** Zulässige Teilnahmewege (werden je Teilnahme serverseitig gespeichert). */
-export const ENTRY_PATHS = ["/gewinn", "/verlosung"] as const;
+/** Teilnahmewege der Dubai-Kampagne (gemeinsamer Lostopf /gewinn + /verlosung). */
+export const DUBAI_ENTRY_PATHS = ["/gewinn", "/verlosung"] as const;
+/**
+ * Alle bekannten Teilnahmewege über alle Kampagnen (werden je Teilnahme
+ * serverseitig gespeichert). Die Kampagnenzuordnung eines Wegs regelt
+ * sweepstakes-campaign.ts – "/cards" gehört zur eigenständigen Cards-Kampagne.
+ */
+export const ENTRY_PATHS = [...DUBAI_ENTRY_PATHS, "/cards"] as const;
 export type EntryPath = (typeof ENTRY_PATHS)[number];
 export function isEntryPath(value: unknown): value is EntryPath {
   return typeof value === "string" && (ENTRY_PATHS as readonly string[]).includes(value);

@@ -27,6 +27,7 @@ const CHROME =
 function input(overrides: Partial<Parameters<typeof sendRegistrationConversion>[0]> = {}) {
   return {
     eventId: EVENT_ID,
+    campaign: "dubai_2026" as const,
     landingPath: "/verlosung" as const,
     eventTimeMs: 1_760_000_000_000,
     clientIp: "203.0.113.7",
@@ -123,7 +124,13 @@ describe("Registrierungsevent (Server): Dedup + Payload", () => {
       clientUserAgent: CHROME,
     });
     // Nur Allowlist-Daten – keinerlei Formularinhalte
-    expect(Object.keys(meta[3].customData ?? {}).sort()).toEqual(["content_name", "status"]);
+    expect(Object.keys(meta[3].customData ?? {}).sort()).toEqual([
+      "content_category",
+      "content_name",
+      "giveaway_campaign",
+      "landing_path",
+      "status",
+    ]);
 
     expect(sendTikTokSingle).toHaveBeenCalledTimes(1);
     const tiktok = vi.mocked(sendTikTokSingle).mock.calls[0]!;

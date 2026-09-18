@@ -29,6 +29,8 @@ export async function sendSweepstakesConfirmation(input: {
   to: string;
   firstName: string;
   referenceNumber: string;
+  /** Kampagne (Lostopf) – bestimmt später die Vorlage; nie implizit. */
+  campaign: string;
 }): Promise<MailResult> {
   if (!isMailerConfigured()) {
     logger.info("mailer.skipped_not_configured", { template: "sweepstakes_confirmation" });
@@ -38,6 +40,7 @@ export async function sendSweepstakesConfirmation(input: {
   // wird hier der tatsächliche Versand ergänzt (keine Simulation).
   logger.warn("mailer.provider_not_implemented", {
     template: "sweepstakes_confirmation",
+    campaign: input.campaign,
     to: "redacted",
     reference: input.referenceNumber,
   });

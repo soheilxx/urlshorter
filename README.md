@@ -325,6 +325,29 @@ Verlosung. Beispiel-Link mit bereinigten Kampagnenparametern:
   `sweepstakes.test.ts` (Unit + Integration) und `consent.test.ts`.
   Offene Geschäftsangaben: [`docs/verlosung-kampagne.md`](docs/verlosung-kampagne.md).
 
+## TCG-Gewinnspiel (/cards)
+
+Eigenständige Kampagne **`cards_2026`** (One Piece OP-17 Case, 3 × Story Booster 01
+Booster Box Fusion World, 3 × Magnificent Monsters EU Version Case, 10 × 100 €
+Cardmarket-Wertgutschein = 17 Gewinne) mit eigenem Lostopf – **nicht** Teil der
+Dubai-Verlosung. Ausführliche Doku: `docs/cards-kampagne.md`.
+
+- Routen: `/cards` (Landingpage), `/cards/danke` (Bestätigung nur mit signiertem
+  Receipt-Cookie, noindex/no-store), `/cards/teilnahmebedingungen` (Version
+  `cards-1.0 (18.09.2026)`).
+- Konfiguration: `src/lib/cards-giveaway-config.ts` (Gewinne, Fristen
+  05.10.2026 23:59 MESZ / 12.10.2026, Texte); Kampagnenregister
+  `src/lib/sweepstakes-campaign.ts`.
+- Datentrennung: `SweepstakesEntry.campaignId` + Unique `(campaignId, orderNumberHash)`;
+  Cards-Server-Action `src/actions/cards-actions.ts` setzt die Kampagne serverseitig,
+  der gemeinsame Service verlangt sie verpflichtend (kein Fallback). Admin filtert/zählt
+  je Kampagne, CSV-Export nur je Kampagne (`campaign=`), Gewinnzuordnung nur aus dem
+  Katalog der jeweiligen Kampagne.
+- Tracking wie auf `/verlosung` (alle Systeme, ohne Consent-Gate – Betreiberentscheidung);
+  jeder Amazon-Klick = Amazon-Outbound / AddToCart-Proxy mit
+  `giveaway_campaign=cards_2026`, nie `Purchase`.
+- OG-Bild neu erzeugen: `npx tsx scripts/generate-cards-og.ts`.
+
 ## Zentrales Tracking-Snippet (t.js)
 
 Ein Script-Einbau bringt sämtliche Pixel auf beliebige eigene Websites –
@@ -467,6 +490,11 @@ Das Admin-Dashboard folgt seit dem Redesign 2.0 einer eigenen Designsprache
   Theme-Persistenz. Die übrigen Specs laufen nur im Desktop-Projekt.
 
 ## Migrationen
+
+Kampagnentrennung (18.09.2026): `20260918090000_sweepstakes_campaign` (additiv: `campaignId`
+mit Backfill auf `dubai_2026`, `prizeId`, Unique `(campaignId, orderNumberHash)`) und
+`20260918090100_sweepstakes_campaign_unique_scope` (globaler Unique auf `orderNumberHash`
+entfällt). Nach echten Cards-Einträgen nicht auf das globale Unique-Schema zurückrollen.
 
 ```bash
 npx prisma migrate dev      # Entwicklung: Migration erzeugen + anwenden

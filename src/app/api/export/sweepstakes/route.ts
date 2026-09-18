@@ -2,17 +2,18 @@ import type { SweepstakesEntry } from "@prisma/client";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { retailerLabel, SWEEPSTAKES_STATUS_LABELS } from "@/lib/gewinnspiel-config";
+import { campaignPrize, getCampaign } from "@/lib/sweepstakes-campaign";
 import { decryptOrderNumber } from "@/lib/sweepstakes-crypto";
-import {
-  buildSweepstakesWhere,
-  parseSweepstakesFilters,
-} from "@/lib/sweepstakes-admin";
+import { buildSweepstakesWhere, parseSweepstakesFilters } from "@/lib/sweepstakes-admin";
 import { csvCell } from "@/lib/sweepstakes-validation";
 import { todayBerlin } from "@/lib/date-range";
 import { formatBerlinDateTime } from "@/lib/utils";
 
 /**
  * CSV-Export der Gewinnspiel-Teilnahmen (nur ADMIN).
+ * - GENAU EINE ausdrücklich gewählte Kampagne je Export (Query `campaign`);
+ *   ohne gültige Kampagne wird nichts exportiert. Die Kampagnenkennung steht
+ *   in jeder Zeile und im Dateinamen.
  * - Semikolon-getrennt, UTF-8 mit BOM (deutsches Excel)
  * - Schutz vor CSV-Injection (Formel-Präfixe werden neutralisiert)
  * - Batch-weise per Cursor (speicherschonend)
@@ -24,8 +25,10 @@ export const dynamic = "force-dynamic";
 const BATCH_SIZE = 500;
 
 const HEADER = [
+  "Kampagne",
   "Referenz",
   "Status",
+  "Gewinn",
   "Eingegangen",
   "Haendler",
   "Haendler (frei)",
@@ -62,7 +65,15 @@ export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const params: Record<string, string | undefined> = {};
   for (const [key, value] of url.searchParams.entries()) params[key] = value;
-  const where = buildSweepstakesWhere(parseSweepstakesFilters(params));
+  const filters = parseSweepstakesFilters(params);
+  if (!filters.campaign) {
+    return new Response(
+      "Bitte genau eine Kampagne wählen (campaign=dubai_2026 oder campaign=cards_2026).",
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+  const campaign = getCampaign(filters.campaign);
+  const where = buildSweepstakesWhere(filters);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -82,8 +93,10 @@ export async function GET(request: Request): Promise<Response> {
           const orderNumber =
             e.status === "DELETED" ? "" : (decryptOrderNumber(e.orderNumberEncrypted) ?? "");
           chunk += [
+            csvCell(e.campaignId),
             csvCell(e.referenceNumber),
             csvCell(SWEEPSTAKES_STATUS_LABELS[e.status] ?? e.status),
+            csvCell(e.prizeId ? (campaignPrize(e.campaignId, e.prizeId)?.label ?? e.prizeId) : ""),
             csvCell(formatBerlinDateTime(e.createdAt)),
             csvCell(retailerLabel(e.retailer)),
             csvCell(e.retailerOther),
@@ -124,7 +137,7 @@ export async function GET(request: Request): Promise<Response> {
     status: 200,
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="gewinnspiel-export-${todayBerlin()}.csv"`,
+      "Content-Disposition": `attachment; filename="gewinnspiel-export-${campaign.slug}-${campaign.id}-${todayBerlin()}.csv"`,
       "Cache-Control": "no-store",
     },
   });

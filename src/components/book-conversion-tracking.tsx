@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import {
+  AMAZON_OUTBOUND_SEMANTICS,
   BOOK_IDENTIFIER_PATTERN,
   BOOK_PRODUCT,
   isBookPurchaseUrl,
@@ -254,9 +255,26 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
 
     function addToCart(ctaId: string, destination: string) {
       const id = crypto.randomUUID();
+      // Interne Semantik des Klicks (Amazon-Outbound / AddToCart-Proxy) – je
+      // Plattform auf erlaubte Parameter abgebildet; keine Formulardaten.
+      const semantics: Record<string, string> = {
+        ...(config.eventParams ?? {}),
+        ...AMAZON_OUTBOUND_SEMANTICS,
+        landing_path: config.path,
+        cta_position: ctaId,
+      };
+      const description = semantics.giveaway_campaign
+        ? "amazon_outbound_proxy:" + semantics.giveaway_campaign
+        : "amazon_outbound_proxy";
       attempt(() => {
         if (config.metaPixelId)
-          w.fbq?.("trackSingle", config.metaPixelId, "AddToCart", CONTENTS, { eventID: id });
+          w.fbq?.(
+            "trackSingle",
+            config.metaPixelId,
+            "AddToCart",
+            { ...CONTENTS, ...semantics },
+            { eventID: id },
+          );
       });
       attempt(() => {
         if (config.tiktokPixelId) {
@@ -272,6 +290,7 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
               ],
               value: BOOK_PRODUCT.value,
               currency: BOOK_PRODUCT.currency,
+              description,
             },
             { event_id: id },
           );
@@ -284,6 +303,7 @@ export function BookConversionTracking({ config }: { config: BookConversionConfi
       });
       attempt(() => {
         const ga4 = {
+          ...semantics,
           currency: BOOK_PRODUCT.currency,
           value: BOOK_PRODUCT.value,
           items: [

@@ -13,6 +13,7 @@ import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import type { EntryPath } from "@/lib/gewinnspiel-config";
 import { logger } from "@/lib/logger";
+import type { CampaignId } from "@/lib/sweepstakes-campaign";
 import { sendMetaCapiSingle, sendTikTokSingle } from "@/lib/tag-capi";
 
 /**
@@ -33,17 +34,21 @@ export const REGISTRATION_STANDARD_EVENT = "CompleteRegistration";
 
 /**
  * Consent-Modus je Teilnahmeweg – Entscheidung des Betreibers (Wiresoft Portal
- * Ltd.): /gewinn seit 28.08.2026 und /verlosung seit 17.09.2026 ohne
- * Consent-Gate ("Alle Events müssen immer feuern"). Für ein Consent-Gate hier
+ * Ltd.): /gewinn seit 28.08.2026, /verlosung seit 17.09.2026 und /cards seit
+ * 18.09.2026 ohne Consent-Gate ("Alle Events müssen immer feuern"; für /cards
+ * bewusst übernommen, siehe docs/cards-kampagne.md). Für ein Consent-Gate hier
  * "required" setzen; dann gilt der Cookie aus resolveConsentCookie().
  */
 export const ENTRY_PATH_CONSENT_MODE: Record<EntryPath, ConsentMode> = {
   "/gewinn": "not-required",
   "/verlosung": "not-required",
+  "/cards": "not-required",
 };
 
 export interface RegistrationConversionInput {
   eventId: string;
+  /** Fachliche Kampagne der gespeicherten Teilnahme (nicht UTM). */
+  campaign: CampaignId;
   landingPath: EntryPath;
   eventTimeMs: number;
   clientIp: string | null;
@@ -146,7 +151,13 @@ export async function sendRegistrationConversion(
         fbc,
         ttp: null,
         ttclid: null,
-        customData: { content_name: "Gewinnspiel-Teilnahme", status: "received" },
+        customData: {
+          content_name: "Gewinnspiel-Teilnahme",
+          content_category: input.campaign,
+          status: "received",
+          giveaway_campaign: input.campaign,
+          landing_path: input.landingPath,
+        },
       });
       if (ok) {
         sent = true;
@@ -175,7 +186,10 @@ export async function sendRegistrationConversion(
           fbc: null,
           ttp,
           ttclid: null,
-          properties: { content_name: "Gewinnspiel-Teilnahme" },
+          properties: {
+            content_name: "Gewinnspiel-Teilnahme",
+            description: `giveaway_campaign=${input.campaign}`,
+          },
         },
       );
       if (ok) {

@@ -1,0 +1,326 @@
+/* ---------------------------------------------------------------------------
+ * TCG-Gewinnspiel /cards – „Deine Sammlung. Dein nächster großer Moment.“
+ * Dunkles Tintenblau, Gold für OP-17/Haupt-CTA, Franchise-Energien als
+ * dosierte Akzente. Die --gw-*-Variablen werden neu belegt, damit das
+ * gemeinsame Teilnahmeformular (EntryForm) ohne Änderung im Cards-Theme läuft.
+ * ------------------------------------------------------------------------- */
+.cards-theme {
+  color-scheme: dark;
+  --cd-bg: #080c18;
+  --cd-bg-deep: #05080f;
+  --cd-surface: #121a2c;
+  --cd-surface-2: #182238;
+  --cd-ink: #f5f2e9;
+  --cd-ink-soft: #b7c2d8;
+  --cd-ink-mute: #8a97b0;
+  --cd-gold: #ffd56a;
+  --cd-gold-deep: #d9a93a;
+  --cd-gold-ink: #17120a;
+  --cd-cyan: #51d9ed;
+  --cd-red: #e75c58;
+  --cd-orange: #ff8a32;
+  --cd-blue: #4c9dff;
+  --cd-violet: #a88bff;
+  --cd-cm-blue: #65bdff;
+  --cd-ivory: #f5f0e5;
+  --cd-ivory-ink: #1a1710;
+  --cd-border: rgba(255, 213, 106, 0.22);
+  --cd-border-soft: rgba(183, 194, 216, 0.14);
+
+  --gw-bg: var(--cd-bg);
+  --gw-bg-soft: var(--cd-surface);
+  --gw-surface: var(--cd-surface);
+  --gw-surface-2: var(--cd-surface-2);
+  --gw-border: var(--cd-border);
+  --gw-border-soft: var(--cd-border-soft);
+  --gw-gold: var(--cd-gold);
+  --gw-gold-strong: #ffe28f;
+  --gw-gold-deep: var(--cd-gold-deep);
+  --gw-ink: var(--cd-ink);
+  --gw-ink-soft: var(--cd-ink-soft);
+  --gw-ink-mute: var(--cd-ink-mute);
+  --gw-input-bg: rgba(255, 255, 255, 0.05);
+  --gw-error-bg: #2b1518;
+  --gw-error-border: rgba(231, 92, 88, 0.6);
+  --gw-error-ink: #f0a39f;
+  --gw-error-ink-strong: #f7c5c2;
+  --gw-cta-ink: var(--cd-gold-ink);
+  --gw-shadow: rgba(0, 0, 0, 0.55);
+  --gw-link-hover: var(--cd-gold);
+  background-color: var(--cd-bg);
+  color: var(--cd-ink);
+}
+
+.cards-theme .gw-hairline {
+  border-color: var(--cd-border-soft);
+}
+.cards-theme select option {
+  background-color: #121a2c;
+  color: #f5f2e9;
+}
+
+/* Display-Schrift für große Headlines (Bricolage Grotesque aus dem Layout) */
+.cd-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Goldener Haupt-CTA mit leicht angeschrägter Kontur (kein Layoutsprung bei Hover) */
+.cd-btn-gold {
+  position: relative;
+  background: linear-gradient(180deg, #ffe28f 0%, var(--cd-gold) 55%, var(--cd-gold-deep) 100%);
+  color: var(--cd-gold-ink);
+  clip-path: polygon(
+    0 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% 100%,
+    12px 100%,
+    0 calc(100% - 12px)
+  );
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease;
+}
+.cd-btn-gold:hover {
+  filter: brightness(1.06);
+}
+.cd-btn-gold:active {
+  transform: translateY(1px);
+}
+
+/* Sekundär-CTA: dünne Cyan-Kontur */
+.cd-btn-outline {
+  border: 1px solid rgba(81, 217, 237, 0.7);
+  color: var(--cd-ink);
+  clip-path: polygon(
+    0 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% 100%,
+    12px 100%,
+    0 calc(100% - 12px)
+  );
+  transition: background-color 0.15s ease;
+}
+.cd-btn-outline:hover {
+  background-color: rgba(81, 217, 237, 0.12);
+}
+
+/* Manga-Panel: abgeschrägte Ecke oben rechts / unten links, dünner Rahmen */
+.cd-panel {
+  position: relative;
+  background: var(--cd-surface);
+  clip-path: polygon(
+    0 0,
+    calc(100% - 22px) 0,
+    100% 22px,
+    100% 100%,
+    22px 100%,
+    0 calc(100% - 22px)
+  );
+}
+.cd-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 40%),
+    linear-gradient(315deg, rgba(255, 255, 255, 0.04), transparent 40%);
+}
+
+/* Holografischer Rahmen: feiner Verlauf, reagiert leicht auf Hover/Fokus */
+.cd-holo {
+  position: relative;
+  isolation: isolate;
+}
+.cd-holo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 213, 106, 0.55),
+    rgba(81, 217, 237, 0.35) 35%,
+    rgba(168, 139, 255, 0.4) 70%,
+    rgba(255, 213, 106, 0.55)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.cd-holo:hover::after,
+.cd-holo:focus-within::after {
+  opacity: 1;
+}
+
+/* Rasterpunkte und Speedlines (nur an den Rändern, rein dekorativ) */
+.cd-dots {
+  background-image: radial-gradient(rgba(183, 194, 216, 0.22) 1px, transparent 1.4px);
+  background-size: 14px 14px;
+}
+.cd-speedlines {
+  background: repeating-linear-gradient(
+    -28deg,
+    transparent 0 18px,
+    rgba(255, 255, 255, 0.05) 18px 20px
+  );
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 35%, #000 65%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 35%, #000 65%, transparent);
+}
+
+/* Goldene Lichtscheibe hinter dem Hauptgewinn + perspektivischer Sockel */
+.cd-glow-gold {
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 213, 106, 0.38) 0%,
+    rgba(255, 213, 106, 0.14) 45%,
+    transparent 72%
+  );
+}
+.cd-pedestal {
+  background: radial-gradient(60% 100% at 50% 50%, rgba(0, 0, 0, 0.65), transparent 70%);
+  transform: scaleY(0.35);
+}
+
+/* Franchise-Energien (Panels) */
+.cd-world-onepiece {
+  background:
+    radial-gradient(70% 60% at 85% 15%, rgba(81, 217, 237, 0.22), transparent 60%),
+    radial-gradient(40% 40% at 10% 90%, rgba(231, 92, 88, 0.16), transparent 60%), var(--cd-surface);
+}
+.cd-world-dragonball {
+  background:
+    radial-gradient(70% 60% at 80% 20%, rgba(255, 138, 50, 0.26), transparent 60%),
+    radial-gradient(50% 50% at 15% 85%, rgba(76, 157, 255, 0.22), transparent 60%),
+    var(--cd-surface);
+}
+.cd-world-yugioh {
+  background:
+    radial-gradient(70% 60% at 80% 20%, rgba(168, 139, 255, 0.28), transparent 60%),
+    linear-gradient(135deg, rgba(255, 213, 106, 0.08), transparent 45%), var(--cd-surface);
+}
+.cd-world-cardmarket {
+  background:
+    radial-gradient(60% 80% at 90% 50%, rgba(101, 189, 255, 0.24), transparent 60%),
+    var(--cd-surface);
+}
+.cd-rays {
+  background: conic-gradient(
+    from 200deg at 80% 25%,
+    transparent 0 12deg,
+    rgba(255, 138, 50, 0.12) 12deg 15deg,
+    transparent 15deg 40deg,
+    rgba(76, 157, 255, 0.1) 40deg 43deg,
+    transparent 43deg 70deg,
+    rgba(255, 138, 50, 0.1) 70deg 73deg,
+    transparent 73deg 360deg
+  );
+}
+.cd-geo {
+  background-image:
+    linear-gradient(
+      60deg,
+      transparent 49.5%,
+      rgba(255, 213, 106, 0.16) 49.5% 50.5%,
+      transparent 50.5%
+    ),
+    linear-gradient(
+      -60deg,
+      transparent 49.5%,
+      rgba(255, 213, 106, 0.12) 49.5% 50.5%,
+      transparent 50.5%
+    );
+  background-size: 120px 120px;
+}
+
+/* Gestaffelter Hero-Aufbau (gesamt ~700 ms) – einmalig, kein Scroll-Hijacking */
+@keyframes cd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cd-rise {
+  animation: cd-rise 0.55s cubic-bezier(0.2, 0.6, 0.3, 1) both;
+  animation-delay: var(--cd-delay, 0ms);
+}
+
+/* Sanfter Hover-Tilt des Hauptgewinns (max. ~3°, nur mit Maus) */
+.cd-tilt {
+  transition: transform 0.4s cubic-bezier(0.2, 0.6, 0.3, 1);
+  transform-origin: center;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cd-tilt:hover {
+    transform: perspective(1200px) rotateY(-3deg) rotateX(2deg) translateY(-2px);
+  }
+}
+
+/* Teilnahmeformular (ParticipationHost): inline neutralisiert wie auf /verlosung */
+.cards-theme dialog[data-inline] {
+  position: static;
+  display: block;
+  inset: auto;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* Konfetti-Overlay der Bestätigungsseite: nie über Interaktionen */
+.cd-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Statischer Erfolgs-Akzent (reduced motion / nach dem Konfetti) */
+.cd-success-ring {
+  background: conic-gradient(
+    from 0deg,
+    var(--cd-gold),
+    var(--cd-cyan),
+    var(--cd-orange),
+    var(--cd-violet),
+    var(--cd-gold)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cd-rise {
+    animation: none;
+  }
+  .cd-tilt,
+  .cd-btn-gold,
+  .cd-btn-outline,
+  .cd-holo::after {
+    transition: none;
+  }
+  .cd-tilt:hover {
+    transform: none;
+  }
+}

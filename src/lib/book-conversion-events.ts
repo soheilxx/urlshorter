@@ -78,4 +78,16 @@ export interface BookConversionConfig {
   linkedInPartnerId?: string | null;
   ga4MeasurementId?: string | null;
   gtmContainerId?: string | null;
+  /**
+   * Feste fachliche Parameter der Seite (z. B. giveaway_campaign), die der
+   * Browser-Adapter je Plattform auf erlaubte Felder abbildet. Nie Formulardaten.
+   */
+  eventParams?: Record<string, string>;
 }
+
+/** Semantik des Amazon-Klicks – bewusst als Proxy dokumentiert, nie als Kauf. */
+export const AMAZON_OUTBOUND_SEMANTICS = {
+  merchant: "amazon",
+  conversion_semantics: "amazon_outbound_proxy",
+  product_type: "book",
+} as const;

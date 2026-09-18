@@ -14,14 +14,15 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Teilnahmeformular des Gewinnspiels (gemeinsam für /gewinn und /verlosung).
+ * Teilnahmeformular der Gewinnspiele (gemeinsam für /gewinn, /verlosung und
+ * /cards – die Kampagne legt die jeweils übergebene Server Action fest).
  * - Ein Feld pro Zeile auf Mobilgeräten, sinnvolle Gruppierung ab sm:
  * - Sichtbare Labels, Inline-Fehler mit aria-describedby, Fokus-Ringe
  * - Honeypot + signiertes Formular-Token gegen Bots
  * - Erfolgsansicht ersetzt das Formular (mit Teilnahme-Referenz); Seiten
  *   können über renderSuccess eine eigene Erfolgsansicht liefern.
  * - Farben ausschließlich über --gw-*-Variablen (Dark-Theme /gewinn,
- *   Light-Theme /verlosung).
+ *   Light-Theme /verlosung, Tintenblau-Theme /cards).
  * - Keine Browser-Persistenz der Eingaben (kein localStorage, autoComplete
  *   nur für die Eingabehilfe des Browsers).
  */
@@ -74,6 +75,11 @@ export interface EntryFormProps {
   formToken: string;
   utm: UtmParams;
   privacyUrl: string | null;
+  /**
+   * Server Action der Kampagne (Standard: Dubai-Lostopf). Die Cards-Seite
+   * übergibt ihre eigene Action, die die Kampagne serverseitig festlegt.
+   */
+  action?: typeof submitSweepstakesAction;
   /** Teilnahmeweg – wird serverseitig validiert und je Teilnahme gespeichert. */
   landingPath?: EntryPath;
   /** Beschriftung des Absende-Buttons. */
@@ -90,16 +96,14 @@ export function EntryForm({
   formToken,
   utm,
   privacyUrl,
+  action = submitSweepstakesAction,
   landingPath = "/gewinn",
   submitLabel = "Verbindlich am Gewinnspiel teilnehmen",
   termsHref = "/gewinn/teilnahmebedingungen",
   submitHint,
   renderSuccess,
 }: EntryFormProps) {
-  const [state, formAction, pending] = useActionState(
-    submitSweepstakesAction,
-    EMPTY_SWEEPSTAKES_STATE,
-  );
+  const [state, formAction, pending] = useActionState(action, EMPTY_SWEEPSTAKES_STATE);
   const [retailer, setRetailer] = useState<string>("");
   /**
    * Zuletzt abgesendete Eingaben (nur im Speicher, keine Browser-Persistenz):

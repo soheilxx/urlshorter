@@ -2,13 +2,16 @@ import "server-only";
 import { Prisma, type SweepstakesEntryStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { isEntryPath, isRetailerId } from "@/lib/gewinnspiel-config";
+import { CAMPAIGN_IDS, type CampaignId, isCampaignId } from "@/lib/sweepstakes-campaign";
 import { hashOrderNumber } from "@/lib/sweepstakes-crypto";
 import { normalizeOrderNumber } from "@/lib/sweepstakes-validation";
 
 /**
  * Verwaltungs-Abfragen für den Admin-Bereich „Gewinnspiel“.
- * Filter werden aus den Query-Parametern gebaut; personenbezogene Daten
- * verlassen diese Schicht nur Richtung Admin-UI/CSV (nie in Logs).
+ * Filter werden aus den Query-Parametern gebaut; die Kampagne ist Bestandteil
+ * jeder Abfrage (explizit gewählt oder ausdrücklich „alle Kampagnen“, dann
+ * mit sichtbarer Kampagnenspalte). Personenbezogene Daten verlassen diese
+ * Schicht nur Richtung Admin-UI/CSV (nie in Logs).
  */
 
 export const SWEEPSTAKES_PAGE_SIZE = 25;
@@ -22,8 +25,10 @@ export interface SweepstakesFilters {
   from?: string;
   to?: string;
   utm?: string;
-  /** Teilnahmeweg ("/gewinn" | "/verlosung" | "none" für Alt-Teilnahmen ohne Pfad). */
+  /** Teilnahmeweg ("/gewinn" | "/verlosung" | "/cards" | "none" für Alt-Teilnahmen ohne Pfad). */
   path?: string;
+  /** Kampagne (Lostopf); undefined = alle Kampagnen (nur Listen/Statistik, nie Export). */
+  campaign?: CampaignId;
   page: number;
 }
 
@@ -48,6 +53,7 @@ export function parseSweepstakesFilters(
 ): SweepstakesFilters {
   const str = (k: string) => (typeof params[k] === "string" ? (params[k] as string).trim() : "");
   const pageRaw = Number.parseInt(str("page") || "1", 10);
+  const campaign = str("campaign");
   return {
     q: str("q") || undefined,
     ref: str("ref") || undefined,
@@ -58,6 +64,7 @@ export function parseSweepstakesFilters(
     to: str("to") || undefined,
     utm: str("utm") || undefined,
     path: str("path") || undefined,
+    campaign: isCampaignId(campaign) ? campaign : undefined,
     page: Number.isFinite(pageRaw) && pageRaw > 0 ? Math.min(pageRaw, 10_000) : 1,
   };
 }
@@ -68,6 +75,9 @@ export function buildSweepstakesWhere(
   const where: Prisma.SweepstakesEntryWhereInput = {};
   const and: Prisma.SweepstakesEntryWhereInput[] = [];
 
+  if (filters.campaign) {
+    and.push({ campaignId: filters.campaign });
+  }
   if (filters.q) {
     and.push({
       OR: [
@@ -114,6 +124,8 @@ export function buildSweepstakesWhere(
 }
 
 export interface SweepstakesStats {
+  /** Gewählte Kampagne der Statistik (null = alle Kampagnen). */
+  campaign: CampaignId | null;
   total: number;
   today: number;
   byRetailer: Array<{ retailer: string; count: number }>;
@@ -123,16 +135,47 @@ export interface SweepstakesStats {
   suspiciousIdentifiers: Array<{ identifier: string; count: number }>;
 }
 
-export async function getSweepstakesStats(): Promise<SweepstakesStats> {
+export interface CampaignCount {
+  campaignId: CampaignId;
+  total: number;
+  today: number;
+  winners: number;
+}
+
+function todayStartBerlin(): Date {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
+  return todayStart;
+}
+
+/** Teilnahmen je Kampagne (immer getrennt ausgewiesen). */
+export async function getCampaignCounts(): Promise<CampaignCount[]> {
+  const todayStart = todayStartBerlin();
+  return Promise.all(
+    CAMPAIGN_IDS.map(async (campaignId) => {
+      const [total, today, winners] = await Promise.all([
+        prisma.sweepstakesEntry.count({ where: { campaignId } }),
+        prisma.sweepstakesEntry.count({ where: { campaignId, createdAt: { gte: todayStart } } }),
+        prisma.sweepstakesEntry.count({ where: { campaignId, status: "WINNER" } }),
+      ]);
+      return { campaignId, total, today, winners };
+    }),
+  );
+}
+
+export async function getSweepstakesStats(campaign?: CampaignId): Promise<SweepstakesStats> {
+  const todayStart = todayStartBerlin();
+  const scope: Prisma.SweepstakesEntryWhereInput = campaign ? { campaignId: campaign } : {};
+  // Raw-Abfragen: Kampagnenfilter als parametrisierte Bedingung (kein SQL-Text aus Eingaben)
+  const scopeSql = campaign ? Prisma.sql`AND se."campaignId" = ${campaign}` : Prisma.sql`AND TRUE`;
 
   const [total, today, retailerGroups, dayRows, sourceGroups, emailGroups, identifierGroups] =
     await Promise.all([
-      prisma.sweepstakesEntry.count(),
-      prisma.sweepstakesEntry.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.sweepstakesEntry.count({ where: scope }),
+      prisma.sweepstakesEntry.count({ where: { ...scope, createdAt: { gte: todayStart } } }),
       prisma.sweepstakesEntry.groupBy({
         by: ["retailer"],
+        where: scope,
         _count: { _all: true },
         orderBy: { _count: { retailer: "desc" } },
       }),
@@ -140,7 +183,7 @@ export async function getSweepstakesStats(): Promise<SweepstakesStats> {
         SELECT to_char((se."createdAt" AT TIME ZONE 'Europe/Berlin')::date, 'YYYY-MM-DD') AS day,
                count(*)::int AS count
         FROM "SweepstakesEntry" se
-        WHERE se."createdAt" >= now() - interval '14 days'
+        WHERE se."createdAt" >= now() - interval '14 days' ${scopeSql}
         GROUP BY 1
         ORDER BY 1 DESC
       `),
@@ -148,6 +191,7 @@ export async function getSweepstakesStats(): Promise<SweepstakesStats> {
         SELECT coalesce(nullif(se."utmSource", ''), nullif(se."utmCampaign", '')) AS source,
                count(*)::int AS count
         FROM "SweepstakesEntry" se
+        WHERE TRUE ${scopeSql}
         GROUP BY 1
         ORDER BY 2 DESC
         LIMIT 8
@@ -155,7 +199,7 @@ export async function getSweepstakesStats(): Promise<SweepstakesStats> {
       prisma.$queryRaw<Array<{ email: string; count: number }>>(Prisma.sql`
         SELECT se."email" AS email, count(*)::int AS count
         FROM "SweepstakesEntry" se
-        WHERE se."email" <> ''
+        WHERE se."email" <> '' ${scopeSql}
         GROUP BY 1
         HAVING count(*) > 1
         ORDER BY 2 DESC
@@ -164,7 +208,7 @@ export async function getSweepstakesStats(): Promise<SweepstakesStats> {
       prisma.$queryRaw<Array<{ identifier: string; count: number }>>(Prisma.sql`
         SELECT se."submissionIdentifier" AS identifier, count(*)::int AS count
         FROM "SweepstakesEntry" se
-        WHERE se."submissionIdentifier" IS NOT NULL
+        WHERE se."submissionIdentifier" IS NOT NULL ${scopeSql}
         GROUP BY 1
         HAVING count(*) >= 3
         ORDER BY 2 DESC
@@ -173,6 +217,7 @@ export async function getSweepstakesStats(): Promise<SweepstakesStats> {
     ]);
 
   return {
+    campaign: campaign ?? null,
     total,
     today,
     byRetailer: retailerGroups.map((g) => ({ retailer: g.retailer, count: g._count._all })),

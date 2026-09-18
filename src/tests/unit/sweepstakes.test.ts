@@ -197,9 +197,11 @@ describe("Kampagne /verlosung: 300 Gutscheine (VOUCHER_BRANDS)", () => {
     expect(VERLOSUNG_SHARE_TEXT.endsWith(VERLOSUNG_URL)).toBe(true);
     expect(VERLOSUNG_SHARE_TEXT).not.toContain("utm_");
   });
-  it("kennt nur die beiden Teilnahmewege", () => {
+  it("kennt genau die drei Teilnahmewege (Dubai: /gewinn, /verlosung – Cards: /cards)", () => {
     expect(isEntryPath("/verlosung")).toBe(true);
     expect(isEntryPath("/gewinn")).toBe(true);
+    expect(isEntryPath("/cards")).toBe(true);
+    expect(isEntryPath("/cards/danke")).toBe(false);
     expect(isEntryPath("/admin")).toBe(false);
     expect(isEntryPath("verlosung")).toBe(false);
     expect(isEntryPath(null)).toBe(false);

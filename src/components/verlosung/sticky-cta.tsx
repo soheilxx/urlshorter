@@ -8,18 +8,39 @@ import { useEffect, useState } from "react";
  * solange ein Formularfeld fokussiert ist, und nie gleichzeitig mit dem
  * Consent-Banner (beides über html[data-*] in globals.css).
  */
+const VARIANTS = {
+  verlosung: {
+    bar: "grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-2 rounded-2xl border border-[var(--vl-border)] bg-white/95 p-2 shadow-[0_14px_40px_-16px_rgba(7,62,67,0.6)] backdrop-blur",
+    primary:
+      "inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[var(--vl-yellow)] px-3 text-center text-sm font-semibold leading-tight text-[var(--vl-ink)] outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--vl-petrol)] focus-visible:ring-offset-2",
+    secondary:
+      "inline-flex min-h-[48px] items-center justify-center rounded-xl border-2 border-[var(--vl-petrol)] px-3 text-center text-sm font-semibold leading-tight text-[var(--vl-petrol)] outline-none hover:bg-[var(--vl-petrol-soft)] focus-visible:ring-2 focus-visible:ring-[var(--vl-petrol)] focus-visible:ring-offset-2",
+  },
+  cards: {
+    bar: "grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-2 rounded-2xl border border-[var(--cd-border)] bg-[rgba(18,26,44,0.96)] p-2 shadow-[0_14px_40px_-12px_rgba(0,0,0,0.8)] backdrop-blur",
+    primary:
+      "cd-btn-gold inline-flex min-h-[48px] items-center justify-center px-3 text-center text-sm font-semibold leading-tight outline-none focus-visible:ring-2 focus-visible:ring-[var(--cd-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--cd-surface)]",
+    secondary:
+      "inline-flex min-h-[48px] items-center justify-center rounded-xl border border-[var(--cd-cyan)]/70 px-3 text-center text-sm font-semibold leading-tight text-[var(--cd-ink)] outline-none hover:bg-[rgba(81,217,237,0.12)] focus-visible:ring-2 focus-visible:ring-[var(--cd-cyan)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--cd-surface)]",
+  },
+} as const;
+
 export function StickyCta({
   primary,
   secondary,
   heroId,
   formId,
+  variant = "verlosung",
 }: {
   /** external: öffnet in neuem Tab (z. B. direkter Amazon-Link). */
   primary: { label: string; href: string; event: string; external?: boolean; ctaId?: string };
   secondary: { label: string; href: string; event: string };
   heroId: string;
   formId: string;
+  /** Kampagnen-Theme des Balkens. */
+  variant?: keyof typeof VARIANTS;
 }) {
+  const styles = VARIANTS[variant];
   const [visible, setVisible] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
 
@@ -101,22 +122,18 @@ export function StickyCta({
 
   return (
     <div className="vl-sticky px-3 pb-3" data-testid="sticky-cta">
-      <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-2 rounded-2xl border border-[var(--vl-border)] bg-white/95 p-2 shadow-[0_14px_40px_-16px_rgba(7,62,67,0.6)] backdrop-blur">
+      <div className={styles.bar}>
         <a
           href={primary.href}
           data-gw-event={primary.event}
           data-cta-id={primary.ctaId}
           {...(primary.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-          className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[var(--vl-yellow)] px-3 text-center text-sm font-semibold leading-tight text-[var(--vl-ink)] outline-none hover:brightness-105 focus-visible:ring-2 focus-visible:ring-[var(--vl-petrol)] focus-visible:ring-offset-2"
+          className={styles.primary}
         >
           {primary.label}
           {primary.external ? <span className="sr-only">(öffnet in neuem Tab)</span> : null}
         </a>
-        <a
-          href={secondary.href}
-          data-gw-event={secondary.event}
-          className="inline-flex min-h-[48px] items-center justify-center rounded-xl border-2 border-[var(--vl-petrol)] px-3 text-center text-sm font-semibold leading-tight text-[var(--vl-petrol)] outline-none hover:bg-[var(--vl-petrol-soft)] focus-visible:ring-2 focus-visible:ring-[var(--vl-petrol)] focus-visible:ring-offset-2"
-        >
+        <a href={secondary.href} data-gw-event={secondary.event} className={styles.secondary}>
           {secondary.label}
         </a>
       </div>

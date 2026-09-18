@@ -28,6 +28,7 @@ function validInput(overrides: Record<string, unknown> = {}): Record<string, unk
 
 function ctx(overrides: Partial<SubmitContext> = {}): SubmitContext {
   return {
+    campaign: "dubai_2026",
     submissionIdentifier: "test-identifier-1",
     honeypot: null,
     formToken: createFormToken(Date.now() - 10_000),

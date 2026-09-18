@@ -205,7 +205,10 @@ enum SweepstakesEntryStatus {
   DELETED
 }
 
-/// Teilnahme am Buch-Gewinnspiel (Landingpage /gewinn).
+/// Teilnahme an einem Buch-Gewinnspiel. Jede Teilnahme gehört genau EINER
+/// Kampagne (campaignId, siehe src/lib/sweepstakes-campaign.ts): "dubai_2026"
+/// (/gewinn, /verlosung) oder "cards_2026" (/cards). Lostopf, Duplikatprüfung,
+/// Bedingungen und Gewinne sind je Kampagne getrennt.
 /// Personenbezogene Felder werden bei Anonymisierung geleert; Referenz und
 /// Bestellnummern-Hash bleiben erhalten (verhindert erneute Registrierung).
 model SweepstakesEntry {
@@ -218,9 +221,14 @@ model SweepstakesEntry {
   /// Name des Händlers bei retailer = "other"
   retailerOther   String?
 
+  /// Kampagnenkennung ("dubai_2026" | "cards_2026"). Der DB-Default gilt nur
+  /// für den Rollout alter Instanzen (die ausschließlich Dubai-Wege bedienen);
+  /// der Teilnahme-Service setzt die Kampagne immer ausdrücklich.
+  campaignId String @default("dubai_2026")
   /// HMAC-SHA256 der normalisierten Bestellnummer (Duplikaterkennung).
-  /// Global eindeutig: eine Bestellnummer kann nur einmal teilnehmen.
-  orderNumberHash      String @unique
+  /// Eindeutig JE KAMPAGNE (Unique auf campaignId + orderNumberHash): dieselbe
+  /// Bestellnummer kann bei Dubai und bei Cards je einmal registriert werden.
+  orderNumberHash      String
   /// AES-256-GCM-verschlüsselte Original-Bestellnummer (für spätere Prüfung)
   orderNumberEncrypted String
 
@@ -243,6 +251,8 @@ model SweepstakesEntry {
 
   status       SweepstakesEntryStatus @default(RECEIVED)
   internalNote String?
+  /// Zugeordneter Gewinn (Katalog GENAU dieser Kampagne, Admin-Ziehung); nur bei Status WINNER.
+  prizeId      String?
 
   // Serverseitig erfasste Herkunft (keine Weitergabe an Drittanbieter)
   utmSource   String?
@@ -252,8 +262,8 @@ model SweepstakesEntry {
   utmTerm     String?
   referrer    String?
   landingHost String?
-  /// Teilnahmeweg, serverseitig gegen ENTRY_PATHS validiert ("/gewinn" | "/verlosung");
-  /// null bei Teilnahmen vor Einführung des Feldes.
+  /// Teilnahmeweg, serverseitig gegen die Wege der Kampagne validiert
+  /// ("/gewinn" | "/verlosung" | "/cards"); null bei Teilnahmen vor Einführung des Feldes.
   landingPath String?
   /// Geltender Gewinnumfang zum Zeitpunkt der Teilnahme (PRIZE_SCOPE der Konfiguration).
   prizeScope  String?
@@ -268,6 +278,9 @@ model SweepstakesEntry {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
+  @@unique([campaignId, orderNumberHash])
+  @@index([campaignId])
+  @@index([orderNumberHash])
   @@index([status])
   @@index([retailer])
   @@index([createdAt])

@@ -13,6 +13,8 @@ const contextSchema = z.object({
     "/gutschein",
     "/gewinn",
     "/verlosung",
+    "/cards",
+    "/cards/danke",
     "/buch-reddit",
     "/buch-inbox",
   ]),

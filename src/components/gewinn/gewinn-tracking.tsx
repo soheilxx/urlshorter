@@ -42,6 +42,8 @@ export interface GewinnTrackingConfig {
   consentAcceptedValue: string | null;
   /** Seiten-Event im dataLayer (Standard: gewinnspiel_seite). */
   pageEventName?: string;
+  /** Feste fachliche Parameter für delegierte Klick-Events (z. B. giveaway_campaign). */
+  eventParams?: Record<string, string>;
 }
 
 function hasMarketingConsent(config: GewinnTrackingConfig): boolean {
@@ -81,10 +83,17 @@ export function GewinnTracking(config: GewinnTrackingConfig) {
       const target = event.target as Element | null;
       const el = target?.closest?.("[data-gw-event]");
       const name = el?.getAttribute("data-gw-event");
-      if (name) trackGewinnEvent(name);
+      if (!name) return;
+      const ctaId = el?.getAttribute("data-cta-id");
+      trackGewinnEvent(name, {
+        ...(config.eventParams ?? {}),
+        ...(ctaId ? { cta_position: ctaId.slice(0, 64) } : {}),
+      });
     };
     document.addEventListener("click", onClick, { capture: true });
     return () => document.removeEventListener("click", onClick, { capture: true });
+    // config ist ein statisches Server-Prop-Objekt
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowed]);
 
   const anyConfigured = Boolean(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { EMPTY_USER_STATE } from "@/actions/action-states";
 import { updateSweepstakesEntryAction } from "@/actions/sweepstakes-actions";
 import { useSuccessRefresh } from "@/components/admin/use-success-refresh";
@@ -18,17 +18,32 @@ const EDITABLE_STATUSES = [
   "NOT_WON",
 ] as const;
 
-/** Status + interne Notiz einer Gewinnspiel-Teilnahme bearbeiten (nur ADMIN). */
+/**
+ * Status, Gewinnzuordnung und interne Notiz einer Teilnahme bearbeiten (nur ADMIN).
+ * Die Kampagne wird mitgesendet und serverseitig gegen die Teilnahme geprüft;
+ * der Gewinnkatalog enthält ausschließlich Gewinne DIESER Kampagne.
+ */
 export function SweepstakesStatusForm({
   entry,
+  campaignLabel,
+  prizes,
 }: {
-  entry: { id: string; status: string; internalNote: string | null };
+  entry: {
+    id: string;
+    campaignId: string;
+    status: string;
+    prizeId: string | null;
+    internalNote: string | null;
+  };
+  campaignLabel: string;
+  prizes: ReadonlyArray<{ id: string; label: string }>;
 }) {
   const [state, formAction, pending] = useActionState(
     updateSweepstakesEntryAction,
     EMPTY_USER_STATE,
   );
   const formRef = useSuccessRefresh(state);
+  const [status, setStatus] = useState(entry.status);
 
   return (
     <form ref={formRef} action={formAction} className="space-y-4">
@@ -36,16 +51,41 @@ export function SweepstakesStatusForm({
       {state.success ? <Alert variant="success">{state.success}</Alert> : null}
 
       <input type="hidden" name="id" value={entry.id} />
+      <input type="hidden" name="campaignId" value={entry.campaignId} />
       <div>
         <Label htmlFor="sw-status">Status</Label>
-        <Select id="sw-status" name="status" defaultValue={entry.status} required>
-          {EDITABLE_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {SWEEPSTAKES_STATUS_LABELS[status] ?? status}
+        <Select
+          id="sw-status"
+          name="status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          required
+        >
+          {EDITABLE_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {SWEEPSTAKES_STATUS_LABELS[s] ?? s}
             </option>
           ))}
         </Select>
       </div>
+      {status === "WINNER" ? (
+        <div>
+          <Label htmlFor="sw-prize">Gewinn (Kampagne {campaignLabel})</Label>
+          <Select id="sw-prize" name="prizeId" defaultValue={entry.prizeId ?? ""} required>
+            <option value="" disabled>
+              Bitte auswählen …
+            </option>
+            {prizes.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </Select>
+          <p className="mt-1 text-xs text-zinc-500">
+            Nur Gewinne dieser Kampagne wählbar – kampagnenfremde Zuordnungen lehnt der Server ab.
+          </p>
+        </div>
+      ) : null}
       <div>
         <Label htmlFor="sw-note">Interne Notiz (nie öffentlich)</Label>
         <Textarea

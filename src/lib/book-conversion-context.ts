@@ -55,6 +55,8 @@ const contextSchema = z.object({
     "/gutschein",
     "/gewinn",
     "/verlosung",
+    "/cards",
+    "/cards/danke",
     "/buch-reddit",
     "/buch-inbox",
   ]),
@@ -78,7 +80,9 @@ function linkedInConversionId(ruleId: string | null | undefined): string | null 
 export async function createBookConversionConfig(
   path: BookTrackingPath,
   consentMode: ConsentMode,
+  options: { eventParams?: Record<string, string> } = {},
 ): Promise<BookConversionConfig | null> {
+  const eventParams = options.eventParams;
   const env = getEnv();
   const site = await resolveBookSite();
   if (!site.active)
@@ -93,6 +97,7 @@ export async function createBookConversionConfig(
       linkedInPartnerId: null,
       ga4MeasurementId: null,
       gtmContainerId: null,
+      eventParams,
     };
   const metaPixelId = site.metaPixelId;
   const tiktokPixelId = site.tiktokPixelId;
@@ -121,6 +126,7 @@ export async function createBookConversionConfig(
       linkedInPartnerId: site.linkedInPartnerId,
       ga4MeasurementId: site.ga4MeasurementId,
       gtmContainerId: site.gtmContainerId,
+      eventParams,
     };
   } catch {
     return null;

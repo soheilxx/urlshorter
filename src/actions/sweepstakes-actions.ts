@@ -13,18 +13,27 @@ import {
 import { writeAuditLog } from "@/lib/audit";
 import { requireRoleOrThrow } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { requireAppSecret } from "@/lib/env";
+import { getClientIp } from "@/lib/request-info";
 import { logger } from "@/lib/logger";
 import { sendRegistrationConversion } from "@/lib/registration-conversion";
-import { getClientIp } from "@/lib/request-info";
 import { submitSweepstakesEntry } from "@/lib/sweepstakes";
+import {
+  CAMPAIGN_IDS,
+  campaignPrize,
+  DUBAI_CAMPAIGN_ID,
+  getCampaign,
+} from "@/lib/sweepstakes-campaign";
 import { createFormToken } from "@/lib/sweepstakes-crypto";
-import { computeRateLimitIdentifier } from "@/lib/visitor-hash";
+import { optionalField, readSweepstakesForm } from "@/lib/sweepstakes-form-input";
 
 /**
- * Server Actions des Gewinnspiels.
- * - Teilnahme (öffentlich, ohne Login)
- * - Verwaltung (Status/Notiz/Anonymisierung – ausschließlich ADMIN)
+ * Server Actions des Dubai-Gewinnspiels (/gewinn, /verlosung) und der
+ * kampagnenübergreifenden Verwaltung.
+ * - Teilnahme (öffentlich, ohne Login) – speichert AUSSCHLIESSLICH in der
+ *   Dubai-Kampagne (serverseitig fest; die Cards-Kampagne hat ihre eigene
+ *   Action in cards-actions.ts).
+ * - Verwaltung (Status/Gewinn/Notiz/Anonymisierung – ausschließlich ADMIN),
+ *   immer mit Prüfung der Kombination aus Teilnahme und Kampagne.
  *
  * Es werden keine personenbezogenen Formulardaten geloggt.
  */
@@ -34,56 +43,20 @@ function str(formData: FormData, name: string): string {
   return typeof v === "string" ? v : "";
 }
 
-function optional(formData: FormData, name: string): string | null {
-  const v = str(formData, name).trim();
-  return v.length > 0 ? v : null;
-}
-
 export async function submitSweepstakesAction(
   _prev: SweepstakesActionState,
   formData: FormData,
 ): Promise<SweepstakesActionState> {
   try {
     const h = await headers();
-    const submissionIdentifier = computeRateLimitIdentifier({
-      secret: requireAppSecret(),
-      ip: getClientIp(h),
-      userAgent: h.get("user-agent"),
+    const { input, ctx, utm } = readSweepstakesForm(formData, h);
+    const result = await submitSweepstakesEntry(input, {
+      ...ctx,
+      // Fest: Dubai-Lostopf. Der Teilnahmeweg aus dem Formular wird im Service
+      // gegen die Dubai-Wege (/gewinn, /verlosung) geprüft – nie gegen /cards.
+      campaign: DUBAI_CAMPAIGN_ID,
+      landingPath: optionalField(formData, "landingPath"),
     });
-
-    const utm = {
-      source: optional(formData, "utm_source"),
-      medium: optional(formData, "utm_medium"),
-      campaign: optional(formData, "utm_campaign"),
-      content: optional(formData, "utm_content"),
-      term: optional(formData, "utm_term"),
-    };
-    const result = await submitSweepstakesEntry(
-      {
-        retailer: str(formData, "retailer"),
-        retailerOther: str(formData, "retailerOther") || undefined,
-        orderNumber: str(formData, "orderNumber"),
-        firstName: str(formData, "firstName"),
-        lastName: str(formData, "lastName"),
-        street: str(formData, "street"),
-        houseNumber: str(formData, "houseNumber"),
-        postalCode: str(formData, "postalCode"),
-        city: str(formData, "city"),
-        country: str(formData, "country"),
-        email: str(formData, "email"),
-        phone: str(formData, "phone"),
-        consent: formData.get("consent") === "on",
-      },
-      {
-        submissionIdentifier,
-        honeypot: optional(formData, "website"),
-        formToken: optional(formData, "formToken"),
-        utm,
-        referrer: optional(formData, "clientReferrer"),
-        landingHost: h.get("host"),
-        landingPath: optional(formData, "landingPath"),
-      },
-    );
 
     if (!result.ok) {
       return {
@@ -99,6 +72,7 @@ export async function submitSweepstakesAction(
     if (result.persisted && result.trackingEventId && result.landingPath) {
       const conversion = {
         eventId: result.trackingEventId,
+        campaign: result.campaign,
         landingPath: result.landingPath,
         eventTimeMs: Date.now(),
         clientIp: getClientIp(h),
@@ -158,31 +132,63 @@ export async function updateSweepstakesEntryAction(
     const parsed = z
       .object({
         id: z.string().uuid(),
+        campaignId: z.enum(CAMPAIGN_IDS),
         status: z.enum(STATUS_VALUES),
+        prizeId: z.string().trim().max(80).optional(),
         internalNote: z.string().trim().max(2000, "Die Notiz ist zu lang.").optional(),
       })
       .safeParse({
         id: formData.get("id"),
+        campaignId: formData.get("campaignId"),
         status: formData.get("status"),
+        prizeId: str(formData, "prizeId") || undefined,
         internalNote: str(formData, "internalNote") || undefined,
       });
     if (!parsed.success) {
-      return { ...EMPTY_USER_STATE, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe." };
+      return {
+        ...EMPTY_USER_STATE,
+        error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe.",
+      };
     }
 
     const entry = await prisma.sweepstakesEntry.findUnique({
       where: { id: parsed.data.id },
-      select: { id: true, status: true, referenceNumber: true },
+      select: { id: true, status: true, referenceNumber: true, campaignId: true, prizeId: true },
     });
     if (!entry) return { ...EMPTY_USER_STATE, error: "Die Teilnahme wurde nicht gefunden." };
+    // Objekt + Kampagne müssen zusammenpassen: eine Cards-Teilnahme darf nicht
+    // im Dubai-Kontext (und umgekehrt) geändert oder als Gewinn markiert werden.
+    if (entry.campaignId !== parsed.data.campaignId) {
+      return {
+        ...EMPTY_USER_STATE,
+        error: "Die Teilnahme gehört zu einer anderen Kampagne. Bitte die Seite neu laden.",
+      };
+    }
     if (entry.status === "DELETED") {
-      return { ...EMPTY_USER_STATE, error: "Anonymisierte Teilnahmen können nicht geändert werden." };
+      return {
+        ...EMPTY_USER_STATE,
+        error: "Anonymisierte Teilnahmen können nicht geändert werden.",
+      };
+    }
+
+    // Gewinnzuordnung nur aus dem Katalog GENAU dieser Kampagne, nur bei Status WINNER.
+    let prizeId: string | null = null;
+    if (parsed.data.status === "WINNER") {
+      const prize = campaignPrize(entry.campaignId, parsed.data.prizeId);
+      if (!prize) {
+        return {
+          ...EMPTY_USER_STATE,
+          error: `Bitte einen Gewinn aus dem Katalog der Kampagne „${getCampaign(entry.campaignId).shortLabel}“ auswählen.`,
+        };
+      }
+      prizeId = prize.id;
     }
 
     await prisma.sweepstakesEntry.update({
-      where: { id: entry.id },
+      where: { id: entry.id, campaignId: entry.campaignId },
       data: {
         status: parsed.data.status,
+        prizeId,
         internalNote: parsed.data.internalNote ?? null,
       },
     });
@@ -194,7 +200,9 @@ export async function updateSweepstakesEntryAction(
       entityId: entry.id,
       changes: {
         reference: entry.referenceNumber,
+        campaign: entry.campaignId,
         status: { from: entry.status, to: parsed.data.status },
+        prize: { from: entry.prizeId, to: prizeId },
         noteChanged: parsed.data.internalNote !== undefined,
       },
     });
@@ -211,22 +219,25 @@ export async function updateSweepstakesEntryAction(
 /**
  * Datenschutz-Löschung: personenbezogene Felder werden geleert, Referenz und
  * Bestellnummern-Hash bleiben (verhindert erneute Registrierung derselben
- * Bestellung). Die verschlüsselte Bestellnummer wird ebenfalls entfernt.
+ * Bestellung in dieser Kampagne). Die verschlüsselte Bestellnummer wird
+ * ebenfalls entfernt.
  */
 export async function anonymizeSweepstakesEntryAction(formData: FormData): Promise<void> {
   const session = await requireRoleOrThrow("ADMIN");
   const id = z.string().uuid().parse(formData.get("id"));
+  const campaignId = z.enum(CAMPAIGN_IDS).parse(formData.get("campaignId"));
 
   const entry = await prisma.sweepstakesEntry.findUnique({
     where: { id },
-    select: { id: true, referenceNumber: true, status: true },
+    select: { id: true, referenceNumber: true, status: true, campaignId: true },
   });
-  if (!entry) redirect("/admin/gewinnspiel");
+  if (!entry || entry.campaignId !== campaignId) redirect("/admin/gewinnspiel");
 
   await prisma.sweepstakesEntry.update({
-    where: { id: entry.id },
+    where: { id: entry.id, campaignId },
     data: {
       status: "DELETED",
+      prizeId: null,
       firstName: "",
       lastName: "",
       street: "",
@@ -254,8 +265,12 @@ export async function anonymizeSweepstakesEntryAction(formData: FormData): Promi
     action: "sweepstakes.anonymize",
     entityType: "SweepstakesEntry",
     entityId: entry.id,
-    changes: { reference: entry.referenceNumber, previousStatus: entry.status },
+    changes: {
+      reference: entry.referenceNumber,
+      campaign: entry.campaignId,
+      previousStatus: entry.status,
+    },
   });
 
-  redirect("/admin/gewinnspiel");
+  redirect(`/admin/gewinnspiel?campaign=${campaignId}`);
 }

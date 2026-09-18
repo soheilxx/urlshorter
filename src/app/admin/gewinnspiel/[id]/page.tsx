@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { retailerLabel, SWEEPSTAKES_STATUS_LABELS } from "@/lib/gewinnspiel-config";
+import { campaignPrize, getCampaign, isCampaignId } from "@/lib/sweepstakes-campaign";
 import { decryptOrderNumber } from "@/lib/sweepstakes-crypto";
 import { formatBerlinDateTime } from "@/lib/utils";
 
@@ -36,29 +37,38 @@ export default async function SweepstakesEntryPage({
   const entry = await prisma.sweepstakesEntry.findUnique({ where: { id } });
   if (!entry) notFound();
 
+  // Kampagne ist Teil der Identität: unbekannte Kennungen werden sichtbar, nicht umgedeutet.
+  const campaign = isCampaignId(entry.campaignId) ? getCampaign(entry.campaignId) : null;
   const anonymized = entry.status === "DELETED";
   const orderNumber = anonymized
     ? null
     : (decryptOrderNumber(entry.orderNumberEncrypted) ?? "(nicht entschlüsselbar)");
+  const prize = entry.prizeId ? campaignPrize(entry.campaignId, entry.prizeId) : null;
 
   return (
     <div className="space-y-6">
       <div>
         <Link
-          href="/admin/gewinnspiel"
+          href={`/admin/gewinnspiel?campaign=${encodeURIComponent(entry.campaignId)}`}
           className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-900"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          Zurück zur Übersicht
+          Zurück zur Übersicht ({campaign?.shortLabel ?? entry.campaignId})
         </Link>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-mono text-xl font-bold tracking-tight">{entry.referenceNumber}</h1>
+          <Badge variant={entry.campaignId === "cards_2026" ? "success" : "muted"}>
+            Kampagne: {campaign?.shortLabel ?? entry.campaignId}
+          </Badge>
           <Badge variant={anonymized ? "danger" : "muted"}>
             {SWEEPSTAKES_STATUS_LABELS[entry.status] ?? entry.status}
           </Badge>
         </div>
         <p className="mt-1 text-sm text-zinc-500">
-          Eingegangen am {formatBerlinDateTime(entry.createdAt)} · Zuletzt geändert am{" "}
+          {campaign
+            ? `${campaign.label} (${campaign.id})`
+            : `Unbekannte Kampagne ${entry.campaignId}`}{" "}
+          · Eingegangen am {formatBerlinDateTime(entry.createdAt)} · Zuletzt geändert am{" "}
           {formatBerlinDateTime(entry.updatedAt)}
         </p>
       </div>
@@ -71,15 +81,24 @@ export default async function SweepstakesEntryPage({
             </CardHeader>
             <CardContent>
               <dl className="divide-y divide-zinc-100">
+                <Row
+                  label="Kampagne (Lostopf)"
+                  value={`${campaign?.shortLabel ?? "?"} · ${entry.campaignId}`}
+                />
                 <Row label="Händler" value={retailerLabel(entry.retailer, entry.retailerOther)} />
                 <Row
                   label="Bestellnummer"
                   value={
-                    anonymized ? (
-                      "(anonymisiert)"
-                    ) : (
-                      <span className="font-mono">{orderNumber}</span>
-                    )
+                    anonymized ? "(anonymisiert)" : <span className="font-mono">{orderNumber}</span>
+                  }
+                />
+                <Row
+                  label="Zugeordneter Gewinn"
+                  value={
+                    entry.status === "WINNER"
+                      ? (prize?.label ??
+                        `${entry.prizeId ?? "–"} (nicht im Katalog dieser Kampagne)`)
+                      : "–"
                   }
                 />
               </dl>
@@ -158,21 +177,29 @@ export default async function SweepstakesEntryPage({
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Status & interne Notiz</CardTitle>
+              <CardTitle>Status, Gewinn & interne Notiz</CardTitle>
             </CardHeader>
             <CardContent>
               {anonymized ? (
                 <p className="text-sm text-zinc-400">
                   Anonymisierte Teilnahmen können nicht mehr bearbeitet werden.
                 </p>
-              ) : (
+              ) : campaign ? (
                 <SweepstakesStatusForm
                   entry={{
                     id: entry.id,
+                    campaignId: entry.campaignId,
                     status: entry.status,
+                    prizeId: entry.prizeId,
                     internalNote: entry.internalNote,
                   }}
+                  campaignLabel={campaign.shortLabel}
+                  prizes={campaign.prizes}
                 />
+              ) : (
+                <p className="text-sm text-red-700">
+                  Unbekannte Kampagnenkennung – diese Teilnahme kann nicht bearbeitet werden.
+                </p>
               )}
             </CardContent>
           </Card>
@@ -186,10 +213,11 @@ export default async function SweepstakesEntryPage({
                 <p className="mb-3 text-sm text-zinc-500">
                   Entfernt alle personenbezogenen Daten dieser Teilnahme unwiderruflich
                   (Anonymisierung). Referenz und Bestellnummern-Hash bleiben erhalten, damit die
-                  Bestellung nicht erneut registriert werden kann.
+                  Bestellung in dieser Kampagne nicht erneut registriert werden kann.
                 </p>
                 <form action={anonymizeSweepstakesEntryAction}>
                   <input type="hidden" name="id" value={entry.id} />
+                  <input type="hidden" name="campaignId" value={entry.campaignId} />
                   <ConfirmSubmitButton
                     confirmText={`Teilnahme ${entry.referenceNumber} wirklich anonymisieren? Dies kann nicht rückgängig gemacht werden.`}
                   >

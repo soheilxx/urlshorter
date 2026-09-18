@@ -4,18 +4,15 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import {
   type EntryPath,
-  getSweepstakesPhase,
-  isEntryPath,
   isRetailerId,
   MAX_FORM_HOURS,
   MIN_FORM_SECONDS,
   PRIVACY_VERSION,
-  PRIZE_SCOPE,
   SUBMISSION_RATE_LIMIT,
-  TERMS_VERSION,
 } from "@/lib/gewinnspiel-config";
 import { logger } from "@/lib/logger";
 import { sendSweepstakesConfirmation } from "@/lib/mailer";
+import { type CampaignId, getCampaign, isCampaignId } from "@/lib/sweepstakes-campaign";
 import {
   encryptOrderNumber,
   generateReferenceNumber,
@@ -32,14 +29,22 @@ import {
 } from "@/lib/sweepstakes-validation";
 
 /**
- * Kernlogik der Gewinnspiel-Teilnahme – bewusst getrennt von der Server
- * Action, damit sie in Integrationstests ohne Next-Request-Kontext läuft.
+ * Kernlogik der Gewinnspiel-Teilnahme – bewusst getrennt von den Server
+ * Actions, damit sie in Integrationstests ohne Next-Request-Kontext läuft.
+ *
+ * Kampagnen: Jede Teilnahme gehört genau EINER Kampagne (Dubai oder Cards).
+ * Die Kampagne ist Pflicht im Kontext und wird von der aufrufenden Server
+ * Action serverseitig festgelegt – nie aus Hidden Fields, UTM oder Referrer.
+ * Lostopf, Phase, Bedingungsversion, Gewinnumfang und Duplikaterkennung
+ * (Unique auf campaignId + orderNumberHash) gelten je Kampagne.
  *
  * Datenschutz: Es werden keine personenbezogenen Daten geloggt; Fehlertexte
  * für Besucher enthalten keine technischen Details.
  */
 
 export interface SubmitContext {
+  /** Kampagne (Lostopf) – PFLICHT, serverseitig festgelegt, nie aus Client-Daten. */
+  campaign: CampaignId;
   /** Nicht rückrechenbare Client-Kennung (HMAC aus IP + User-Agent) */
   submissionIdentifier: string | null;
   /** Honeypot-Feld (muss leer sein) */
@@ -56,8 +61,9 @@ export interface SubmitContext {
   referrer: string | null;
   landingHost: string | null;
   /**
-   * Teilnahmeweg aus dem Formular; wird serverseitig gegen ENTRY_PATHS geprüft
-   * und nur als gültiger Wert gespeichert (sonst null).
+   * Teilnahmeweg; wird serverseitig gegen die Wege DER KAMPAGNE geprüft und
+   * nur als gültiger Wert gespeichert (sonst null). Ein Weg einer fremden
+   * Kampagne wird nie übernommen.
    */
   landingPath?: string | null;
   now?: Date;
@@ -66,6 +72,7 @@ export interface SubmitContext {
 export type SubmitResult =
   | {
       ok: true;
+      campaign: CampaignId;
       referenceNumber: string;
       /** false beim Honeypot-Scheinerfolg: nichts gespeichert, kein Conversion-Event. */
       persisted: boolean;
@@ -74,9 +81,6 @@ export type SubmitResult =
       landingPath: EntryPath | null;
     }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
-
-const DUPLICATE_MESSAGE =
-  "Diese Bestellnummer wurde bereits für das Gewinnspiel registriert. Falls du glaubst, dass es sich um einen Fehler handelt, kontaktiere bitte den Support.";
 
 const GENERIC_ERROR =
   "Deine Teilnahme konnte gerade nicht gespeichert werden. Bitte versuche es in einem Moment erneut.";
@@ -92,11 +96,22 @@ export async function submitSweepstakesEntry(
   rawInput: Record<string, unknown>,
   ctx: SubmitContext,
 ): Promise<SubmitResult> {
+  // 0) Kampagne ist Pflicht – ohne gültige Kennung wird NICHTS gespeichert
+  //    (insbesondere kein stiller Rückfall auf die Dubai-Kampagne).
+  if (!isCampaignId(ctx.campaign)) {
+    logger.error("sweepstakes.campaign_missing", {});
+    return { ok: false, error: GENERIC_ERROR };
+  }
+  const campaign = getCampaign(ctx.campaign);
   const now = ctx.now ?? new Date();
-  const landingPath: EntryPath | null = isEntryPath(ctx.landingPath) ? ctx.landingPath : null;
+  const landingPath: EntryPath | null =
+    typeof ctx.landingPath === "string" &&
+    (campaign.entryPaths as readonly string[]).includes(ctx.landingPath)
+      ? (ctx.landingPath as EntryPath)
+      : null;
 
-  // 1) Phase prüfen (zeitlich zentral konfiguriert)
-  const phase = getSweepstakesPhase(now);
+  // 1) Phase der Kampagne prüfen (zeitlich zentral konfiguriert)
+  const phase = campaign.getPhase(now);
   if (phase === "scheduled") {
     return { ok: false, error: "Die Teilnahme hat noch nicht begonnen." };
   }
@@ -107,9 +122,10 @@ export async function submitSweepstakesEntry(
   // 2) Honeypot: still akzeptieren, aber nichts speichern (Bots erfahren nichts).
   //    Kein Conversion-Event – es gibt keine Teilnahme, die gezählt werden dürfte.
   if (ctx.honeypot && ctx.honeypot.trim().length > 0) {
-    logger.warn("sweepstakes.honeypot_tripped", {});
+    logger.warn("sweepstakes.honeypot_tripped", { campaign: campaign.id });
     return {
       ok: true,
+      campaign: campaign.id,
       referenceNumber: generateReferenceNumber(),
       persisted: false,
       trackingEventId: null,
@@ -132,11 +148,10 @@ export async function submitSweepstakesEntry(
     };
   }
 
-  // 4) Rate Limiting pro Client-Kennung
+  // 4) Rate Limiting pro Client-Kennung (technischer Missbrauchsschutz über
+  //    alle Kampagnen – bewusst keine fachliche „ein Los pro IP“-Regel).
   if (ctx.submissionIdentifier) {
-    const windowStart = new Date(
-      now.getTime() - SUBMISSION_RATE_LIMIT.windowMinutes * 60 * 1000,
-    );
+    const windowStart = new Date(now.getTime() - SUBMISSION_RATE_LIMIT.windowMinutes * 60 * 1000);
     const recent = await prisma.sweepstakesEntry.count({
       where: {
         submissionIdentifier: ctx.submissionIdentifier,
@@ -144,7 +159,7 @@ export async function submitSweepstakesEntry(
       },
     });
     if (recent >= SUBMISSION_RATE_LIMIT.maxPerWindow) {
-      logger.warn("sweepstakes.rate_limited", {});
+      logger.warn("sweepstakes.rate_limited", { campaign: campaign.id });
       return {
         ok: false,
         error: "Zu viele Registrierungen in kurzer Zeit. Bitte versuche es später erneut.",
@@ -209,19 +224,18 @@ export async function submitSweepstakesEntry(
     };
   }
 
-  // 7) Duplikaterkennung (freundlich, ohne Fremddaten preiszugeben)
+  // 7) Duplikaterkennung JE KAMPAGNE (freundlich, ohne Fremddaten preiszugeben)
   const orderHash = hashOrderNumber(order.value);
+  const duplicate = {
+    ok: false as const,
+    error: campaign.duplicateMessage,
+    fieldErrors: { orderNumber: campaign.duplicateMessage },
+  };
   const existing = await prisma.sweepstakesEntry.findUnique({
-    where: { orderNumberHash: orderHash },
+    where: { campaignId_orderNumberHash: { campaignId: campaign.id, orderNumberHash: orderHash } },
     select: { id: true },
   });
-  if (existing) {
-    return {
-      ok: false,
-      error: DUPLICATE_MESSAGE,
-      fieldErrors: { orderNumber: DUPLICATE_MESSAGE },
-    };
-  }
+  if (existing) return duplicate;
 
   // 8) Speichern (Referenz-Kollisionen und Hash-Wettläufe sauber behandeln)
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -230,6 +244,7 @@ export async function submitSweepstakesEntry(
       const entry = await prisma.sweepstakesEntry.create({
         data: {
           id: newEntryId(),
+          campaignId: campaign.id,
           referenceNumber,
           retailer: input.retailer,
           retailerOther: input.retailer === "other" ? (input.retailerOther ?? null) : null,
@@ -246,7 +261,7 @@ export async function submitSweepstakesEntry(
           phone: phone.value,
           confirmedAccuracyAt: now,
           acceptedTermsAt: now,
-          termsVersion: TERMS_VERSION,
+          termsVersion: campaign.termsVersion,
           acknowledgedPrivacyAt: now,
           privacyVersion: PRIVACY_VERSION,
           utmSource: trimOrNull(ctx.utm.source, 120),
@@ -257,8 +272,9 @@ export async function submitSweepstakesEntry(
           referrer: trimOrNull(ctx.referrer, 300),
           landingHost: trimOrNull(ctx.landingHost, 120),
           landingPath,
-          prizeScope: PRIZE_SCOPE,
+          prizeScope: campaign.prizeScope,
           submissionIdentifier: ctx.submissionIdentifier,
+          createdAt: now,
         },
         select: { id: true, referenceNumber: true, email: true, firstName: true },
       });
@@ -268,6 +284,7 @@ export async function submitSweepstakesEntry(
         to: entry.email,
         firstName: entry.firstName,
         referenceNumber: entry.referenceNumber,
+        campaign: campaign.id,
       });
       if (mail.sent) {
         await prisma.sweepstakesEntry.update({
@@ -276,9 +293,13 @@ export async function submitSweepstakesEntry(
         });
       }
 
-      logger.info("sweepstakes.entry_created", { reference: entry.referenceNumber });
+      logger.info("sweepstakes.entry_created", {
+        reference: entry.referenceNumber,
+        campaign: campaign.id,
+      });
       return {
         ok: true,
+        campaign: campaign.id,
         referenceNumber: entry.referenceNumber,
         persisted: true,
         // Eigene UUID (nicht die Teilnahme-ID): Pixel und Conversion-APIs erhalten
@@ -289,13 +310,8 @@ export async function submitSweepstakesEntry(
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         const target = String(error.meta?.target ?? "");
-        if (target.includes("orderNumberHash")) {
-          return {
-            ok: false,
-            error: DUPLICATE_MESSAGE,
-            fieldErrors: { orderNumber: DUPLICATE_MESSAGE },
-          };
-        }
+        // Wettlauf derselben Bestellnummer innerhalb der Kampagne
+        if (target.includes("orderNumberHash")) return duplicate;
         // Referenz-Kollision: mit neuer Referenz erneut versuchen
         continue;
       }

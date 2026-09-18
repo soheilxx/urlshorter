@@ -46,11 +46,36 @@ function holdScrollPosition() {
   };
 }
 
+/** Optik des modalen Dialogs je Kampagnen-Theme (Inline-Modus ist themeneutral). */
+const VARIANTS = {
+  verlosung: {
+    openEvent: "verlosung_formular_geoeffnet",
+    dialog:
+      "verlosung-theme m-0 h-dvh max-h-dvh w-full max-w-none bg-[var(--vl-ivory)] p-0 text-[var(--vl-ink)] shadow-2xl backdrop:bg-[rgba(5,45,49,0.65)] backdrop:backdrop-blur-sm sm:m-auto sm:h-auto sm:max-h-[92dvh] sm:w-[min(100vw-2rem,44rem)] sm:rounded-3xl",
+    header:
+      "flex items-center justify-between gap-4 border-b border-[var(--vl-border-soft)] bg-[var(--vl-ivory)] px-5 py-4 sm:px-8",
+    title: "text-lg font-semibold tracking-tight text-[var(--vl-petrol)] sm:text-xl",
+    close:
+      "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--vl-ink-soft)] outline-none hover:bg-[var(--vl-petrol-soft)] hover:text-[var(--vl-petrol)] focus-visible:ring-2 focus-visible:ring-[var(--vl-petrol)]",
+  },
+  cards: {
+    openEvent: "cards_formular_geoeffnet",
+    dialog:
+      "cards-theme m-0 h-dvh max-h-dvh w-full max-w-none bg-[var(--cd-bg)] p-0 text-[var(--cd-ink)] shadow-2xl backdrop:bg-[rgba(4,7,16,0.78)] backdrop:backdrop-blur-sm sm:m-auto sm:h-auto sm:max-h-[92dvh] sm:w-[min(100vw-2rem,44rem)] sm:rounded-3xl sm:border sm:border-[var(--cd-border)]",
+    header:
+      "flex items-center justify-between gap-4 border-b border-[var(--cd-border-soft)] bg-[var(--cd-surface)] px-5 py-4 sm:px-8",
+    title: "font-display text-lg font-semibold tracking-tight text-[var(--cd-gold)] sm:text-xl",
+    close:
+      "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--cd-ink-soft)] outline-none hover:bg-[var(--cd-surface-2)] hover:text-[var(--cd-ink)] focus-visible:ring-2 focus-visible:ring-[var(--cd-gold)]",
+  },
+} as const;
+
 export function ParticipationHost({
   form,
   enabled,
   dialogTitle,
   inlineLabelId,
+  variant = "verlosung",
 }: {
   /** Das Formular (bzw. der Hinweis bei geschlossener Phase). */
   form: ReactNode;
@@ -59,7 +84,10 @@ export function ParticipationHost({
   dialogTitle: string;
   /** ID der Sektionsüberschrift – benennt den Dialog auch im Inline-Modus. */
   inlineLabelId: string;
+  /** Kampagnen-Theme des modalen Dialogs. */
+  variant?: keyof typeof VARIANTS;
 }) {
+  const styles = VARIANTS[variant];
   const [modal, setModal] = useState(false);
   const [spacer, setSpacer] = useState(0);
   const modalRef = useRef(false);
@@ -96,11 +124,11 @@ export function ParticipationHost({
       return false;
     }
     modalRef.current = true;
-    trackGewinnEvent("verlosung_formular_geoeffnet");
+    trackGewinnEvent(styles.openEvent);
     dialog.querySelector<HTMLElement>("#retailer")?.focus({ preventScroll: true });
     restoreScroll();
     return true;
-  }, []);
+  }, [styles.openEvent]);
 
   const closeModal = useCallback(() => {
     const dialog = dialogRef.current;
@@ -189,26 +217,19 @@ export function ParticipationHost({
         aria-labelledby={modal ? "teilnahme-dialog-heading" : inlineLabelId}
         data-testid="teilnahme-dialog"
         data-inline={modal ? undefined : ""}
-        className={
-          modal
-            ? "verlosung-theme m-0 h-dvh max-h-dvh w-full max-w-none bg-[var(--vl-ivory)] p-0 text-[var(--vl-ink)] shadow-2xl backdrop:bg-[rgba(5,45,49,0.65)] backdrop:backdrop-blur-sm sm:m-auto sm:h-auto sm:max-h-[92dvh] sm:w-[min(100vw-2rem,44rem)] sm:rounded-3xl"
-            : ""
-        }
+        className={modal ? styles.dialog : ""}
       >
         <div className={modal ? "flex h-full max-h-dvh flex-col sm:h-auto sm:max-h-[92dvh]" : ""}>
           {modal ? (
-            <div className="flex items-center justify-between gap-4 border-b border-[var(--vl-border-soft)] bg-[var(--vl-ivory)] px-5 py-4 sm:px-8">
-              <h2
-                id="teilnahme-dialog-heading"
-                className="text-lg font-semibold tracking-tight text-[var(--vl-petrol)] sm:text-xl"
-              >
+            <div className={styles.header}>
+              <h2 id="teilnahme-dialog-heading" className={styles.title}>
                 {dialogTitle}
               </h2>
               <button
                 type="button"
                 onClick={closeModal}
                 aria-label="Formular schließen"
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--vl-ink-soft)] outline-none hover:bg-[var(--vl-petrol-soft)] hover:text-[var(--vl-petrol)] focus-visible:ring-2 focus-visible:ring-[var(--vl-petrol)]"
+                className={styles.close}
               >
                 <X className="h-5 w-5" aria-hidden="true" />
               </button>

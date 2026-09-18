@@ -19,10 +19,12 @@ import {
 } from "@/lib/gewinnspiel-config";
 import {
   buildSweepstakesWhere,
+  getCampaignCounts,
   getSweepstakesStats,
   parseSweepstakesFilters,
   SWEEPSTAKES_PAGE_SIZE,
 } from "@/lib/sweepstakes-admin";
+import { CAMPAIGN_LIST, campaignLabel, getCampaign } from "@/lib/sweepstakes-campaign";
 import { maskEmail } from "@/lib/sweepstakes-validation";
 import { formatBerlinDateTime, formatNumber } from "@/lib/utils";
 
@@ -39,6 +41,17 @@ const STATUS_BADGES: Record<string, "success" | "muted" | "warning" | "danger"> 
   DELETED: "danger",
 };
 
+const CAMPAIGN_BADGES: Record<string, "success" | "muted" | "warning" | "danger"> = {
+  dubai_2026: "muted",
+  cards_2026: "success",
+};
+
+/**
+ * Admin-Übersicht der Gewinnspiel-Teilnahmen. Die Kampagne (Dubai / Cards)
+ * ist Bestandteil jeder Abfrage: entweder ausdrücklich gefiltert oder
+ * „alle Kampagnen“ mit sichtbarer Kampagnenspalte. Zähler werden immer je
+ * Kampagne getrennt ausgewiesen; ein Export ist nur je Kampagne möglich.
+ */
 export default async function SweepstakesAdminPage({
   searchParams,
 }: {
@@ -49,8 +62,9 @@ export default async function SweepstakesAdminPage({
   const filters = parseSweepstakesFilters(params);
   const where = buildSweepstakesWhere(filters);
 
-  const [stats, totalFiltered, entries] = await Promise.all([
-    getSweepstakesStats(),
+  const [campaignCounts, stats, totalFiltered, entries] = await Promise.all([
+    getCampaignCounts(),
+    getSweepstakesStats(filters.campaign),
     prisma.sweepstakesEntry.count({ where }),
     prisma.sweepstakesEntry.findMany({
       where,
@@ -59,6 +73,7 @@ export default async function SweepstakesAdminPage({
       take: SWEEPSTAKES_PAGE_SIZE,
       select: {
         id: true,
+        campaignId: true,
         createdAt: true,
         referenceNumber: true,
         firstName: true,
@@ -85,7 +100,12 @@ export default async function SweepstakesAdminPage({
     const qs = qp.toString();
     return qs ? `/admin/gewinnspiel?${qs}` : "/admin/gewinnspiel";
   };
-  const exportHref = `/api/export/sweepstakes${query.toString() ? `?${query.toString()}` : ""}`;
+  const exportHref = (campaignId: string) => {
+    const qp = new URLSearchParams(query);
+    qp.set("campaign", campaignId);
+    return `/api/export/sweepstakes?${qp.toString()}`;
+  };
+  const exportTargets = filters.campaign ? [getCampaign(filters.campaign)] : CAMPAIGN_LIST;
   const activeFilterCount = [
     filters.q,
     filters.ref,
@@ -96,60 +116,80 @@ export default async function SweepstakesAdminPage({
     filters.status,
     filters.from,
     filters.to,
+    filters.campaign,
   ].filter(Boolean).length;
+  const scopeLabel = filters.campaign
+    ? `Kampagne ${getCampaign(filters.campaign).shortLabel} (${filters.campaign})`
+    : "alle Kampagnen";
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Gewinnspiel"
-        description="Teilnahmen der Dubai-Verlosung – gemeinsamer Lostopf von lizenzzumerfolg.com/gewinn und /verlosung · nur für Admins"
+        description="Teilnahmen der Buch-Gewinnspiele – zwei getrennte Kampagnen: Dubai (lizenzzumerfolg.com/gewinn, /verlosung) und Cards (lizenzzumerfolg.com/cards) · nur für Admins"
       >
-        <a href={exportHref} className="w-full md:w-auto">
-          <Button variant="secondary" size="sm" className="w-full md:w-auto">
-            <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            CSV-Export (gefiltert)
-          </Button>
-        </a>
+        <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row">
+          {exportTargets.map((c) => (
+            <a key={c.id} href={exportHref(c.id)} className="w-full md:w-auto">
+              <Button variant="secondary" size="sm" className="w-full md:w-auto">
+                <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                CSV-Export {c.shortLabel} (gefiltert)
+              </Button>
+            </a>
+          ))}
+        </div>
       </PageHeader>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Teilnahmen gesamt" value={formatNumber(stats.total)} />
-        <StatCard label="Heute" value={formatNumber(stats.today)} />
-        <StatCard
-          label="Top-Händler"
-          value={
-            stats.byRetailer[0]
-              ? `${retailerLabel(stats.byRetailer[0].retailer)} (${formatNumber(stats.byRetailer[0].count)})`
-              : "–"
-          }
-        />
-        <StatCard
-          label="Top-Quelle"
-          value={
-            stats.bySource[0]
-              ? `${stats.bySource[0].source} (${formatNumber(stats.bySource[0].count)})`
-              : "–"
-          }
-        />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="campaign-counts">
+        {campaignCounts.map((row) => (
+          <StatCard
+            key={row.campaignId}
+            label={`${campaignLabel(row.campaignId)} · Teilnahmen (heute ${formatNumber(row.today)})`}
+            value={formatNumber(row.total)}
+          />
+        ))}
+        {campaignCounts.map((row) => (
+          <StatCard
+            key={`${row.campaignId}-winners`}
+            label={`${campaignLabel(row.campaignId)} · Gewinner markiert`}
+            value={formatNumber(row.winners)}
+          />
+        ))}
       </div>
 
       <Card>
         <FilterPanel activeCount={activeFilterCount} defaultOpen={activeFilterCount > 0}>
           <form method="get" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
+              <Label htmlFor="f-campaign">Kampagne</Label>
+              <Select id="f-campaign" name="campaign" defaultValue={filters.campaign ?? ""}>
+                <option value="">Alle Kampagnen (Spalte sichtbar)</option>
+                {CAMPAIGN_LIST.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.shortLabel} – {c.id}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
               <Label htmlFor="f-q">Name oder E-Mail</Label>
               <Input id="f-q" name="q" defaultValue={filters.q ?? ""} placeholder="Suche …" />
             </div>
             <div>
               <Label htmlFor="f-ref">Teilnahme-Referenz</Label>
-              <Input id="f-ref" name="ref" defaultValue={filters.ref ?? ""} placeholder="z. B. K7M2X9AB" />
+              <Input
+                id="f-ref"
+                name="ref"
+                defaultValue={filters.ref ?? ""}
+                placeholder="z. B. K7M2X9AB"
+              />
             </div>
             <div>
               <Label htmlFor="f-order">Bestellnummer (exakt)</Label>
               <Input id="f-order" name="order" defaultValue={filters.order ?? ""} />
             </div>
             <div>
-              <Label htmlFor="f-utm">Quelle / Kampagne</Label>
+              <Label htmlFor="f-utm">Quelle / Kampagnenparameter (UTM)</Label>
               <Input id="f-utm" name="utm" defaultValue={filters.utm ?? ""} placeholder="utm…" />
             </div>
             <div>
@@ -204,7 +244,7 @@ export default async function SweepstakesAdminPage({
                 </Button>
               </Link>
               <p className="ml-auto text-xs text-zinc-500">
-                {formatNumber(totalFiltered)} Treffer
+                {formatNumber(totalFiltered)} Treffer · {scopeLabel}
               </p>
             </div>
           </form>
@@ -213,9 +253,10 @@ export default async function SweepstakesAdminPage({
 
       <Card>
         <TableWrapper className="hidden md:block">
-          <Table minWidth={900}>
+          <Table minWidth={980}>
             <Thead>
               <tr>
+                <Th>Kampagne</Th>
                 <Th>Eingegangen</Th>
                 <Th>Referenz</Th>
                 <Th>Name</Th>
@@ -230,13 +271,18 @@ export default async function SweepstakesAdminPage({
             <tbody>
               {entries.length === 0 ? (
                 <tr>
-                  <Td colSpan={9} className="py-10 text-center text-zinc-400">
+                  <Td colSpan={10} className="py-10 text-center text-zinc-400">
                     Keine Teilnahmen für die aktuelle Filterung.
                   </Td>
                 </tr>
               ) : (
                 entries.map((entry) => (
                   <tr key={entry.id} className="hover:bg-zinc-50/60">
+                    <Td>
+                      <Badge variant={CAMPAIGN_BADGES[entry.campaignId] ?? "muted"}>
+                        {campaignLabel(entry.campaignId)}
+                      </Badge>
+                    </Td>
                     <Td className="whitespace-nowrap text-zinc-500">
                       {formatBerlinDateTime(entry.createdAt)}
                     </Td>
@@ -298,16 +344,21 @@ export default async function SweepstakesAdminPage({
                         {retailerLabel(entry.retailer, entry.retailerOther)}
                       </p>
                     </div>
-                    <Badge variant={STATUS_BADGES[entry.status] ?? "muted"}>
-                      {SWEEPSTAKES_STATUS_LABELS[entry.status] ?? entry.status}
-                    </Badge>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <Badge variant={CAMPAIGN_BADGES[entry.campaignId] ?? "muted"}>
+                        {campaignLabel(entry.campaignId)}
+                      </Badge>
+                      <Badge variant={STATUS_BADGES[entry.status] ?? "muted"}>
+                        {SWEEPSTAKES_STATUS_LABELS[entry.status] ?? entry.status}
+                      </Badge>
+                    </div>
                   </div>
                   <p className="mt-1 text-xs text-zinc-400">
                     <span className="font-mono font-semibold text-zinc-500">
                       {entry.referenceNumber}
                     </span>{" "}
                     · {formatBerlinDateTime(entry.createdAt)}
-                    {entry.utmSource ?? entry.utmCampaign
+                    {(entry.utmSource ?? entry.utmCampaign)
                       ? ` · ${entry.utmSource ?? entry.utmCampaign}`
                       : ""}
                     {entry.landingPath ? ` · ${entry.landingPath}` : ""}
@@ -342,6 +393,14 @@ export default async function SweepstakesAdminPage({
           </div>
         </div>
       ) : null}
+
+      <p className="text-xs text-zinc-500">
+        Statistiken unten: {scopeLabel} · {formatNumber(stats.total)} Teilnahmen, heute{" "}
+        {formatNumber(stats.today)}
+        {stats.bySource[0]
+          ? ` · Top-Quelle ${stats.bySource[0].source} (${formatNumber(stats.bySource[0].count)})`
+          : ""}
+      </p>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card>

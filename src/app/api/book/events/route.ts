@@ -2,10 +2,12 @@ import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import {
+  AMAZON_OUTBOUND_SEMANTICS,
   BOOK_IDENTIFIER_PATTERN,
   BOOK_PRODUCT,
   isBookPurchaseUrl,
 } from "@/lib/book-conversion-events";
+import { campaignForEntryPath } from "@/lib/sweepstakes-campaign";
 import { resolveBookSite, verifyBookConversionContext } from "@/lib/book-conversion-context";
 import { classifyRequest } from "@/lib/bot-detection";
 import { evaluateConsent, readCookieValue, resolveConsentCookie } from "@/lib/consent";
@@ -144,6 +146,17 @@ export async function POST(request: Request): Promise<Response> {
 
     const clientIp = getClientIp(request.headers);
     const isAddToCart = input.type === "AddToCart";
+    // Fachliche Kampagne aus dem SERVERSEITIG verifizierten Pfad (nie aus UTM).
+    const giveawayCampaign = campaignForEntryPath(context.path)?.id;
+    const semantics = {
+      ...AMAZON_OUTBOUND_SEMANTICS,
+      landing_path: context.path,
+      cta_position: input.ctaId ?? "unknown",
+      ...(giveawayCampaign ? { giveaway_campaign: giveawayCampaign } : {}),
+    };
+    const description = giveawayCampaign
+      ? "amazon_outbound_proxy:" + giveawayCampaign
+      : "amazon_outbound_proxy";
     const customData = isAddToCart
       ? {
           content_name: BOOK_PRODUCT.name,
@@ -151,6 +164,7 @@ export async function POST(request: Request): Promise<Response> {
           content_type: "product",
           value: BOOK_PRODUCT.value,
           currency: BOOK_PRODUCT.currency,
+          ...semantics,
         }
       : undefined;
 
@@ -210,6 +224,7 @@ export async function POST(request: Request): Promise<Response> {
             properties: {
               value: BOOK_PRODUCT.value,
               currency: BOOK_PRODUCT.currency,
+              description,
               contents: [
                 {
                   content_id: BOOK_PRODUCT.id,
