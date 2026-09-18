@@ -403,7 +403,7 @@ export default async function CardsPage({
           <a href="#top" className="flex min-w-0 items-center gap-2.5">
             <span className="cd-display truncate text-sm font-semibold text-[var(--cd-ink)] sm:text-base">
               <span className="hidden sm:inline">{BUCH_TITEL}</span>
-              <span className="sm:hidden">Lizenz zum Erfolg</span>
+              <span className="hidden min-[430px]:inline sm:hidden">Lizenz zum Erfolg</span>
             </span>
             <span className="shrink-0 rounded-md border border-[var(--cd-border)] px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-[var(--cd-gold)] uppercase">
               TCG-Gewinnspiel
@@ -504,7 +504,7 @@ export default async function CardsPage({
                 className="cd-glow-gold pointer-events-none absolute top-[46%] left-1/2 h-[75%] w-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full"
                 aria-hidden="true"
               />
-              <div className="relative mx-auto grid max-w-[520px] grid-cols-[1fr_minmax(0,2.1fr)_1fr] items-end gap-1 sm:gap-3 lg:max-w-none">
+              <div className="relative mx-auto grid max-w-[520px] grid-cols-1 items-end gap-1 sm:grid-cols-[1fr_minmax(0,2.1fr)_1fr] sm:gap-3 lg:max-w-none">
                 <figure className="cd-rise hidden self-end sm:block" style={delay(300)}>
                   {prizeArt(dragonBall, "panel", "translate-y-2 -rotate-3 opacity-95")}
                 </figure>
