@@ -3,7 +3,7 @@
 import { submitCardsEntryAction } from "@/actions/cards-actions";
 import { EntryForm, type UtmParams } from "@/components/gewinn/entry-form";
 import {
-  CARDS_ANNOUNCEMENT_LABEL,
+  CARDS_ANNOUNCEMENT_DATETIME_LABEL,
   CARDS_ENTRY_DEADLINE_LABEL,
   CARDS_TERMS_PATH,
 } from "@/lib/cards-giveaway-config";
@@ -36,8 +36,8 @@ export function CardsEntry({
       submitHint={
         <>
           Bis zum {CARDS_ENTRY_DEADLINE_LABEL} teilnehmen. Die Gewinner werden am{" "}
-          {CARDS_ANNOUNCEMENT_LABEL} bekannt gegeben. Diese Anmeldung gilt ausschließlich für das
-          Cards-Gewinnspiel.
+          {CARDS_ANNOUNCEMENT_DATETIME_LABEL} bekannt gegeben. Diese Anmeldung gilt ausschließlich
+          für das Cards-Gewinnspiel.
         </>
       }
     />

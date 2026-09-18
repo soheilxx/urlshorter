@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { CardsConfetti } from "@/components/cards/cards-confetti";
 import { CardsShareBox } from "@/components/cards/cards-share";
 import {
-  CARDS_ANNOUNCEMENT_LABEL,
+  CARDS_ANNOUNCEMENT_DATETIME_LABEL,
   CARDS_CAMPAIGN_ID,
   CARDS_ENTRY_PATH,
 } from "@/lib/cards-giveaway-config";
@@ -141,7 +141,7 @@ export function CardsDanke({
           <p className="mt-3 text-[var(--cd-ink-soft)]">
             Die Gewinnerbekanntgabe findet am{" "}
             <strong className="font-semibold text-[var(--cd-ink)]">
-              {CARDS_ANNOUNCEMENT_LABEL}
+              {CARDS_ANNOUNCEMENT_DATETIME_LABEL}
             </strong>{" "}
             statt.
           </p>

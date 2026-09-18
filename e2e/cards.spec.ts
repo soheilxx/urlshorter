@@ -105,7 +105,7 @@ test.describe("TCG-Gewinnspiel /cards", () => {
       /Hauptgewinn · 1 × One Piece OP-17 Case/i,
     );
     await expect(page.getByTestId("hero-dates")).toHaveText(
-      "Teilnahmeschluss: 05.10.2026, 23:59 Uhr (MESZ) · Gewinnerbekanntgabe: 12.10.2026",
+      "Teilnahmeschluss: 05.10.2026, 23:59 Uhr (MESZ) · Gewinnerbekanntgabe: 21.10.2026, 12 Uhr",
     );
     await expect(
       page.getByText(
@@ -307,7 +307,7 @@ test.describe("TCG-Gewinnspiel /cards", () => {
       ).toBeVisible();
       await expect(page.getByText("Registrierung eingegangen – Prüfung ausstehend")).toBeVisible();
       await expect(
-        page.getByText("Die Gewinnerbekanntgabe findet am 12.10.2026 statt."),
+        page.getByText("Die Gewinnerbekanntgabe findet am 21.10.2026 um 12 Uhr statt."),
       ).toBeVisible();
       await expect(page.getByTestId("teilnahme-referenz")).toHaveText(REFERENCE);
       await expect(page.getByText(/Bestätigung wurde versendet/)).toHaveCount(0);

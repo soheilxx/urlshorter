@@ -30,6 +30,7 @@ import {
   SPENDEN_EMPFAENGER,
 } from "@/lib/buch-config";
 import {
+  CARDS_ANNOUNCEMENT_DATETIME_LABEL,
   CARDS_ANNOUNCEMENT_LABEL,
   CARDS_CAMPAIGN_ID,
   CARDS_CARDMARKET_COUNT,
@@ -246,7 +247,7 @@ function ClosedNotice({ phase }: { phase: SweepstakesPhase }) {
           <p className="mx-auto mt-3 max-w-xl text-[var(--cd-ink-soft)]">
             Die Gewinner werden am{" "}
             <strong className="font-semibold text-[var(--cd-ink)]">
-              {CARDS_ANNOUNCEMENT_LABEL}
+              {CARDS_ANNOUNCEMENT_DATETIME_LABEL}
             </strong>{" "}
             bekannt gegeben. Das Buch gibt es weiterhin – eine neue Teilnahme ist nicht mehr
             möglich.
@@ -338,7 +339,7 @@ export default async function CardsPage({
     },
     {
       q: "Wann werden die Gewinner bekannt gegeben?",
-      a: `Am ${CARDS_ANNOUNCEMENT_LABEL}. Gewinnerinnen und Gewinner werden über die angegebene E-Mail-Adresse und gegebenenfalls telefonisch benachrichtigt.`,
+      a: `Am ${CARDS_ANNOUNCEMENT_DATETIME_LABEL} (MESZ). Gewinnerinnen und Gewinner werden über die angegebene E-Mail-Adresse und gegebenenfalls telefonisch benachrichtigt.`,
     },
     {
       q: "Muss ich das Gewinnspiel teilen?",
@@ -1031,7 +1032,7 @@ export default async function CardsPage({
             data-testid="form-dates"
           >
             Bis zum {CARDS_ENTRY_DEADLINE_LABEL} teilnehmen. Die Gewinner werden am{" "}
-            {CARDS_ANNOUNCEMENT_LABEL} bekannt gegeben.
+            {CARDS_ANNOUNCEMENT_DATETIME_LABEL} bekannt gegeben.
           </p>
           <p
             className="mt-3 text-center text-xs text-[var(--cd-ink-mute)]"
@@ -1141,7 +1142,7 @@ export default async function CardsPage({
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-[var(--cd-ink-soft)]">
               {open
-                ? `${CARDS_PRIZE_COUNT} Gewinne für deine Sammlung – vom OP-17-Case bis zu ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} Cardmarket. Gewinnerbekanntgabe am ${CARDS_ANNOUNCEMENT_LABEL}.`
+                ? `${CARDS_PRIZE_COUNT} Gewinne für deine Sammlung – vom OP-17-Case bis zu ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} Cardmarket. Gewinnerbekanntgabe am ${CARDS_ANNOUNCEMENT_DATETIME_LABEL}.`
                 : `Teilnahme beendet · Gewinnerbekanntgabe: ${CARDS_ANNOUNCEMENT_LABEL}.`}
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

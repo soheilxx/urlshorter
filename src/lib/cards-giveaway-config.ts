@@ -35,9 +35,12 @@ export const CARDS_TIMEZONE = "Europe/Berlin";
 export const CARDS_ENTRY_DEADLINE_EXCLUSIVE = new Date("2026-10-06T00:00:00+02:00");
 export const CARDS_ENTRY_DEADLINE_LABEL = "05.10.2026, 23:59 Uhr (MESZ)";
 export const CARDS_ENTRY_DEADLINE_SHORT = "05.10.2026, 23:59 Uhr";
-/** Gewinnerbekanntgabe: Datum in Europe/Berlin, bewusst ohne Uhrzeit. */
-export const CARDS_ANNOUNCEMENT_DATE = new Date("2026-10-12T00:00:00+02:00");
-export const CARDS_ANNOUNCEMENT_LABEL = "12.10.2026";
+/** Gewinnerbekanntgabe (Vorgabe des Auftraggebers, 18.09.2026): 21.10.2026 um 12 Uhr MESZ. */
+export const CARDS_ANNOUNCEMENT_DATE = new Date("2026-10-21T12:00:00+02:00");
+/** Kurzform für „Gewinnerbekanntgabe: …“ */
+export const CARDS_ANNOUNCEMENT_LABEL = "21.10.2026, 12 Uhr";
+/** Langform für „… am …“ */
+export const CARDS_ANNOUNCEMENT_DATETIME_LABEL = "21.10.2026 um 12 Uhr";
 
 /** Manueller Status: "auto" folgt den Fristen; alles andere erzwingt eine Phase. */
 export const CARDS_MODE: "auto" | SweepstakesPhase = "auto";
@@ -54,8 +57,9 @@ export function getCardsPhase(now: Date = new Date()): SweepstakesPhase {
  * Version der Cards-Teilnahmebedingungen (wird je Teilnahme unveränderlich
  * gespeichert). Eigene Zählung, unabhängig von den Dubai-Bedingungen.
  * 1.1: Case-/Display-Umfang präzisiert (12 Boxen je Case, ST01 als Display).
+ * 1.2: Gewinnerbekanntgabe 21.10.2026 um 12 Uhr (MESZ).
  */
-export const CARDS_TERMS_VERSION = "cards-1.1 (18.09.2026)";
+export const CARDS_TERMS_VERSION = "cards-1.2 (18.09.2026)";
 
 /* ----------------------------------------------------------------------------
  * Gewinne – exakt laut Briefing + Präzisierung. 17 einzelne Gewinne.
@@ -268,7 +272,7 @@ export const CARDMARKET_VOUCHER_HELP_URL = "https://help.cardmarket.com/de/cardm
  * Aktionstexte (Teilen, CTA-Wortlaut, Messenger-Vorschau).
  * ------------------------------------------------------------------------- */
 export const CARDS_SHARE_TEXT = `Ein ganzes One Piece OP-17 Case (12 Boxes), Dragon-Ball- und Yu-Gi-Oh!-Gewinne sowie ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} Cardmarket: Bei „Die Lizenz zum Erfolg“ gibt es ${CARDS_PRIZE_COUNT} Gewinne für TCG-Fans. Buch kaufen, Bestellnummer eintragen und teilnehmen. 100 % der Autoreneinnahmen gehen an den Kinderschutzbund. Alle Infos: ${CARDS_URL}`;
-export const CARDS_SHARE_TEXT_CLOSED = `Das Cards-Gewinnspiel zu „Die Lizenz zum Erfolg“ ist beendet – Gewinnerbekanntgabe am ${CARDS_ANNOUNCEMENT_LABEL}. Das Buch gibt es weiterhin: ${CARDS_URL}`;
+export const CARDS_SHARE_TEXT_CLOSED = `Das Cards-Gewinnspiel zu „Die Lizenz zum Erfolg“ ist beendet – Gewinnerbekanntgabe am ${CARDS_ANNOUNCEMENT_DATETIME_LABEL}. Das Buch gibt es weiterhin: ${CARDS_URL}`;
 export const CARDS_SHARE_TITLE = "Ein ganzes One Piece OP-17 Case zu gewinnen";
 
 /**

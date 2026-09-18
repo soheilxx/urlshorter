@@ -4,7 +4,7 @@ import Link from "next/link";
 import { BUCH_TITEL } from "@/lib/buch-config";
 import {
   CARDMARKET_VOUCHER_HELP_URL,
-  CARDS_ANNOUNCEMENT_LABEL,
+  CARDS_ANNOUNCEMENT_DATETIME_LABEL,
   CARDS_CARDMARKET_COUNT,
   CARDS_CARDMARKET_TOTAL_LABEL,
   CARDS_CARDMARKET_VALUE_LABEL,
@@ -191,11 +191,11 @@ export default function CardsTeilnahmebedingungenPage() {
               Gewinne bei der Dubai-Verlosung bleiben für das Cards-Gewinnspiel unberücksichtigt.
             </p>
             <p className="mt-2">
-              Die Gewinnerbekanntgabe erfolgt am {CARDS_ANNOUNCEMENT_LABEL}; die Benachrichtigung
-              erfolgt über die angegebene E-Mail-Adresse und gegebenenfalls telefonisch. Meldet sich
-              eine Gewinnerin oder ein Gewinner nicht innerhalb von 14 Tagen nach der
-              Benachrichtigung oder kann kein gültiger Bestellnachweis erbracht werden, kann
-              ersatzweise neu gezogen werden.
+              Die Gewinnerbekanntgabe erfolgt am {CARDS_ANNOUNCEMENT_DATETIME_LABEL} (MESZ); die
+              Benachrichtigung erfolgt über die angegebene E-Mail-Adresse und gegebenenfalls
+              telefonisch. Meldet sich eine Gewinnerin oder ein Gewinner nicht innerhalb von 14
+              Tagen nach der Benachrichtigung oder kann kein gültiger Bestellnachweis erbracht
+              werden, kann ersatzweise neu gezogen werden.
             </p>
             <p className="mt-2">
               Eine öffentliche Bekanntgabe erfolgt ohne gesonderte Einwilligung höchstens in
