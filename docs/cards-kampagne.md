@@ -101,4 +101,20 @@ Nicht gemessen/behauptet: Lighthouse-Scores, Live-Conversions bei den Werbeplatt
 
 ## 9. Produktionsmigration und Deploy
 
-Reihenfolge laut Projekt-Workflow: Counts vor der Migration festhalten → `prisma migrate deploy` gegen `DATABASE_URL_UNPOOLED` → Counts nach der Migration (alle Bestandsdaten `campaignId = dubai_2026`) → Push auf `main` (Vercel-Deploy) → Live-Verifikation `/cards`, `/cards/danke` (ohne Receipt: neutraler Hinweis), `/cards/teilnahmebedingungen`, `/gewinn`, `/verlosung`, `/gutschein`. Das Ergebnis dieser Schritte steht im Abschlussbericht.
+Reihenfolge laut Projekt-Workflow: Counts vor der Migration festhalten → `prisma migrate deploy` gegen `DATABASE_URL_UNPOOLED` → Counts nach der Migration (alle Bestandsdaten `campaignId = dubai_2026`) → Push auf `main` (Vercel-Deploy) → Live-Verifikation `/cards`, `/cards/danke` (ohne Receipt: neutraler Hinweis), `/cards/teilnahmebedingungen`, `/gewinn`, `/verlosung`, `/gutschein`. Durchgeführt am 18.09.2026:
+
+| Schritt | Ergebnis |
+| --- | --- |
+| Counts vor Migration (Prod) | 19 Teilnahmen: `landingPath` 1 × `/gewinn`, 18 × null (Alt-Teilnahmen); Bedingungen 8 × 1.1, 10 × 1.2, 1 × 1.3; kein Bestand außerhalb der Dubai-Wege |
+| `prisma migrate deploy` (Prod, `DATABASE_URL_UNPOOLED`) | beide Migrationen angewendet |
+| Counts nach Migration | 19 Teilnahmen, alle `campaignId = dubai_2026`; Bedingungsversionen unverändert; Indizes `campaignId_orderNumberHash_key` (unique), `campaignId_idx`, `orderNumberHash_idx`; globaler Unique entfernt |
+| Push `main` (bccd8a7, 5609b44) → Vercel | live nach ~70 s |
+| `/cards` (auch mit UTM) | 200, Titel/Canonical/OG korrekt, 6 Amazon-Links, Terminzeile, 4 Gewinn-Chips |
+| `/cards/og.png` | 200, image/png |
+| `/cards/danke` ohne Receipt | 200 „Kein aktueller Vorgang“, `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow, noarchive`, `meta robots noindex` |
+| `/cards/teilnahmebedingungen` | 200, Version `cards-1.0 (18.09.2026)` |
+| `/gewinn`, `/verlosung`, `/gutschein`, `/das-buch` | 200 |
+| Tracking live (ein Seitenaufruf, normaler Chrome-UA, keine Klicks) | `gtag.js?id=G-4EK7Q83FJ6` geladen, GA4 `page_view` (204, `gcs=G111`), dataLayer `consent default` + `cards_seite` + `config`; Meta/TikTok/Reddit/LinkedIn-Skripte geladen; Collector-Beacons `/api/book/events` und `/api/reddit/events` je 204; Prod-`TagEvent` für `/cards`: `book_page_view` 1, `reddit_landing_page_view` 1 |
+| Produktions-Lostopf | unverändert 19 × `dubai_2026`, 0 × `cards_2026` (keine Testeinträge im echten Gewinnspiel) |
+
+Hinweis: Der In-App-Browser (User-Agent mit „Claude/…“) wird von der Bot-Erkennung der Collector-Routen gefiltert und erzeugt keine TagEvents – die Verifikation erfolgte deshalb zusätzlich mit einem normalen Chrome-User-Agent.
