@@ -73,7 +73,7 @@ describe("Kampagnentrennung: Cards (/cards) und Dubai (/gewinn, /verlosung)", ()
     expect(row?.campaignId).toBe("cards_2026");
     expect(row?.landingPath).toBe("/cards");
     expect(row?.termsVersion).toBe(CARDS_TERMS_VERSION);
-    expect(row?.termsVersion.startsWith("cards-1.0")).toBe(true);
+    expect(row?.termsVersion.startsWith("cards-1.1")).toBe(true);
     expect(row?.prizeScope).toBe(CARDS_PRIZE_SCOPE);
     expect(row?.prizeScope).toContain("1×OP-17 Case");
     expect(row?.prizeScope).not.toContain("dubai");

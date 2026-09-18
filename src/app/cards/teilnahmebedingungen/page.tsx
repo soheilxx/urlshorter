@@ -90,10 +90,7 @@ export default function CardsTeilnahmebedingungenPage() {
                     {cardsPrizeFullLabel(prize)}
                   </strong>
                   {prize.main ? " – Hauptgewinn" : ""}
-                  {prize.id === "fusion_world_st01_box" ? " (jeweils eine Booster Box)" : ""}
-                  {prize.id === "magnificent_monsters_eu_case"
-                    ? " (jeweils ein Case der EU-Version)"
-                    : ""}
+                  {prize.contents ? ` (je Gewinn: ${prize.contents})` : ""}
                   {prize.id === "cardmarket_100"
                     ? ` (${CARDS_CARDMARKET_COUNT} Gutscheine über jeweils ${CARDS_CARDMARKET_VALUE_LABEL}, zusammen ${CARDS_CARDMARKET_TOTAL_LABEL})`
                     : ""}
@@ -101,12 +98,16 @@ export default function CardsTeilnahmebedingungenPage() {
               ))}
             </ul>
             <p className="mt-2">
-              Der Hauptgewinn ist ein ganzes {CARDS_MAIN_PRIZE.unit} (Case); es handelt sich weder
-              um eine einzelne Booster Box noch um einzelne Booster-Packs. Die Sachgewinne werden
-              als Produkt verlost; einzelne Karten, ein bestimmter Inhalt oder ein bestimmter Wert
-              werden nicht zugesagt. Sprachversion und Ausgabe der Sachgewinne ergeben sich aus dem
-              tatsächlich bereitgestellten Produkt. Abbildungen auf der Aktionsseite sind
-              Illustrationen und keine Produktfotos.
+              Der Hauptgewinn ist ein ganzes {CARDS_MAIN_PRIZE.unit} mit 12 Booster Boxes; es
+              handelt sich weder um eine einzelne Booster Box noch um einzelne Booster-Packs. Die
+              Magnificent-Monsters-Gewinne sind jeweils ein ganzes Case mit 12 Boxen der EU-Version;
+              die Dragon-Ball-Gewinne sind jeweils ein Display (Booster Box mit 20 Packs), kein
+              Case. Die Sachgewinne werden als versiegeltes Produkt verlost; einzelne Karten, ein
+              bestimmter Inhalt oder ein bestimmter Wert werden nicht zugesagt. Die
+              Magnificent-Monsters-Cases sind die EU Version in englischer Sprache; auch die
+              abgebildeten OP-17- und Story-Booster-01-Produkte sind die englischen Ausgaben. Die
+              Abbildungen auf der Aktionsseite zeigen jeweils eine Box bzw. ein Display des
+              Produkts.
             </p>
             <p className="mt-2">
               Für die Cardmarket-Wertgutscheine gelten die offiziellen Einlösebedingungen von
@@ -131,10 +132,12 @@ export default function CardsTeilnahmebedingungenPage() {
               3. Teilnahme und Teilnahmezeitraum
             </h2>
             <p className="mt-2">
-              Die Teilnahme erfolgt durch die Bestellung des Buches „{BUCH_TITEL}“ bei Amazon oder
-              einem anderen Händler, der das Buch führt, und die Registrierung der Bestell- bzw.
-              Auftragsnummer zusammen mit den Kontaktdaten auf lizenzzumerfolg.com/cards. Der Kauf
-              allein ist keine Teilnahme; die Teilnahme erfolgt nicht automatisch.
+              Die Teilnahme erfolgt durch die Bestellung des Buches „{BUCH_TITEL}“ bei Amazon
+              (Bestell-Link auf der Aktionsseite) und die Registrierung der Bestell- bzw.
+              Auftragsnummer zusammen mit den Kontaktdaten auf lizenzzumerfolg.com/cards.
+              Bestellungen bei anderen Buchhändlern können mit ihrer Bestellnummer ebenfalls
+              registriert werden. Der Kauf allein ist keine Teilnahme; die Teilnahme erfolgt nicht
+              automatisch.
             </p>
             <p className="mt-2">
               Jede gültige, einzeln registrierte Bestellnummer zählt im Cards-Gewinnspiel als ein

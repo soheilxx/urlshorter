@@ -32,10 +32,21 @@ describe("Cards-Gewinnspiel: Gewinnumfang (exakt laut Briefing)", () => {
     expect(byId.op17_case?.count).toBe(1);
     expect(byId.op17_case?.unit).toBe("One Piece OP-17 Case");
     expect(byId.op17_case?.main).toBe(true);
-    expect(byId.fusion_world_st01_box?.count).toBe(3);
-    expect(byId.fusion_world_st01_box?.productCode).toBe("ST01");
-    expect(byId.fusion_world_st01_box?.unit).toContain("Booster Box");
-    expect(byId.fusion_world_st01_box?.franchise).toContain("Fusion World");
+    expect(byId.fusion_world_st01_display?.count).toBe(3);
+    expect(byId.fusion_world_st01_display?.productCode).toBe("ST01");
+    expect(byId.fusion_world_st01_display?.unit).toContain("Display");
+    expect(byId.fusion_world_st01_display?.form).toBe("display");
+    expect(byId.fusion_world_st01_display?.franchise).toContain("Fusion World");
+    expect(byId.op17_case?.form).toBe("case");
+    expect(byId.op17_case?.badge).toBe("1 Case = 12 Boxes");
+    expect(byId.magnificent_monsters_eu_case?.form).toBe("case");
+    expect(byId.magnificent_monsters_eu_case?.badge).toBe("1 Case = 12 Boxen");
+    expect(byId.op17_case?.image?.src).toBe("/cards/op17-booster-box.webp");
+    expect(byId.magnificent_monsters_eu_case?.image?.src).toBe(
+      "/cards/magnificent-monsters-eu.png",
+    );
+    expect(byId.magnificent_monsters_eu_case?.contents).toContain("englisch");
+    expect(byId.cardmarket_100?.image).toBeNull();
     expect(byId.magnificent_monsters_eu_case?.count).toBe(3);
     expect(byId.magnificent_monsters_eu_case?.variant).toBe("EU Version");
     expect(byId.magnificent_monsters_eu_case?.unit).toContain("Case");
@@ -63,13 +74,13 @@ describe("Cards-Gewinnspiel: Gewinnumfang (exakt laut Briefing)", () => {
 
   it("formatiert Mengen immer sichtbar vor der Einheit", () => {
     expect(CARDS_PRIZES.map(cardsPrizeOverviewLabel)).toEqual([
-      "1 × OP-17 Case",
-      "3 × Fusion World Booster Box",
-      "3 × Magnificent Monsters EU Case",
+      "1 × OP-17 Case (12 Boxes)",
+      "3 × ST01 Display",
+      "3 × Magnificent Monsters Case (EU)",
       "10 × 100 € Cardmarket",
     ]);
     expect(cardsPrizeFullLabel(CARDS_PRIZES[1]!)).toBe(
-      "3 × Story Booster 01 Booster Box Fusion World (ST01)",
+      "3 × Story Booster 01 Display Fusion World (ST01)",
     );
     expect(cardsPrizeFullLabel(CARDS_PRIZES[2]!)).toBe("3 × Magnificent Monsters EU Version Case");
   });
@@ -89,20 +100,16 @@ describe("Cards-Gewinnspiel: Fristen (Europe/Berlin)", () => {
     expect(getCardsPhase(new Date("2026-10-12T00:00:00+02:00"))).toBe("announced");
   });
 
-  it("CTA-Wortlaut folgt dem Erscheinungstermin des Buches", () => {
-    expect(cardsAmazonCtaLabel(new Date("2026-10-05T12:00:00+02:00"))).toBe(
-      "Buch bei Amazon vorbestellen",
-    );
-    expect(cardsAmazonCtaLabel(new Date("2026-10-06T00:00:00+02:00"))).toBe(
-      "Buch bei Amazon kaufen",
-    );
+  it("CTA-Wortlaut lautet immer „bestellen“ (Vorgabe des Auftraggebers)", () => {
+    expect(cardsAmazonCtaLabel()).toBe("Buch bei Amazon bestellen");
+    expect(cardsAmazonCtaLabel()).not.toMatch(/vorbestellen|kaufen/);
   });
 });
 
 describe("Cards-Gewinnspiel: Teilen und Kampagnenregister", () => {
   it("Share-Text nennt die Gewinne, die Spende und endet auf der kanonischen URL ohne Parameter", () => {
     expect(CARDS_URL).toBe("https://lizenzzumerfolg.com/cards");
-    expect(CARDS_SHARE_TEXT).toContain("OP-17 Case");
+    expect(CARDS_SHARE_TEXT).toContain("OP-17 Case (12 Boxes)");
     expect(CARDS_SHARE_TEXT).toContain("17 Gewinne");
     expect(CARDS_SHARE_TEXT).toContain("10 × 100 € Cardmarket");
     expect(CARDS_SHARE_TEXT).toContain("100 % der Autoreneinnahmen");

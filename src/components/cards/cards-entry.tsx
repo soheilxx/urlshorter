@@ -37,7 +37,7 @@ export function CardsEntry({
         <>
           Bis zum {CARDS_ENTRY_DEADLINE_LABEL} teilnehmen. Die Gewinner werden am{" "}
           {CARDS_ANNOUNCEMENT_LABEL} bekannt gegeben. Diese Anmeldung gilt ausschließlich für das
-          Cards-Gewinnspiel – die Dubai-Verlosung ist eine separate Aktion.
+          Cards-Gewinnspiel.
         </>
       }
     />

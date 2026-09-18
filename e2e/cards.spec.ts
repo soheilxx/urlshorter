@@ -87,8 +87,17 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", CANONICAL);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       "content",
-      `${CANONICAL}/og.png`,
+      `${CANONICAL}/og.jpg`,
     );
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+      "content",
+      /OP-17 Case zu gewinnen/,
+    );
+    const ogDescription = await page
+      .locator('meta[property="og:description"]')
+      .getAttribute("content");
+    expect(ogDescription).toContain("12 Boxes");
+    expect(ogDescription).not.toMatch(/Bestellnummer|registrier/i);
     const h1 = page.getByRole("heading", { level: 1 });
     await expect(h1).toContainText("Ein ganzes OP-17-Case.");
     await expect(h1).toContainText("Vielleicht bald deins.");
@@ -110,12 +119,12 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     // Kompakte Gewinnübersicht: exakte Mengen und Einheiten
     const chips = page.getByTestId(/^prize-chip-/);
     await expect(chips).toHaveCount(4);
-    await expect(page.getByTestId("prize-chip-op17_case")).toHaveText("1 × OP-17 Case");
-    await expect(page.getByTestId("prize-chip-fusion_world_st01_box")).toHaveText(
-      "3 × Fusion World Booster Box",
+    await expect(page.getByTestId("prize-chip-op17_case")).toHaveText("1 × OP-17 Case (12 Boxes)");
+    await expect(page.getByTestId("prize-chip-fusion_world_st01_display")).toHaveText(
+      "3 × ST01 Display",
     );
     await expect(page.getByTestId("prize-chip-magnificent_monsters_eu_case")).toHaveText(
-      "3 × Magnificent Monsters EU Case",
+      "3 × Magnificent Monsters Case (EU)",
     );
     await expect(page.getByTestId("prize-chip-cardmarket_100")).toHaveText("10 × 100 € Cardmarket");
 
@@ -124,12 +133,22 @@ test.describe("TCG-Gewinnspiel /cards", () => {
       page.getByRole("heading", { name: "Ein ganzes Case. Ein großer Moment für deine Sammlung." }),
     ).toBeVisible();
     await expect(page.getByTestId("main-prize-name")).toHaveText("1 × One Piece OP-17 Case");
-    const db = page.getByTestId("prize-panel-fusion_world_st01_box");
-    await expect(db).toContainText("3 × Story Booster 01 Booster Box");
+    const db = page.getByTestId("prize-panel-fusion_world_st01_display");
+    await expect(db).toContainText("3 × Story Booster 01 Display");
+    await expect(db).toContainText("1 Display = 20 Packs");
+    await expect(db.getByRole("img", { name: /Story Booster 01/ })).toBeVisible();
     await expect(db).toContainText("Dragon Ball Super Card Game Fusion World");
     await expect(db).toContainText("ST01");
     const ygo = page.getByTestId("prize-panel-magnificent_monsters_eu_case");
     await expect(ygo).toContainText("3 × Magnificent Monsters Case");
+    await expect(ygo).toContainText("1 Case = 12 Boxen");
+    await expect(ygo.getByRole("img", { name: /Magnificent Monsters/ })).toBeVisible();
+    // Hauptgewinn: echtes Produktbild + Case-Badge + Teilen-Button im Hero
+    await expect(page.getByTestId("hero-stage").getByRole("img", { name: /OP-17/ })).toBeVisible();
+    await expect(page.getByTestId("hero-stage")).toContainText("1 Case = 12 Boxes");
+    await expect(page.getByTestId("voucher-card").first()).toContainText("10 × 100 €");
+    await expect(page.getByTestId("hero-share")).toBeVisible();
+    expect(await page.locator("body").innerText()).not.toMatch(/vorbestellen/i);
     await expect(page.getByTestId("yugioh-variant")).toHaveText("EU Version");
     const cm = page.getByTestId("prize-panel-cardmarket_100");
     await expect(cm).toContainText("10 × 100 € Cardmarket-Wertgutschein");
@@ -139,9 +158,7 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     );
 
     // Jeder Bestell-CTA führt direkt zu Amazon (neuer Tab)
-    const heroAmazon = page
-      .getByRole("link", { name: /Buch bei Amazon (vorbestellen|kaufen)/ })
-      .first();
+    const heroAmazon = page.getByRole("link", { name: /Buch bei Amazon bestellen/ }).first();
     await expect(heroAmazon).toHaveAttribute("href", AMAZON);
     await expect(heroAmazon).toHaveAttribute("target", "_blank");
     const amazonLinks = page.locator(`a[href="${AMAZON}"]`);
@@ -154,9 +171,15 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     await expect(page.getByTestId("share-url").first()).toHaveText(CANONICAL);
     await expect(page.getByTestId("consent-banner")).toHaveCount(0);
     await expect(page.getByRole("button", { name: SUBMIT })).toBeVisible();
-    await expect(page.getByTestId("dubai-note")).toContainText(
-      "Die Dubai-Verlosung ist eine separate Aktion.",
+    await expect(page.getByTestId("campaign-note")).toHaveText(
+      "Diese Anmeldung gilt ausschließlich für das Cards-Gewinnspiel.",
     );
+    // Vorgaben des Auftraggebers: keine Dubai-Nennung in den FAQ, keine Werbung für andere Händler
+    expect(await page.locator("#faq").innerText()).not.toMatch(/Dubai/);
+    expect(await page.locator("main").innerText()).not.toMatch(/Weitere Händler/);
+    await expect(
+      page.locator('a[href*="thalia"], a[href*="hugendubel"], a[href*="buecher.de"]'),
+    ).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: "Teilnahmebedingungen", exact: true }),
     ).toHaveAttribute("href", "/cards/teilnahmebedingungen");
@@ -215,7 +238,7 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     // Amazon-Button im Hero: AddToCart bei Buch- UND Reddit-Collector, GA4 add_to_cart mit Semantik, kein Purchase
     const popupPromise = page.waitForEvent("popup");
     await page
-      .getByRole("link", { name: /Buch bei Amazon (vorbestellen|kaufen)/ })
+      .getByRole("link", { name: /Buch bei Amazon bestellen/ })
       .first()
       .click();
     const popup = await popupPromise;
@@ -463,7 +486,7 @@ test.describe("TCG-Gewinnspiel /cards", () => {
       await page.goto(detailsHref!);
       await expect(page.getByText("Kampagne: Cards")).toBeVisible();
       // Bedingungsversion UND Gewinnumfang tragen die Cards-Kennung – nichts von Dubai
-      await expect(page.getByText(/\(cards-1\.0 \(18\.09\.2026\)\)/)).toHaveCount(2);
+      await expect(page.getByText(/\(cards-1\.1 \(18\.09\.2026\)\)/)).toHaveCount(2);
       await expect(page.getByText(/dubai-reise/)).toHaveCount(0);
 
       // Export: nur mit Kampagne, Kennung in Datei und Dateiname
@@ -500,11 +523,10 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Teilnahmebedingungen Cards-Gewinnspiel",
     );
-    await expect(page.getByText(/Version cards-1\.0 \(18\.09\.2026\)/)).toBeVisible();
+    await expect(page.getByText(/Version cards-1\.1 \(18\.09\.2026\)/)).toBeVisible();
     await expect(page.getByText("1 × One Piece OP-17 Case (OP-17)")).toBeVisible();
-    await expect(
-      page.getByText("3 × Story Booster 01 Booster Box Fusion World (ST01)"),
-    ).toBeVisible();
+    await expect(page.getByText("3 × Story Booster 01 Display Fusion World (ST01)")).toBeVisible();
+    await expect(page.getByText(/12 Booster Boxes à 24 Packs/)).toBeVisible();
     await expect(page.getByText("3 × Magnificent Monsters EU Version Case")).toBeVisible();
     await expect(page.getByText("10 × Cardmarket-Wertgutschein über 100 €")).toBeVisible();
     await expect(page.getByText(/05\.10\.2026, 23:59 Uhr \(MESZ\)/).first()).toBeVisible();
@@ -534,7 +556,7 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     await page.evaluate(() => window.scrollTo(0, 2400));
     await expect(page.getByTestId("sticky-cta")).toBeVisible();
     await expect(
-      page.getByTestId("sticky-cta").getByRole("link", { name: /Buch kaufen/ }),
+      page.getByTestId("sticky-cta").getByRole("link", { name: /Buch bestellen/ }),
     ).toHaveAttribute("href", AMAZON);
     await expect(
       page.getByTestId("sticky-cta").getByRole("link", { name: "Bestellnummer eintragen" }),

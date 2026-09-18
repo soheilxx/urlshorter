@@ -202,16 +202,21 @@ export function CardsShareBox({
 export function CardsShareButton({
   shareText,
   className,
+  showLabel = false,
+  position = "header",
 }: {
   shareText: string;
   className?: string;
+  /** Label immer anzeigen (Hero) statt nur ab sm (Header) */
+  showLabel?: boolean;
+  position?: string;
 }) {
   const [canShare, setCanShare] = useState(false);
   useEffect(() => {
     setCanShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
   }, []);
   async function share() {
-    trackGewinnEvent("cards_teilen_geoeffnet", { ...TRACKING, cta_position: "header" });
+    trackGewinnEvent("cards_teilen_geoeffnet", { ...TRACKING, cta_position: position });
     try {
       await navigator.share({ title: CARDS_SHARE_TITLE, text: shareText, url: CARDS_URL });
     } catch {
@@ -222,14 +227,14 @@ export function CardsShareButton({
     return (
       <button type="button" onClick={share} className={className} aria-label="Aktion teilen">
         <Share2 className="h-4 w-4" aria-hidden="true" />
-        <span className="hidden sm:inline">Teilen</span>
+        <span className={showLabel ? "" : "hidden sm:inline"}>Teilen</span>
       </button>
     );
   }
   return (
     <a href="#teilen" className={className} aria-label="Zur Teilen-Sektion">
       <Share2 className="h-4 w-4" aria-hidden="true" />
-      <span className="hidden sm:inline">Teilen</span>
+      <span className={showLabel ? "" : "hidden sm:inline"}>Teilen</span>
     </a>
   );
 }

@@ -12,7 +12,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { CardsEntry } from "@/components/cards/cards-entry";
 import { CardsShareBox, CardsShareButton } from "@/components/cards/cards-share";
-import { ProductBox, VoucherArt } from "@/components/cards/product-art";
+import { ProductShowcase } from "@/components/cards/product-showcase";
+import { VoucherCard } from "@/components/cards/voucher-card";
 import { GewinnTracking } from "@/components/gewinn/gewinn-tracking";
 import { ParticipationHost } from "@/components/verlosung/participation-host";
 import { StickyCta } from "@/components/verlosung/sticky-cta";
@@ -37,6 +38,8 @@ import {
   CARDS_DATES_LINE,
   CARDS_ENTRY_DEADLINE_LABEL,
   CARDS_ENTRY_PATH,
+  CARDS_OG_DESCRIPTION,
+  CARDS_OG_TITLE,
   CARDS_OP17_FACTS,
   CARDS_PRIZE_COUNT,
   CARDS_PRIZES,
@@ -66,25 +69,27 @@ import { createFormToken } from "@/lib/sweepstakes-crypto";
 /**
  * TCG-Gewinnspiel /cards – „Deine Sammlung. Dein nächster großer Moment.“
  *
- * Eigenständige Kampagne (cards_2026) mit eigenem Lostopf: Buch bestellen,
- * Bestellnummer registrieren, an der Verlosung von 17 Gewinnen teilnehmen.
- * Alle Mengen, Fristen und Texte kommen aus cards-giveaway-config.ts bzw.
- * buch-config.ts. Jeder Bestell-CTA führt direkt zu Amazon (neuer Tab) und
- * wird als Amazon-Outbound / AddToCart-Proxy erfasst; jeder Teilnahme-Button
- * öffnet dasselbe Formular im Dialog (ParticipationHost), das zusätzlich
- * inline in #teilnehmen liegt.
+ * Eigenständige Kampagne (cards_2026) mit eigenem Lostopf: Buch bei Amazon
+ * bestellen, Bestellnummer registrieren, an der Verlosung von 17 Gewinnen
+ * teilnehmen. Alle Mengen, Fristen, Bilder und Texte kommen aus
+ * cards-giveaway-config.ts bzw. buch-config.ts. Vorgaben des Auftraggebers
+ * (18.09.2026): echte Produktbilder, Case = 12 Boxen (OP-17, Magnificent
+ * Monsters EU/englisch), Dragon Ball ST01 als Display; CTA-Wortlaut immer
+ * „bestellen“; ausschließlich Amazon als beworbener Bestellweg; keine
+ * Dubai-Nennung in den FAQ. Jeder Bestell-CTA führt direkt zu Amazon (neuer
+ * Tab) und wird als Amazon-Outbound / AddToCart-Proxy erfasst; jeder
+ * Teilnahme-Button öffnet dasselbe Formular im Dialog (ParticipationHost).
  *
  * Tracking: Entscheidung des Betreibers (Wiresoft Portal Ltd., 17./18.09.2026):
  * Alle Events feuern ohne Consent-Gate ("not-required") – wie auf /gewinn und
- * /verlosung. Das First-Party-Consent-Banner bleibt im Code und kann mit
- * consentMode="required" wieder eingebunden werden (siehe docs/cards-kampagne.md).
+ * /verlosung (siehe docs/cards-kampagne.md).
  */
 
 export const dynamic = "force-dynamic";
 
 const TITLE = "One Piece OP-17 Case gewinnen – TCG-Gewinnspiel | Die Lizenz zum Erfolg";
-const DESCRIPTION = `Buch „${BUCH_TITEL}“ kaufen, Bestellnummer registrieren und ${CARDS_PRIZE_COUNT} Gewinne für deine Sammlung gewinnen: 1 × One Piece OP-17 Case, 3 × Fusion World Booster Box (ST01), 3 × Magnificent Monsters EU Version Case und ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} Cardmarket-Wertgutschein. 100 % der Autoreneinnahmen gehen an den Kinderschutzbund.`;
-const OG_IMAGE = `${CARDS_URL}/og.png`;
+const DESCRIPTION = `Buch „${BUCH_TITEL}“ bei Amazon bestellen, Bestellnummer registrieren und ${CARDS_PRIZE_COUNT} Gewinne für deine Sammlung gewinnen: 1 × One Piece OP-17 Case (12 Boxes), 3 × Fusion World ST01 Display, 3 × Magnificent Monsters Case (EU, englisch) und ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} Cardmarket-Wertgutschein. 100 % der Autoreneinnahmen gehen an den Kinderschutzbund.`;
+const OG_IMAGE = `${CARDS_URL}/og.jpg`;
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -92,8 +97,8 @@ export const metadata: Metadata = {
   alternates: { canonical: CARDS_URL },
   robots: { index: true, follow: true },
   openGraph: {
-    title: TITLE,
-    description: DESCRIPTION,
+    title: CARDS_OG_TITLE,
+    description: CARDS_OG_DESCRIPTION,
     url: CARDS_URL,
     siteName: BUCH_TITEL,
     locale: "de_DE",
@@ -103,14 +108,15 @@ export const metadata: Metadata = {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: `TCG-Gewinnspiel zu „${BUCH_TITEL}“: Ein ganzes One Piece OP-17 Case als Hauptgewinn – Buch kaufen, Bestellnummer eintragen`,
+        type: "image/jpeg",
+        alt: "Ein ganzes One Piece OP-17 Case, Dragon Ball Fusion World ST01 Display, Yu-Gi-Oh! Magnificent Monsters Case und Cardmarket-Guthaben zu gewinnen",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
+    title: CARDS_OG_TITLE,
+    description: CARDS_OG_DESCRIPTION,
     images: [OG_IMAGE],
   },
 };
@@ -124,8 +130,15 @@ const NAV_LINK =
 const AMAZON_EVENT = "cards_amazon_klick";
 const TRACKING_PARAMS = { giveaway_campaign: CARDS_CAMPAIGN_ID, landing_path: CARDS_ENTRY_PATH };
 
+/** Einziger beworbener Bestellweg (Vorgabe des Auftraggebers): der geprüfte Amazon-Link. */
 const AMAZON = RETAILER_LINKS.find((r) => r.primary) ?? RETAILER_LINKS[0]!;
-const OTHER_RETAILERS = RETAILER_LINKS.filter((r) => !r.primary);
+
+const WORLD_DOT: Record<CardsPrize["world"], string> = {
+  onepiece: "var(--cd-gold)",
+  dragonball: "var(--cd-orange)",
+  yugioh: "var(--cd-violet)",
+  cardmarket: "var(--cd-cm-blue)",
+};
 
 function delay(ms: number): React.CSSProperties {
   return { "--cd-delay": `${ms}ms` } as React.CSSProperties;
@@ -177,7 +190,7 @@ function SectionHeading({
     <div className={align === "center" ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}>
       {kicker ? (
         <p
-          className={`text-xs font-semibold tracking-[0.22em] uppercase ${
+          className={`text-xs font-semibold tracking-[0.24em] uppercase ${
             light ? "text-[#7a5a12]" : "text-[var(--cd-gold)]"
           }`}
         >
@@ -244,53 +257,27 @@ function ClosedNotice({ phase }: { phase: SweepstakesPhase }) {
   );
 }
 
-function prizeArt(prize: CardsPrize, size: "hero" | "panel", className?: string) {
-  switch (prize.id) {
-    case "op17_case":
-      return (
-        <ProductBox
-          world="onepiece"
-          kicker={prize.franchise}
-          title={["ONE PIECE", "OP-17 CASE"]}
-          code={prize.productCode}
-          form="CASE"
-          size={size}
-          className={className}
+/** Kleine Funkel-Sterne um den Hauptgewinn (rein dekorativ). */
+function SparkleField() {
+  const stars: Array<[number, number, number, number]> = [
+    [4, 12, 14, 0],
+    [90, 8, 10, 500],
+    [95, 44, 8, 900],
+    [2, 60, 9, 1300],
+    [82, 86, 12, 300],
+    [12, 88, 7, 1700],
+  ];
+  return (
+    <div className="pointer-events-none absolute inset-0 z-10" aria-hidden="true">
+      {stars.map(([x, y, s, d]) => (
+        <span
+          key={`${x}-${y}`}
+          className="cd-sparkle"
+          style={{ left: `${x}%`, top: `${y}%`, width: s, height: s, ...delay(d) }}
         />
-      );
-    case "fusion_world_st01_box":
-      return (
-        <ProductBox
-          world="dragonball"
-          kicker="Fusion World"
-          title={["STORY BOOSTER 01", "BOOSTER BOX"]}
-          code={prize.productCode}
-          form="BOOSTER BOX"
-          size={size}
-          className={className}
-        />
-      );
-    case "magnificent_monsters_eu_case":
-      return (
-        <ProductBox
-          world="yugioh"
-          kicker="Yu-Gi-Oh! TCG"
-          title={["MAGNIFICENT", "MONSTERS CASE"]}
-          code={prize.variant}
-          form="CASE"
-          size={size}
-          className={className}
-        />
-      );
-    case "cardmarket_100":
-      return (
-        <VoucherArt
-          count={prize.count}
-          value={CARDS_CARDMARKET_VALUE_LABEL}
-          className={className}
-        />
-      );
-  }
+      ))}
+    </div>
+  );
 }
 
 export default async function CardsPage({
@@ -309,7 +296,7 @@ export default async function CardsPage({
   const phase = getCardsPhase(now);
   const open = phase === "open";
   const kauf = buchKaufLabels(now);
-  const amazonLabel = cardsAmazonCtaLabel(now);
+  const amazonLabel = cardsAmazonCtaLabel();
   const formToken = createFormToken();
   const env = getEnv();
   const shareText = open ? CARDS_SHARE_TEXT : CARDS_SHARE_TEXT_CLOSED;
@@ -323,11 +310,11 @@ export default async function CardsPage({
   const FAQ: Array<{ q: string; a: string }> = [
     {
       q: "Wie nehme ich teil?",
-      a: `Kaufe „${BUCH_TITEL}“ und registriere danach deine Bestellnummer hier auf lizenzzumerfolg.com/cards im Teilnahmeformular. Der Kauf allein ist keine Anmeldung – erst mit der gespeicherten Registrierung bist du im Cards-Lostopf.`,
+      a: `Bestelle „${BUCH_TITEL}“ bei Amazon über den Button auf dieser Seite und registriere danach deine Bestellnummer hier auf lizenzzumerfolg.com/cards im Teilnahmeformular. Der Kauf allein ist keine Anmeldung – erst mit der gespeicherten Registrierung bist du im Cards-Lostopf.`,
     },
     {
       q: "Was kann ich gewinnen?",
-      a: `Genau ${CARDS_PRIZE_COUNT} Gewinne: ${cardsPrizeFullLabel(op17)} als Hauptgewinn, ${cardsPrizeFullLabel(dragonBall)} – jeweils eine Booster Box, ${cardsPrizeFullLabel(yugioh)} – jeweils ein Case, und ${cardsPrizeFullLabel(cardmarket)} (zusammen ${CARDS_CARDMARKET_TOTAL_LABEL}).`,
+      a: `Genau ${CARDS_PRIZE_COUNT} Gewinne: ${cardsPrizeFullLabel(op17)} als Hauptgewinn – ein ganzes Case mit ${op17.contents}; ${cardsPrizeFullLabel(dragonBall)} – jeweils ein Display (Booster Box mit 20 Packs), kein Case; ${cardsPrizeFullLabel(yugioh)} – jeweils ein ganzes Case mit 12 Boxen der englischsprachigen EU-Version; und ${cardsPrizeFullLabel(cardmarket)} (zusammen ${CARDS_CARDMARKET_TOTAL_LABEL}).`,
     },
     {
       q: "Erhöhen mehrere Bestellnummern meine Chance?",
@@ -338,16 +325,8 @@ export default async function CardsPage({
       a: "Nein. Es zählt die gültige Bestellnummer, nicht die Anzahl der Bücher darin. Mehrere Bücher unter einer Bestellnummer ergeben ein Los.",
     },
     {
-      q: "Ist das das Dubai-Gewinnspiel?",
-      a: "Nein. Das Cards-Gewinnspiel ist eine eigene Aktion mit eigenem Lostopf, eigenen Gewinnen und eigener Frist. Bestehende Anmeldungen zur Dubai-Verlosung werden nicht automatisch übernommen – und eine Cards-Anmeldung nimmt nicht an der Dubai-Verlosung teil.",
-    },
-    {
-      q: "Kann ich eine bereits bei Dubai verwendete Nummer eintragen?",
-      a: "Ja, einmal: Eine bei der Dubai-Verlosung registrierte Bestellnummer kann für das Cards-Gewinnspiel einmal separat registriert werden. Dafür ist eine eigene Cards-Anmeldung hier auf der Seite nötig; innerhalb von Cards zählt sie dann genau einmal.",
-    },
-    {
-      q: "Muss ich bei Amazon bestellen?",
-      a: `Nein. Amazon ist der schnellste Weg, aber du kannst das Buch auch bei ${OTHER_RETAILERS.map((r) => r.label).join(", ")} oder jedem anderen Händler bestellen, der es führt – wähle im Formular dann „Anderer Händler“ und trage den Namen ein.`,
+      q: "Wo bestelle ich das Buch?",
+      a: `Bei Amazon – direkt über den Bestell-Button auf dieser Seite. Nach der Bestellung findest du deine Bestellnummer in der Amazon-Bestellbestätigung (Format z. B. 306-1234567-1234567) und trägst sie hier im Formular ein.`,
     },
     {
       q: "Was wird gespendet?",
@@ -398,7 +377,7 @@ export default async function CardsPage({
       {/* ------------------------------------------------------------------ */}
       {/* A · Header                                                          */}
       {/* ------------------------------------------------------------------ */}
-      <header className="sticky top-0 z-30 border-b border-[var(--cd-border-soft)] bg-[rgba(8,12,24,0.88)] backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-[var(--cd-border)] bg-[rgba(8,12,24,0.9)] shadow-[0_1px_0_rgba(255,213,106,0.12),0_10px_30px_-20px_rgba(0,0,0,0.9)] backdrop-blur">
         <div className="mx-auto flex h-14 max-w-[1320px] items-center justify-between gap-2 px-4 sm:px-8">
           <a href="#top" className="flex min-w-0 items-center gap-2.5">
             <span className="cd-display truncate text-sm font-semibold text-[var(--cd-ink)] sm:text-base">
@@ -451,35 +430,35 @@ export default async function CardsPage({
             aria-hidden="true"
             style={{
               background:
-                "radial-gradient(60% 55% at 78% 40%, rgba(255,213,106,0.14) 0%, transparent 60%), radial-gradient(45% 45% at 8% 90%, rgba(81,217,237,0.10) 0%, transparent 60%), linear-gradient(180deg, #0a1020 0%, var(--cd-bg) 70%)",
+                "radial-gradient(55% 50% at 74% 42%, rgba(255,213,106,0.16) 0%, transparent 60%), radial-gradient(40% 40% at 6% 92%, rgba(81,217,237,0.12) 0%, transparent 60%), radial-gradient(30% 30% at 96% 96%, rgba(168,139,255,0.14) 0%, transparent 60%), linear-gradient(180deg, #0a1020 0%, var(--cd-bg) 70%)",
             }}
           />
           <div
-            className="cd-dots pointer-events-none absolute inset-y-0 left-0 hidden w-24 opacity-50 lg:block"
+            className="cd-dots pointer-events-none absolute inset-y-0 left-0 hidden w-28 opacity-50 lg:block"
             aria-hidden="true"
           />
           <div
-            className="cd-dots pointer-events-none absolute inset-y-0 right-0 hidden w-24 opacity-50 lg:block"
+            className="cd-dots pointer-events-none absolute inset-y-0 right-0 hidden w-28 opacity-50 lg:block"
             aria-hidden="true"
           />
 
-          <div className="relative mx-auto grid max-w-[1320px] grid-cols-1 gap-x-8 gap-y-6 px-4 pt-10 pb-12 sm:px-8 lg:grid-cols-[45fr_55fr] lg:grid-rows-[auto_auto] lg:items-center lg:pt-16 lg:pb-20">
+          <div className="relative mx-auto grid max-w-[1320px] grid-cols-1 gap-x-10 gap-y-7 px-4 pt-8 pb-10 sm:px-8 lg:grid-cols-[45fr_55fr] lg:grid-rows-[auto_auto] lg:items-center lg:pt-14 lg:pb-16">
             {/* Text oben (mobil zuerst) */}
             <div className="lg:col-start-1 lg:row-start-1">
               <p
-                className="cd-rise text-xs font-semibold tracking-[0.22em] text-[var(--cd-cyan)] uppercase"
+                className="cd-rise text-[11px] font-semibold tracking-[0.24em] text-[var(--cd-cyan)] uppercase sm:text-xs"
                 style={delay(0)}
               >
                 Für One-Piece-, Dragon-Ball- und Yu-Gi-Oh!-Fans
               </p>
               <h1
                 id="hero-heading"
-                className="cd-display cd-rise mt-4 text-[2.35rem] leading-[1.02] font-bold text-balance text-[var(--cd-ink)] sm:text-5xl lg:text-[3.9rem]"
+                className="cd-display cd-rise mt-4 text-[2.5rem] leading-[1.0] font-bold text-balance text-[var(--cd-ink)] sm:text-5xl lg:text-[4.1rem]"
                 style={delay(60)}
               >
                 Ein ganzes OP-17-Case.
                 <br />
-                <span className="text-[var(--cd-gold)]">Vielleicht bald deins.</span>
+                <span className="cd-foil-text">Vielleicht bald deins.</span>
               </h1>
               <p
                 className="cd-rise mt-5 inline-flex max-w-full items-center gap-2 rounded-md border border-[var(--cd-gold)]/60 bg-[rgba(255,213,106,0.08)] px-3 py-1.5 text-[11px] font-bold tracking-[0.16em] text-[var(--cd-gold)] uppercase sm:text-xs"
@@ -491,9 +470,9 @@ export default async function CardsPage({
               </p>
             </div>
 
-            {/* Produktbühne (mobil komprimiert zwischen H1 und Text) */}
+            {/* Produktbühne: mobil gestapelt (OP-17 groß, dann Display/Case, dann Gutschein), Desktop als Szene */}
             <div
-              className="relative lg:col-start-2 lg:row-span-2 lg:row-start-1"
+              className="relative grid grid-cols-2 gap-3 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:block lg:h-[640px]"
               data-testid="hero-stage"
             >
               <div
@@ -501,61 +480,58 @@ export default async function CardsPage({
                 aria-hidden="true"
               />
               <div
-                className="cd-glow-gold pointer-events-none absolute top-[46%] left-1/2 h-[75%] w-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                className="cd-burst pointer-events-none absolute top-[38%] left-1/2 hidden h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2 opacity-80 lg:block"
                 aria-hidden="true"
               />
-              <div className="relative mx-auto grid max-w-[520px] grid-cols-1 items-end gap-1 sm:grid-cols-[1fr_minmax(0,2.1fr)_1fr] sm:gap-3 lg:max-w-none">
-                <figure className="cd-rise hidden self-end sm:block" style={delay(300)}>
-                  {prizeArt(dragonBall, "panel", "translate-y-2 -rotate-3 opacity-95")}
-                </figure>
-                <figure
-                  className="cd-rise cd-tilt relative z-10 mx-auto w-full max-w-[min(62vw,330px)] sm:max-w-none"
-                  style={delay(180)}
-                >
-                  {prizeArt(op17, "hero", "drop-shadow-[0_30px_50px_rgba(0,0,0,0.6)]")}
-                  <div
-                    className="cd-pedestal pointer-events-none absolute right-[6%] bottom-[-6%] left-[6%] h-10"
-                    aria-hidden="true"
-                  />
-                </figure>
-                <figure className="cd-rise hidden self-end sm:block" style={delay(380)}>
-                  {prizeArt(yugioh, "panel", "translate-y-2 rotate-3 opacity-95")}
-                </figure>
+              <div
+                className="cd-glow-gold pointer-events-none absolute top-[40%] left-1/2 h-[70%] w-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                aria-hidden="true"
+              />
+
+              <div
+                className="cd-rise relative col-span-2 mx-auto w-full max-w-[380px] lg:absolute lg:top-0 lg:left-[19%] lg:w-[58%] lg:max-w-none"
+                style={delay(180)}
+              >
+                <SparkleField />
+                <ProductShowcase prize={op17} size="hero" priority showCaption={false} />
               </div>
               <div
-                className="cd-rise relative mx-auto mt-3 flex max-w-[520px] items-center justify-between gap-3 rounded-xl border border-[var(--cd-cm-blue)]/50 bg-[rgba(18,26,44,0.9)] px-4 py-2.5 lg:mx-0 lg:ml-auto lg:max-w-[380px]"
-                style={delay(460)}
-                data-testid="hero-cardmarket"
+                className="cd-rise relative lg:absolute lg:bottom-[12%] lg:left-0 lg:w-[27%] lg:-rotate-3"
+                style={delay(320)}
               >
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold tracking-[0.18em] text-[var(--cd-cm-blue)] uppercase">
-                    Cardmarket-Wertgutscheine
-                  </p>
-                  <p className="cd-display text-2xl leading-none font-bold text-[var(--cd-ink)]">
-                    {CARDS_CARDMARKET_COUNT} × {CARDS_CARDMARKET_VALUE_LABEL}
-                  </p>
-                </div>
-                <p className="shrink-0 text-right text-xs text-[var(--cd-ink-soft)]">
-                  zusammen
-                  <br />
-                  <span className="font-semibold text-[var(--cd-ink)]">
-                    {CARDS_CARDMARKET_TOTAL_LABEL}
-                  </span>
-                </p>
+                <ProductShowcase prize={dragonBall} size="mini" showCaption={false} />
               </div>
-              <p className="mt-2 text-center text-[11px] text-[var(--cd-ink-mute)] lg:text-right">
-                Illustrative Produktdarstellungen – keine Originalfotos.
+              <div
+                className="cd-rise relative lg:absolute lg:right-0 lg:bottom-[26%] lg:w-[24%] lg:rotate-3"
+                style={delay(400)}
+              >
+                <ProductShowcase prize={yugioh} size="mini" showCaption={false} />
+              </div>
+              <div
+                className="cd-rise relative col-span-2 lg:absolute lg:right-[1%] lg:bottom-0 lg:w-[46%]"
+                style={delay(480)}
+              >
+                <VoucherCard
+                  count={CARDS_CARDMARKET_COUNT}
+                  valueLabel={CARDS_CARDMARKET_VALUE_LABEL}
+                  totalLabel={CARDS_CARDMARKET_TOTAL_LABEL}
+                />
+              </div>
+              <p className="col-span-2 text-center text-[11px] text-[var(--cd-ink-mute)] lg:absolute lg:right-0 lg:-bottom-7 lg:text-right">
+                Abbildungen: je eine Box bzw. ein Display der Produkte (englische Ausgaben) ·
+                Gutschein als Gestaltung
               </p>
             </div>
 
-            {/* Text unten: Erklärung, CTAs, Microcopy, Spende, Termine */}
+            {/* Text unten: Erklärung, CTAs, Teilen, Microcopy, Spende, Termine */}
             <div className="lg:col-start-1 lg:row-start-2">
               <p
                 className="cd-rise text-lg text-[var(--cd-ink-soft)] sm:text-xl"
                 style={delay(160)}
               >
-                Hol dir „{BUCH_TITEL}“ von {BUCH_AUTOR}. Trage danach deine Bestellnummer ein und
-                nimm an der Verlosung von {CARDS_PRIZE_COUNT} Gewinnen für deine Sammlung teil.
+                Hol dir „{BUCH_TITEL}“ von {BUCH_AUTOR} bei Amazon. Trage danach deine Bestellnummer
+                ein und nimm an der Verlosung von {CARDS_PRIZE_COUNT} Gewinnen für deine Sammlung
+                teil.
               </p>
               <div
                 className="cd-rise mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap"
@@ -578,6 +554,14 @@ export default async function CardsPage({
                     Teilnahme beendet · Gewinnerbekanntgabe: {CARDS_ANNOUNCEMENT_LABEL}
                   </span>
                 )}
+                <span data-testid="hero-share" className="inline-flex">
+                  <CardsShareButton
+                    shareText={shareText}
+                    showLabel
+                    position="hero"
+                    className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--cd-border)] px-5 text-sm font-semibold text-[var(--cd-ink)] outline-none hover:bg-[var(--cd-surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--cd-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--cd-bg)] sm:w-auto"
+                  />
+                </span>
               </div>
               <p className="cd-rise mt-4 text-sm text-[var(--cd-ink-soft)]" style={delay(300)}>
                 Buchkauf + Registrierung der Bestellnummer erforderlich. Die Teilnahme erfolgt nicht
@@ -644,22 +628,17 @@ export default async function CardsPage({
                 <li
                   key={prize.id}
                   data-testid={`prize-chip-${prize.id}`}
-                  className="cd-rise inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-[var(--cd-border-soft)] bg-[rgba(18,26,44,0.8)] px-3 text-sm font-medium text-[var(--cd-ink)]"
-                  style={delay(500 + i * 60)}
+                  className={`cd-rise inline-flex min-h-[40px] items-center gap-2 rounded-lg border px-3 text-sm font-medium text-[var(--cd-ink)] ${
+                    prize.main
+                      ? "border-[var(--cd-gold)]/60 bg-[rgba(255,213,106,0.1)]"
+                      : "border-[var(--cd-border-soft)] bg-[rgba(18,26,44,0.8)]"
+                  }`}
+                  style={delay(520 + i * 60)}
                 >
                   <span
                     className="h-2 w-2 shrink-0 rounded-full"
                     aria-hidden="true"
-                    style={{
-                      background:
-                        prize.world === "onepiece"
-                          ? "var(--cd-gold)"
-                          : prize.world === "dragonball"
-                            ? "var(--cd-orange)"
-                            : prize.world === "yugioh"
-                              ? "var(--cd-violet)"
-                              : "var(--cd-cm-blue)",
-                    }}
+                    style={{ background: WORLD_DOT[prize.world] }}
                   />
                   {cardsPrizeOverviewLabel(prize)}
                 </li>
@@ -677,15 +656,15 @@ export default async function CardsPage({
           className="relative scroll-mt-16 border-t border-[var(--cd-border-soft)]"
         >
           <div className="mx-auto max-w-[1320px] px-4 py-14 sm:px-8 lg:py-20">
-            <div className="cd-panel cd-world-onepiece relative overflow-hidden p-6 sm:p-10 lg:p-14">
+            <div className="cd-panel cd-world-onepiece cd-corners relative overflow-hidden p-6 sm:p-10 lg:p-14">
               <div
                 className="cd-speedlines pointer-events-none absolute inset-0 opacity-50"
                 aria-hidden="true"
               />
               <div className="relative grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center">
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.22em] text-[var(--cd-gold)] uppercase">
-                    Hauptgewinn
+                  <p className="text-xs font-semibold tracking-[0.24em] text-[var(--cd-gold)] uppercase">
+                    Hauptgewinn · Case = 12 Booster Boxes
                   </p>
                   <h2
                     id="gewinne-heading"
@@ -700,6 +679,7 @@ export default async function CardsPage({
                   >
                     {op17.headline}
                   </p>
+                  <p className="mt-1 text-sm font-medium text-[var(--cd-cyan)]">{op17.subline}</p>
                   <p className="mt-3 text-lg text-[var(--cd-ink-soft)]">{op17.description}</p>
                   <p className="mt-3 text-[var(--cd-ink-soft)]">
                     Dein nächster großer Fund könnte ein ganzes OP-17-Case sein.
@@ -719,10 +699,10 @@ export default async function CardsPage({
                       Details zu Ausgabe und Umfang
                     </summary>
                     <p className="mt-2">
-                      Verlost wird ein ganzes Case des Booster-Sets OP-17 (ONE PIECE CARD GAME).
-                      Sprachversion und Ausgabe ergeben sich aus dem tatsächlich bereitgestellten
-                      Produkt; einzelne Karten, ein bestimmter Inhalt oder ein Marktwert werden
-                      nicht zugesagt. Details stehen in den{" "}
+                      Verlost wird ein ganzes Case des Booster-Sets OP-17 „The World’s Strongest
+                      Warriors“ (ONE PIECE CARD GAME): {op17.contents}. Abgebildet ist eine der
+                      Booster Boxes (englische Ausgabe). Einzelne Karten, ein bestimmter Inhalt oder
+                      ein Marktwert werden nicht zugesagt. Details stehen in den{" "}
                       <Link
                         href={CARDS_TERMS_PATH}
                         className="underline decoration-[var(--cd-gold)]/50 underline-offset-2 hover:text-[var(--cd-gold)]"
@@ -734,7 +714,7 @@ export default async function CardsPage({
                   </details>
                   <div className="mt-8">
                     <AmazonLink ctaId="gewinne_amazon" className={BTN_GOLD}>
-                      {open ? "Buch holen & Teilnahme sichern" : `Buch bei Amazon ${kauf.verb}`}
+                      {open ? "Buch holen & Teilnahme sichern" : amazonLabel}
                     </AmazonLink>
                     {open ? (
                       <p className="mt-3 text-sm text-[var(--cd-ink-soft)]">
@@ -752,18 +732,10 @@ export default async function CardsPage({
                     ) : null}
                   </div>
                 </div>
-                <figure className="relative mx-auto w-full max-w-[420px]">
-                  <div
-                    className="cd-glow-gold pointer-events-none absolute inset-[-10%] rounded-full"
-                    aria-hidden="true"
-                  />
-                  <div className="cd-tilt relative">
-                    {prizeArt(op17, "hero", "drop-shadow-[0_30px_50px_rgba(0,0,0,0.65)]")}
-                  </div>
-                  <figcaption className="mt-3 text-center text-xs text-[var(--cd-ink-mute)]">
-                    Illustrative Produktdarstellung des Hauptgewinns – kein Originalfoto.
-                  </figcaption>
-                </figure>
+                <div className="relative mx-auto w-full max-w-[460px]">
+                  <SparkleField />
+                  <ProductShowcase prize={op17} size="hero" />
+                </div>
               </div>
             </div>
           </div>
@@ -781,42 +753,42 @@ export default async function CardsPage({
             />
             <div className="mt-10 grid gap-6 lg:grid-cols-2">
               <article
-                data-testid="prize-panel-fusion_world_st01_box"
-                className="cd-panel cd-world-dragonball relative overflow-hidden p-6 sm:p-8"
+                data-testid={`prize-panel-${dragonBall.id}`}
+                className="cd-panel cd-world-dragonball cd-corners relative overflow-hidden p-6 sm:p-8"
+                style={{ "--cd-corner": "var(--cd-orange)" } as React.CSSProperties}
               >
                 <div className="cd-rays pointer-events-none absolute inset-0" aria-hidden="true" />
-                <div className="relative grid gap-6 sm:grid-cols-[1fr_180px] sm:items-center">
+                <div className="relative grid gap-6 sm:grid-cols-[1fr_220px] sm:items-center">
                   <div>
-                    <p className="text-xs font-semibold tracking-[0.22em] text-[var(--cd-orange)] uppercase">
-                      Dragon Ball · {dragonBall.productCode}
+                    <p className="text-xs font-semibold tracking-[0.24em] text-[var(--cd-orange)] uppercase">
+                      Dragon Ball · {dragonBall.productCode} · Display
                     </p>
                     <h3 className="cd-display mt-3 text-2xl font-semibold text-[var(--cd-ink)] sm:text-3xl">
                       {dragonBall.headline}
                     </h3>
                     <p className="mt-1 font-medium text-[var(--cd-blue)]">{dragonBall.subline}</p>
                     <p className="mt-3 text-[var(--cd-ink-soft)]">{dragonBall.description}</p>
+                    <p className="mt-2 text-xs text-[var(--cd-ink-mute)]">{dragonBall.contents}</p>
                   </div>
-                  <figure className="mx-auto w-full max-w-[200px] sm:max-w-none">
-                    {prizeArt(dragonBall, "panel", "drop-shadow-[0_20px_36px_rgba(0,0,0,0.6)]")}
-                    <figcaption className="mt-1 text-center text-[11px] text-[var(--cd-ink-mute)]">
-                      Illustration
-                    </figcaption>
-                  </figure>
+                  <div className="mx-auto w-full max-w-[280px] sm:max-w-none">
+                    <ProductShowcase prize={dragonBall} size="panel" />
+                  </div>
                 </div>
               </article>
 
               <article
-                data-testid="prize-panel-magnificent_monsters_eu_case"
-                className="cd-panel cd-world-yugioh relative overflow-hidden p-6 sm:p-8"
+                data-testid={`prize-panel-${yugioh.id}`}
+                className="cd-panel cd-world-yugioh cd-corners relative overflow-hidden p-6 sm:p-8"
+                style={{ "--cd-corner": "var(--cd-violet)" } as React.CSSProperties}
               >
                 <div
                   className="cd-geo pointer-events-none absolute inset-0 opacity-70"
                   aria-hidden="true"
                 />
-                <div className="relative grid gap-6 sm:grid-cols-[1fr_180px] sm:items-center">
+                <div className="relative grid gap-6 sm:grid-cols-[1fr_220px] sm:items-center">
                   <div>
-                    <p className="text-xs font-semibold tracking-[0.22em] text-[var(--cd-violet)] uppercase">
-                      Yu-Gi-Oh! · {yugioh.variant}
+                    <p className="text-xs font-semibold tracking-[0.24em] text-[var(--cd-violet)] uppercase">
+                      Yu-Gi-Oh! · {yugioh.variant} · Case
                     </p>
                     <h3 className="cd-display mt-3 text-2xl font-semibold text-[var(--cd-ink)] sm:text-3xl">
                       {yugioh.headline}
@@ -825,27 +797,26 @@ export default async function CardsPage({
                       className="mt-1 font-medium text-[var(--cd-gold)]"
                       data-testid="yugioh-variant"
                     >
-                      {yugioh.subline}
+                      {yugioh.variant}
                     </p>
+                    <p className="mt-1 text-sm text-[var(--cd-ink-soft)]">{yugioh.subline}</p>
                     <p className="mt-3 text-[var(--cd-ink-soft)]">{yugioh.description}</p>
                   </div>
-                  <figure className="mx-auto w-full max-w-[200px] sm:max-w-none">
-                    {prizeArt(yugioh, "panel", "drop-shadow-[0_20px_36px_rgba(0,0,0,0.6)]")}
-                    <figcaption className="mt-1 text-center text-[11px] text-[var(--cd-ink-mute)]">
-                      Illustration
-                    </figcaption>
-                  </figure>
+                  <div className="mx-auto w-full max-w-[280px] sm:max-w-none">
+                    <ProductShowcase prize={yugioh} size="panel" />
+                  </div>
                 </div>
               </article>
 
               <article
-                data-testid="prize-panel-cardmarket_100"
-                className="cd-panel cd-world-cardmarket relative overflow-hidden p-6 sm:p-8 lg:col-span-2"
+                data-testid={`prize-panel-${cardmarket.id}`}
+                className="cd-panel cd-world-cardmarket cd-corners relative overflow-hidden p-6 sm:p-8 lg:col-span-2"
+                style={{ "--cd-corner": "var(--cd-cm-blue)" } as React.CSSProperties}
               >
-                <div className="relative grid gap-6 lg:grid-cols-[1fr_360px] lg:items-center">
+                <div className="relative grid gap-6 lg:grid-cols-[1fr_400px] lg:items-center">
                   <div>
-                    <p className="text-xs font-semibold tracking-[0.22em] text-[var(--cd-cm-blue)] uppercase">
-                      Cardmarket
+                    <p className="text-xs font-semibold tracking-[0.24em] text-[var(--cd-cm-blue)] uppercase">
+                      Cardmarket · 10 Gewinne
                     </p>
                     <h3 className="cd-display mt-3 text-2xl font-semibold text-[var(--cd-ink)] sm:text-3xl">
                       {cardmarket.headline}
@@ -858,15 +829,16 @@ export default async function CardsPage({
                     </p>
                     <p className="mt-2 text-xs text-[var(--cd-ink-mute)]">
                       Es gelten die offiziellen Einlösebedingungen von Cardmarket (siehe
-                      Teilnahmebedingungen).
+                      Teilnahmebedingungen). Gestaltete Darstellung – kein einlösbarer Code.
                     </p>
                   </div>
-                  <figure className="mx-auto w-full max-w-[360px]">
-                    {prizeArt(cardmarket, "panel", "drop-shadow-[0_20px_36px_rgba(0,0,0,0.6)]")}
-                    <figcaption className="mt-1 text-center text-[11px] text-[var(--cd-ink-mute)]">
-                      Illustration – kein einlösbarer Code
-                    </figcaption>
-                  </figure>
+                  <div className="mx-auto w-full max-w-[400px]">
+                    <VoucherCard
+                      count={CARDS_CARDMARKET_COUNT}
+                      valueLabel={CARDS_CARDMARKET_VALUE_LABEL}
+                      totalLabel={CARDS_CARDMARKET_TOTAL_LABEL}
+                    />
+                  </div>
                 </div>
               </article>
             </div>
@@ -894,8 +866,8 @@ export default async function CardsPage({
               {[
                 {
                   icon: BookOpen,
-                  title: "Buch kaufen.",
-                  text: `Bestelle „${BUCH_TITEL}“ bei Amazon oder einem nach den Cards-Bedingungen zulässigen Händler.`,
+                  title: "Buch bei Amazon bestellen.",
+                  text: `Bestelle „${BUCH_TITEL}“ direkt über den Amazon-Button auf dieser Seite.`,
                 },
                 {
                   icon: ClipboardList,
@@ -1030,22 +1002,8 @@ export default async function CardsPage({
                 </AmazonLink>
               </div>
               <p className="mt-4 text-sm text-[#6b6455]">
-                Weitere Händler:{" "}
-                {OTHER_RETAILERS.map((r, i) => (
-                  <span key={r.id}>
-                    <a
-                      href={r.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      data-cta-id={`buch_${r.id}`}
-                      className="font-medium text-[var(--cd-ivory-ink)] underline decoration-[#7a5a12]/40 underline-offset-2 hover:decoration-[#7a5a12]"
-                    >
-                      {r.label}
-                    </a>
-                    {i < OTHER_RETAILERS.length - 1 ? " · " : ""}
-                  </span>
-                ))}{" "}
-                – oder jeder andere Händler, der das Buch führt.
+                Nach der Bestellung findest du deine Bestellnummer in der Amazon-Bestellbestätigung
+                – trag sie danach hier auf der Seite ein.
               </p>
             </div>
           </div>
@@ -1074,10 +1032,9 @@ export default async function CardsPage({
           </p>
           <p
             className="mt-3 text-center text-xs text-[var(--cd-ink-mute)]"
-            data-testid="dubai-note"
+            data-testid="campaign-note"
           >
-            Diese Anmeldung gilt ausschließlich für das Cards-Gewinnspiel. Die Dubai-Verlosung ist
-            eine separate Aktion.
+            Diese Anmeldung gilt ausschließlich für das Cards-Gewinnspiel.
           </p>
           <div className="mt-6">
             <ParticipationHost
@@ -1114,7 +1071,7 @@ export default async function CardsPage({
           className="scroll-mt-16 border-t border-[var(--cd-border-soft)] bg-[var(--cd-bg-deep)]"
         >
           <div className="mx-auto max-w-3xl px-4 py-14 sm:px-8 lg:py-20">
-            <p className="text-center text-xs font-semibold tracking-[0.22em] text-[var(--cd-cyan)] uppercase">
+            <p className="text-center text-xs font-semibold tracking-[0.24em] text-[var(--cd-cyan)] uppercase">
               Die Verlosung des Jahres für deine TCG-Community
             </p>
             <h2 id="teilen-heading" className="sr-only">
@@ -1223,7 +1180,8 @@ export default async function CardsPage({
                 ONE PIECE CARD GAME, Dragon Ball Super Card Game Fusion World, Yu-Gi-Oh!, Cardmarket
                 und Amazon sind Marken bzw. Angebote der jeweiligen Inhaber; die Nennung bezeichnet
                 die verlosten Produkte und Gutscheine und bedeutet keine Sponsoring- oder
-                Kooperationspartnerschaft. Produktabbildungen sind Illustrationen.
+                Kooperationspartnerschaft. Produktabbildungen zeigen jeweils eine Box bzw. ein
+                Display des Produkts.
               </p>
             </div>
             <nav aria-label="Rechtliches">
@@ -1272,7 +1230,7 @@ export default async function CardsPage({
           heroId="hero"
           formId="teilnehmen"
           primary={{
-            label: "Buch kaufen",
+            label: "Buch bestellen",
             href: AMAZON.url,
             event: AMAZON_EVENT,
             external: true,
