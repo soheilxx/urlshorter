@@ -310,11 +310,24 @@
   --show-accent-2: var(--cd-gold);
   --show-glow: rgba(168, 139, 255, 0.45);
 }
+/* Hochformatige Yu-Gi-Oh!-Box: in den großen Panels ein höherer Rahmen … */
 .cd-show--yugioh .cd-show-frame {
   aspect-ratio: 4 / 5;
 }
 .cd-show--yugioh .cd-show-stage {
   inset: 7% 12%;
+}
+/* … als Mini-Kachel (Hero-Bühne) aber gleich hoch wie das Dragon-Ball-Display,
+   Box schmaler gestellt, damit beide Produkte optisch gleich groß wirken */
+.cd-show--mini.cd-show--yugioh .cd-show-frame {
+  aspect-ratio: 1 / 1;
+}
+.cd-show--mini.cd-show--yugioh .cd-show-stage {
+  inset: 8% 24%;
+}
+/* Das Display (perspektivische Box mit weniger Bildmasse) füllt seinen Rahmen stärker */
+.cd-show--dragonball .cd-show-stage {
+  inset: 2%;
 }
 .cd-show-frame {
   position: relative;
