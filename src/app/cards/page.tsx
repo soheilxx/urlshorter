@@ -456,7 +456,7 @@ export default async function CardsPage({
                 className="cd-display cd-rise mt-4 text-[2.5rem] leading-[1.0] font-bold text-balance text-[var(--cd-ink)] sm:text-5xl lg:text-[4.1rem]"
                 style={delay(60)}
               >
-                Ein ganzes OP-17-Case.
+                Ein ganzes OP-17 Case.
                 <br />
                 <span className="cd-foil-text">Vielleicht bald deins.</span>
               </h1>

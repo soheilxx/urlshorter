@@ -28,7 +28,7 @@ const html = `<!doctype html><html><body style="margin:0">
 
   <div style="position:absolute;left:64px;top:0;bottom:0;width:560px;display:flex;flex-direction:column;justify-content:center;">
     <div style="font-size:15px;letter-spacing:4px;text-transform:uppercase;color:#51d9ed;font-weight:700;white-space:nowrap;">TCG-Verlosung · One Piece · Dragon Ball · Yu-Gi-Oh!</div>
-    <div style="margin-top:18px;font-size:70px;line-height:1.0;font-weight:800;letter-spacing:-1.8px;">Ein ganzes<br/>OP-17-Case.<br/><span style="background:linear-gradient(100deg,#ffe9a6,#ffd56a 40%,#f0b73a 65%,#ffe9a6);-webkit-background-clip:text;background-clip:text;color:transparent;">Vielleicht bald deins.</span></div>
+    <div style="margin-top:18px;font-size:70px;line-height:1.0;font-weight:800;letter-spacing:-1.8px;">Ein ganzes<br/>OP-17 Case.<br/><span style="background:linear-gradient(100deg,#ffe9a6,#ffd56a 40%,#f0b73a 65%,#ffe9a6);-webkit-background-clip:text;background-clip:text;color:transparent;">Vielleicht bald deins.</span></div>
     <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;">
       <span style="border:1px solid rgba(255,213,106,0.8);background:rgba(255,213,106,0.12);color:#ffd56a;font-size:15px;font-weight:800;letter-spacing:1.5px;padding:8px 12px;border-radius:6px;">1 × OP-17 CASE · 12 BOXES</span>
       <span style="border:1px solid rgba(255,138,50,0.7);color:#ffb066;font-size:15px;font-weight:700;letter-spacing:1px;padding:8px 12px;border-radius:6px;">3 × ST01 DISPLAY</span>

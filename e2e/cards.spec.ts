@@ -99,7 +99,7 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     expect(ogDescription).toContain("12 Boxes");
     expect(ogDescription).not.toMatch(/Bestellnummer|registrier/i);
     const h1 = page.getByRole("heading", { level: 1 });
-    await expect(h1).toContainText("Ein ganzes OP-17-Case.");
+    await expect(h1).toContainText("Ein ganzes OP-17 Case.");
     await expect(h1).toContainText("Vielleicht bald deins.");
     await expect(page.getByTestId("hero-badge")).toHaveText(
       /Hauptgewinn · 1 × One Piece OP-17 Case/i,
