@@ -470,15 +470,18 @@
 }
 .cd-show--mini .cd-show-badge {
   left: 8px;
+  right: 8px;
   bottom: 8px;
-  padding: 4px 8px 4px 6px;
+  justify-content: center;
+  text-align: center;
+  padding: 5px 8px;
   font-size: 10px;
-  gap: 6px;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  white-space: normal;
 }
 .cd-show--mini .cd-show-badge-count {
-  min-width: 28px;
-  height: 18px;
-  font-size: 11px;
+  display: none;
 }
 .cd-show--mini .cd-show-rarity {
   display: none;
@@ -605,6 +608,35 @@
   font-size: clamp(26px, 7vw, 40px);
 }
 
+/* Wandernder Farbschimmer (Spendenzeile): Gold → Cyan → Gold, hin und zurück */
+.cd-shine {
+  background: linear-gradient(
+    90deg,
+    var(--cd-gold) 0%,
+    #ffe9a6 18%,
+    var(--cd-cyan) 38%,
+    #ffffff 50%,
+    var(--cd-cyan) 62%,
+    #ffe9a6 82%,
+    var(--cd-gold) 100%
+  );
+  background-size: 260% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgba(255, 213, 106, 0.35));
+  animation: cd-shine 4.5s ease-in-out infinite alternate;
+}
+@keyframes cd-shine {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
 /* Kleine Funkel-Sterne (rein dekorativ) */
 .cd-sparkle {
   position: absolute;
@@ -684,8 +716,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .cd-rise,
-  .cd-sparkle {
+  .cd-sparkle,
+  .cd-shine {
     animation: none;
+  }
+  .cd-shine {
+    background-position: 50% 50%;
   }
   .cd-sparkle {
     opacity: 0.6;

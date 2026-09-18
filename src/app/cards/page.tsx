@@ -568,14 +568,17 @@ export default async function CardsPage({
                 automatisch.
               </p>
               <p
-                className="cd-rise mt-3 flex items-start gap-2 text-sm font-medium text-[var(--cd-ink)]"
+                className="cd-rise mt-3 flex items-start gap-2 text-base font-semibold"
                 style={delay(340)}
+                data-testid="hero-donation"
               >
                 <HeartHandshake
-                  className="mt-0.5 h-4 w-4 shrink-0 text-[var(--cd-gold)]"
+                  className="mt-0.5 h-5 w-5 shrink-0 text-[var(--cd-gold)]"
                   aria-hidden="true"
                 />
-                100 % der Autoreneinnahmen gehen an den {SPENDEN_EMPFAENGER}.
+                <span className="cd-shine">
+                  100 % der Autoreneinnahmen gehen an den {SPENDEN_EMPFAENGER}.
+                </span>
               </p>
               <p
                 className="cd-rise mt-3 text-sm text-[var(--cd-ink-soft)]"
