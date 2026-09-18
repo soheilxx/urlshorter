@@ -336,7 +336,7 @@ Dubai-Verlosung. Ausführliche Doku: `docs/cards-kampagne.md`.
   Receipt-Cookie, noindex/no-store), `/cards/teilnahmebedingungen` (Version
   `cards-1.0 (18.09.2026)`).
 - Konfiguration: `src/lib/cards-giveaway-config.ts` (Gewinne, Fristen
-  05.10.2026 23:59 MESZ / 12.10.2026, Texte); Kampagnenregister
+  05.10.2026 23:59 MESZ / Bekanntgabe 21.10.2026 12 Uhr, Texte); Kampagnenregister
   `src/lib/sweepstakes-campaign.ts`.
 - Datentrennung: `SweepstakesEntry.campaignId` + Unique `(campaignId, orderNumberHash)`;
   Cards-Server-Action `src/actions/cards-actions.ts` setzt die Kampagne serverseitig,

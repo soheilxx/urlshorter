@@ -486,7 +486,7 @@ test.describe("TCG-Gewinnspiel /cards", () => {
       await page.goto(detailsHref!);
       await expect(page.getByText("Kampagne: Cards")).toBeVisible();
       // Bedingungsversion UND Gewinnumfang tragen die Cards-Kennung – nichts von Dubai
-      await expect(page.getByText(/\(cards-1\.1 \(18\.09\.2026\)\)/)).toHaveCount(2);
+      await expect(page.getByText(/\(cards-1\.2 \(18\.09\.2026\)\)/)).toHaveCount(2);
       await expect(page.getByText(/dubai-reise/)).toHaveCount(0);
 
       // Export: nur mit Kampagne, Kennung in Datei und Dateiname
@@ -523,14 +523,16 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Teilnahmebedingungen Cards-Gewinnspiel",
     );
-    await expect(page.getByText(/Version cards-1\.1 \(18\.09\.2026\)/)).toBeVisible();
+    await expect(page.getByText(/Version cards-1\.2 \(18\.09\.2026\)/)).toBeVisible();
     await expect(page.getByText("1 × One Piece OP-17 Case (OP-17)")).toBeVisible();
     await expect(page.getByText("3 × Story Booster 01 Display Fusion World (ST01)")).toBeVisible();
     await expect(page.getByText(/12 Booster Boxes à 24 Packs/)).toBeVisible();
     await expect(page.getByText("3 × Magnificent Monsters EU Version Case")).toBeVisible();
     await expect(page.getByText("10 × Cardmarket-Wertgutschein über 100 €")).toBeVisible();
     await expect(page.getByText(/05\.10\.2026, 23:59 Uhr \(MESZ\)/).first()).toBeVisible();
-    await expect(page.getByText(/Gewinnerbekanntgabe erfolgt am 12\.10\.2026/)).toBeVisible();
+    await expect(
+      page.getByText(/Gewinnerbekanntgabe erfolgt am 21\.10\.2026 um 12 Uhr/),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: "Cardmarket-Hilfe: Gutscheine" })).toHaveAttribute(
       "href",
       "https://help.cardmarket.com/de/cardmarket-coupons",

@@ -87,17 +87,18 @@ describe("Cards-Gewinnspiel: Gewinnumfang (exakt laut Briefing)", () => {
 });
 
 describe("Cards-Gewinnspiel: Fristen (Europe/Berlin)", () => {
-  it("exklusive Servergrenze ist 2026-10-05T22:00:00.000Z, Bekanntgabe am 12.10.2026 ohne Uhrzeit", () => {
+  it("exklusive Servergrenze ist 2026-10-05T22:00:00.000Z, Bekanntgabe am 21.10.2026 um 12 Uhr MESZ", () => {
     expect(CARDS_ENTRY_DEADLINE_EXCLUSIVE.toISOString()).toBe("2026-10-05T22:00:00.000Z");
-    expect(CARDS_ANNOUNCEMENT_DATE.toISOString()).toBe("2026-10-11T22:00:00.000Z");
+    expect(CARDS_ANNOUNCEMENT_DATE.toISOString()).toBe("2026-10-21T10:00:00.000Z");
   });
 
   it("die volle Schlussminute zählt, ab Mitternacht MESZ ist geschlossen, ab dem Bekanntgabetag 'announced'", () => {
     expect(getCardsPhase(new Date("2026-09-18T10:00:00+02:00"))).toBe("open");
     expect(getCardsPhase(new Date("2026-10-05T23:59:59.999+02:00"))).toBe("open");
     expect(getCardsPhase(new Date("2026-10-06T00:00:00.000+02:00"))).toBe("closed");
-    expect(getCardsPhase(new Date("2026-10-11T23:59:59+02:00"))).toBe("closed");
-    expect(getCardsPhase(new Date("2026-10-12T00:00:00+02:00"))).toBe("announced");
+    expect(getCardsPhase(new Date("2026-10-12T00:00:00+02:00"))).toBe("closed");
+    expect(getCardsPhase(new Date("2026-10-21T11:59:59+02:00"))).toBe("closed");
+    expect(getCardsPhase(new Date("2026-10-21T12:00:00+02:00"))).toBe("announced");
   });
 
   it("CTA-Wortlaut lautet immer „bestellen“ (Vorgabe des Auftraggebers)", () => {
@@ -116,7 +117,7 @@ describe("Cards-Gewinnspiel: Teilen und Kampagnenregister", () => {
     expect(CARDS_SHARE_TEXT.endsWith(CARDS_URL)).toBe(true);
     expect(CARDS_SHARE_TEXT).not.toContain("utm_");
     expect(CARDS_SHARE_TEXT_CLOSED).toContain("beendet");
-    expect(CARDS_SHARE_TEXT_CLOSED).toContain("12.10.2026");
+    expect(CARDS_SHARE_TEXT_CLOSED).toContain("21.10.2026 um 12 Uhr");
   });
 
   it("ordnet Teilnahmewege eindeutig zu und kennt keinen Fallback", () => {

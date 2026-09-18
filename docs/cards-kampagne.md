@@ -23,7 +23,7 @@ Tracking-Matrix, Consent-Entscheidung und die tatsächlich durchgeführten Prüf
 | ----------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | `/cards`                      | `src/app/cards/page.tsx`                               | Landingpage (Hero mit OP-17-Bühne, Hauptgewinn, Nebenbühnen, Ablauf, Buch/Spende, Formular, Teilen, FAQ) |
 | `/cards/danke`                | `src/app/cards/danke/page.tsx`                         | Bestätigung nur mit signiertem Receipt-Cookie; noindex + no-store (`next.config.ts`)                     |
-| `/cards/teilnahmebedingungen` | `src/app/cards/teilnahmebedingungen/page.tsx`          | Eigene Bedingungen `cards-1.1 (18.09.2026)`                                                              |
+| `/cards/teilnahmebedingungen` | `src/app/cards/teilnahmebedingungen/page.tsx`          | Eigene Bedingungen `cards-1.2 (18.09.2026)`                                                              |
 | Theme                         | `src/app/cards/cards.css`, `src/app/cards/layout.tsx`  | Tintenblau/Gold, `--gw-*`-Mapping für das gemeinsame Formular                                            |
 | Konfiguration                 | `src/lib/cards-giveaway-config.ts`                     | 17 Gewinne, Fristen, Texte, Cardmarket-Hilfe-Link                                                        |
 | Kampagnenregister             | `src/lib/sweepstakes-campaign.ts`                      | `dubai_2026` / `cards_2026`: Wege, Bedingungsversion, Phase, Gewinnkatalog                               |
@@ -107,8 +107,8 @@ Das Briefing warnt davor, `consentMode="not-required"` unbesehen zu übernehmen.
 
 - Teilnahmeschluss UI: **05.10.2026, 23:59 Uhr (MESZ)** – Hero, Formularhinweis, FAQ, Bedingungen.
 - Serverseitige exklusive Grenze: **06.10.2026 00:00:00 MESZ = 2026-10-05T22:00:00.000Z** (`getCardsPhase`, Integrationstest: 23:59:59.999 zählt, 00:00:00 nicht).
-- Gewinnerbekanntgabe: **12.10.2026** ohne Uhrzeit (Phase `announced` ab Tagesbeginn Europe/Berlin; keine automatische Ziehung).
-- Nach Schluss: Hero-Status „Teilnahme beendet · Gewinnerbekanntgabe: 12.10.2026“, Formularbereich mit Endstatus, keine Teilnahme-CTAs, Share-Text für die beendete Aktion, Buchlinks bleiben.
+- Gewinnerbekanntgabe: **21.10.2026 um 12 Uhr (MESZ)** (Vorgabe des Auftraggebers vom 18.09.2026, ersetzt 12.10.2026; Phase `announced` ab diesem Zeitpunkt; keine automatische Ziehung). Bedingungen dazu auf Version `cards-1.2`.
+- Nach Schluss: Hero-Status „Teilnahme beendet · Gewinnerbekanntgabe: 21.10.2026, 12 Uhr“, Formularbereich mit Endstatus, keine Teilnahme-CTAs, Share-Text für die beendete Aktion, Buchlinks bleiben.
 
 ## 8. Durchgeführte Prüfungen (18.09.2026, lokal)
 
