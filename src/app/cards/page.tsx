@@ -89,8 +89,8 @@ import { createFormToken } from "@/lib/sweepstakes-crypto";
 export const dynamic = "force-dynamic";
 
 const TITLE = "One Piece OP-17 Case gewinnen – TCG-Gewinnspiel | Die Lizenz zum Erfolg";
-const DESCRIPTION = `Buch „${BUCH_TITEL}“ bei Amazon bestellen, Bestellnummer registrieren und ${CARDS_PRIZE_COUNT} Gewinne für deine Sammlung gewinnen: 1 × One Piece OP-17 Case (12 Boxes), 3 × Fusion World ST01 Display, 3 × Magnificent Monsters Case (EU, englisch) und ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} Cardmarket-Wertgutschein. 100 % der Autoreneinnahmen gehen an den Kinderschutzbund.`;
-const OG_IMAGE = `${CARDS_URL}/og.jpg`;
+const DESCRIPTION = `Buch „${BUCH_TITEL}“ bei Amazon bestellen, Bestellnummer registrieren und ${CARDS_PRIZE_COUNT} Gewinne für deine Sammlung gewinnen: 1 × One Piece OP-17 Case (12 Boxes), 3 × Fusion World ST01 Display, 3 × Magnificent Monsters Case (EU, englisch) und ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} Wertgutschein für cardmarket.pro. 100 % der Autoreneinnahmen gehen an den Kinderschutzbund.`;
+const OG_IMAGE = `${CARDS_URL}/og-v2.jpg`;
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -110,7 +110,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         type: "image/jpeg",
-        alt: "Ein ganzes One Piece OP-17 Case, Dragon Ball Fusion World ST01 Display, Yu-Gi-Oh! Magnificent Monsters Case und Cardmarket-Guthaben zu gewinnen",
+        alt: "Ein ganzes One Piece OP-17 Case, Dragon Ball Fusion World ST01 Display, Yu-Gi-Oh! Magnificent Monsters Case und cardmarket.pro-Guthaben zu gewinnen",
       },
     ],
   },
@@ -820,7 +820,7 @@ export default async function CardsPage({
                 <div className="relative grid gap-6 lg:grid-cols-[1fr_400px] lg:items-center">
                   <div>
                     <p className="text-xs font-semibold tracking-[0.24em] text-[var(--cd-cm-blue)] uppercase">
-                      Cardmarket · 10 Gewinne
+                      cardmarket.pro · 10 Gewinne
                     </p>
                     <h3 className="cd-display mt-3 text-2xl font-semibold text-[var(--cd-ink)] sm:text-3xl">
                       {cardmarket.headline}
@@ -832,8 +832,9 @@ export default async function CardsPage({
                       {cardmarket.description}
                     </p>
                     <p className="mt-2 text-xs text-[var(--cd-ink-mute)]">
-                      Es gelten die offiziellen Einlösebedingungen von Cardmarket (siehe
-                      Teilnahmebedingungen). Gestaltete Darstellung – kein einlösbarer Code.
+                      Gültigkeit und Einlösebedingungen von cardmarket.pro werden mit dem Gutschein
+                      mitgeteilt (siehe Teilnahmebedingungen). Gestaltete Darstellung – kein
+                      einlösbarer Code.
                     </p>
                   </div>
                   <div className="mx-auto w-full max-w-[400px]">
@@ -1085,7 +1086,7 @@ export default async function CardsPage({
               className="mt-6"
               shareText={shareText}
               heading="Deine Community sollte das sehen."
-              intro="One Piece, Dragon Ball, Yu-Gi-Oh! und Cardmarket: Teile die Verlosung mit deinen Freunden, deiner TCG-Gruppe oder deiner Community."
+              intro="One Piece, Dragon Ball, Yu-Gi-Oh! und cardmarket.pro: Teile die Verlosung mit deinen Freunden, deiner TCG-Gruppe oder deiner Community."
             />
           </div>
         </section>
@@ -1142,7 +1143,7 @@ export default async function CardsPage({
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-[var(--cd-ink-soft)]">
               {open
-                ? `${CARDS_PRIZE_COUNT} Gewinne für deine Sammlung – vom OP-17-Case bis zu ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} Cardmarket. Gewinnerbekanntgabe am ${CARDS_ANNOUNCEMENT_DATETIME_LABEL}.`
+                ? `${CARDS_PRIZE_COUNT} Gewinne für deine Sammlung – vom OP-17-Case bis zu ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} cardmarket.pro. Gewinnerbekanntgabe am ${CARDS_ANNOUNCEMENT_DATETIME_LABEL}.`
                 : `Teilnahme beendet · Gewinnerbekanntgabe: ${CARDS_ANNOUNCEMENT_LABEL}.`}
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -1181,8 +1182,9 @@ export default async function CardsPage({
                 </a>
               </p>
               <p className="mt-2 text-xs">
-                ONE PIECE CARD GAME, Dragon Ball Super Card Game Fusion World, Yu-Gi-Oh!, Cardmarket
-                und Amazon sind Marken bzw. Angebote der jeweiligen Inhaber; die Nennung bezeichnet
+                ONE PIECE CARD GAME, Dragon Ball Super Card Game Fusion World, Yu-Gi-Oh!,
+                cardmarket.pro und Amazon sind Marken bzw. Angebote der jeweiligen Inhaber; die
+                Nennung bezeichnet
                 die verlosten Produkte und Gutscheine und bedeutet keine Sponsoring- oder
                 Kooperationspartnerschaft. Produktabbildungen zeigen jeweils eine Box bzw. ein
                 Display des Produkts.

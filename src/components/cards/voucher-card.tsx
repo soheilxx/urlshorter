@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Gestaltete Wertgutschein-Karte (Cardmarket): Guthaben-Optik mit Chip,
- * holografischem Streifen und klarer Menge „10 × 100 €“. Bewusst als
- * Gestaltung erkennbar, ohne einlösbaren Code und ohne Logo-Nachbau.
+ * Gestaltete Wertgutschein-Karte (cardmarket.pro): Guthaben-Optik mit Chip,
+ * holografischem Streifen und klarer Menge „10 × 100 €“. Bewusst als eigene
+ * Gestaltung erkennbar – ohne einlösbaren Code und ohne Nachbau eines
+ * fremden Logos (der Anbieter wird ausschließlich als Text genannt).
  */
 export function VoucherCard({
   count,
@@ -23,14 +24,18 @@ export function VoucherCard({
       className={cn("cd-voucher", compact && "cd-voucher--compact", className)}
       data-testid="voucher-card"
       role="img"
-      aria-label={`${count} × ${valueLabel} Cardmarket-Wertgutschein, zusammen ${totalLabel}`}
+      aria-label={`${count} × ${valueLabel} Wertgutschein für cardmarket.pro, zusammen ${totalLabel}`}
     >
       <div className="cd-voucher-holo" aria-hidden="true" />
       <div className="cd-voucher-pattern" aria-hidden="true" />
       <div className="cd-voucher-body">
         <div className="flex items-start justify-between gap-3">
           <span className="cd-voucher-chip" aria-hidden="true" />
-          <span className="cd-voucher-kicker">Cardmarket-Wertgutschein</span>
+          <span className="cd-voucher-kicker">
+            <span className="block">Wertgutschein</span>
+            {/* Anbieter rein beschreibend als Domain in Kleinschreibung – kein Wortzeichen-Look */}
+            <span className="cd-voucher-brand block">cardmarket.pro</span>
+          </span>
         </div>
         <p className="cd-voucher-value">
           {count} × {valueLabel}

@@ -22,7 +22,8 @@
   --cd-orange: #ff8a32;
   --cd-blue: #4c9dff;
   --cd-violet: #a88bff;
-  --cd-cm-blue: #65bdff;
+  /* Gutschein-Akzent (cardmarket.pro): Türkis – bewusst kein Blau des früheren Anbieters */
+  --cd-cm-blue: #4fd1c5;
   --cd-ivory: #f5f0e5;
   --cd-ivory-ink: #1a1710;
   --cd-border: rgba(255, 213, 106, 0.22);
@@ -253,7 +254,7 @@
 }
 .cd-world-cardmarket {
   background:
-    radial-gradient(60% 80% at 90% 50%, rgba(101, 189, 255, 0.24), transparent 60%),
+    radial-gradient(60% 80% at 90% 50%, rgba(79, 209, 197, 0.24), transparent 60%),
     var(--cd-surface);
 }
 .cd-rays {
@@ -499,7 +500,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Cardmarket-Wertgutschein (VoucherCard)
+ * Wertgutschein cardmarket.pro (VoucherCard) – eigene Gestaltung, kein Logo
  * ------------------------------------------------------------------------- */
 .cd-voucher {
   position: relative;
@@ -509,12 +510,12 @@
   overflow: hidden;
   isolation: isolate;
   background:
-    radial-gradient(90% 70% at 100% 0%, rgba(101, 189, 255, 0.35), transparent 60%),
+    radial-gradient(90% 70% at 100% 0%, rgba(79, 209, 197, 0.35), transparent 60%),
     radial-gradient(60% 60% at 0% 100%, rgba(255, 255, 255, 0.08), transparent 60%),
-    linear-gradient(135deg, #17456f 0%, #0f2e4d 45%, #071a2e 100%);
+    linear-gradient(135deg, #0f4f4a 0%, #0b3634 45%, #06211f 100%);
   box-shadow:
     0 30px 60px -28px rgba(0, 0, 0, 0.9),
-    inset 0 0 0 1px rgba(101, 189, 255, 0.55);
+    inset 0 0 0 1px rgba(79, 209, 197, 0.55);
   color: #f5f2e9;
 }
 .cd-voucher-holo {
@@ -524,7 +525,7 @@
     115deg,
     transparent 30%,
     rgba(255, 255, 255, 0.14) 44%,
-    rgba(101, 189, 255, 0.28) 50%,
+    rgba(79, 209, 197, 0.28) 50%,
     rgba(168, 139, 255, 0.22) 56%,
     transparent 70%
   );
@@ -568,6 +569,13 @@
   text-transform: uppercase;
   color: var(--cd-cm-blue);
   text-align: right;
+}
+.cd-voucher-brand {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 1.15em;
+  font-weight: 600;
+  color: #f5f2e9;
 }
 .cd-voucher-value {
   margin-top: auto;

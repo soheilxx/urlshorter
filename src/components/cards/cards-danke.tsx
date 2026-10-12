@@ -201,7 +201,7 @@ export function CardsDanke({
         compact
         shareText={shareText}
         heading="Deine Community sollte das sehen."
-        intro="One Piece, Dragon Ball, Yu-Gi-Oh! und Cardmarket: Teile die Verlosung mit deinen Freunden, deiner TCG-Gruppe oder deiner Community."
+        intro="One Piece, Dragon Ball, Yu-Gi-Oh! und cardmarket.pro: Teile die Verlosung mit deinen Freunden, deiner TCG-Gruppe oder deiner Community."
       />
     </div>
   );

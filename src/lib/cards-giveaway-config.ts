@@ -58,8 +58,10 @@ export function getCardsPhase(now: Date = new Date()): SweepstakesPhase {
  * gespeichert). Eigene Zählung, unabhängig von den Dubai-Bedingungen.
  * 1.1: Case-/Display-Umfang präzisiert (12 Boxen je Case, ST01 als Display).
  * 1.2: Gewinnerbekanntgabe 21.10.2026 um 12 Uhr (MESZ).
+ * 1.3: Gutschein-Anbieter cardmarket.pro als gleichwertige Ersatzleistung
+ *      (Abmahnung cardmarket.com, 12.10.2026); Anzahl und Wert unverändert.
  */
-export const CARDS_TERMS_VERSION = "cards-1.2 (18.09.2026)";
+export const CARDS_TERMS_VERSION = "cards-1.3 (12.10.2026)";
 
 /* ----------------------------------------------------------------------------
  * Gewinne – exakt laut Briefing + Präzisierung. 17 einzelne Gewinne.
@@ -196,14 +198,14 @@ export const CARDS_PRIZES: readonly CardsPrize[] = [
     main: false,
     count: 10,
     form: "voucher",
-    unit: "Cardmarket-Wertgutschein über 100 €",
-    short: "100 € Cardmarket",
-    franchise: "Cardmarket",
+    unit: "Wertgutschein für cardmarket.pro über 100 €",
+    short: "100 € cardmarket.pro",
+    franchise: "cardmarket.pro",
     productCode: null,
     variant: null,
     contents: null,
     badge: null,
-    headline: "10 × 100 € Cardmarket-Wertgutschein",
+    headline: "10 × 100 € Wertgutschein für cardmarket.pro",
     subline: "Deine Wunschkarten. Deine Entscheidung.",
     description:
       "Wir verlosen zehn Wertgutscheine über jeweils 100 €. Zusammen sind das 1.000 € für die nächsten Wünsche deiner Sammlung.",
@@ -218,7 +220,7 @@ export const CARDS_SECONDARY_PRIZES = CARDS_PRIZES.filter((p) => !p.main);
 /** 17 einzelne Gewinne (berechnet). */
 export const CARDS_PRIZE_COUNT = CARDS_PRIZES.reduce((sum, p) => sum + p.count, 0);
 
-/** Cardmarket-Gutscheine: 10 Stück, zusammen 1.000 € (berechnet). */
+/** cardmarket.pro-Gutscheine: 10 Stück, zusammen 1.000 € (berechnet). Interne IDs bleiben stabil. */
 const CARDMARKET = CARDS_PRIZES.find((p) => p.id === "cardmarket_100") as CardsPrize;
 export const CARDS_CARDMARKET_COUNT = CARDMARKET.count;
 export const CARDS_CARDMARKET_VALUE_EUR = CARDMARKET.valueEurPerUnit ?? 0;
@@ -261,17 +263,18 @@ export const CARDS_OP17_FACTS = [
 export const CARDS_PRIZE_SCOPE = `cards: ${CARDS_PRIZES.map((p) => `${p.count}×${p.short}`).join("+")} (${CARDS_TERMS_VERSION})`;
 
 /**
- * Offizielle Cardmarket-Hilfeseite zu Gutscheinen (Einlösung im Konto,
- * Guthaben nur für Einkäufe auf Cardmarket, nicht auszahlbar). Es gelten die
- * dort veröffentlichten Bedingungen; hier werden keine eigenen Einschränkungen
- * oder Zusagen erfunden.
+ * Gutschein-Anbieter seit Fassung cards-1.3 (12.10.2026): cardmarket.pro
+ * (TCG-Marktplatz). Der Anbieter wird ausschließlich als Text genannt – kein
+ * fremdes Logo. Gültigkeit und Einlösebedingungen teilt cardmarket.pro mit dem
+ * Gutschein mit; hier werden keine eigenen Einschränkungen oder Zusagen erfunden.
  */
-export const CARDMARKET_VOUCHER_HELP_URL = "https://help.cardmarket.com/de/cardmarket-coupons";
+export const CARDMARKET_PRO_URL = "https://cardmarket.pro";
+export const CARDMARKET_PRO_NAME = "cardmarket.pro";
 
 /* ----------------------------------------------------------------------------
  * Aktionstexte (Teilen, CTA-Wortlaut, Messenger-Vorschau).
  * ------------------------------------------------------------------------- */
-export const CARDS_SHARE_TEXT = `Ein ganzes One Piece OP-17 Case (12 Boxes), Dragon-Ball- und Yu-Gi-Oh!-Gewinne sowie ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} Cardmarket: Bei „Die Lizenz zum Erfolg“ gibt es ${CARDS_PRIZE_COUNT} Gewinne für TCG-Fans. Buch kaufen, Bestellnummer eintragen und teilnehmen. 100 % der Autoreneinnahmen gehen an den Kinderschutzbund. Alle Infos: ${CARDS_URL}`;
+export const CARDS_SHARE_TEXT = `Ein ganzes One Piece OP-17 Case (12 Boxes), Dragon-Ball- und Yu-Gi-Oh!-Gewinne sowie ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} cardmarket.pro: Bei „Die Lizenz zum Erfolg“ gibt es ${CARDS_PRIZE_COUNT} Gewinne für TCG-Fans. Buch kaufen, Bestellnummer eintragen und teilnehmen. 100 % der Autoreneinnahmen gehen an den Kinderschutzbund. Alle Infos: ${CARDS_URL}`;
 export const CARDS_SHARE_TEXT_CLOSED = `Das Cards-Gewinnspiel zu „Die Lizenz zum Erfolg“ ist beendet – Gewinnerbekanntgabe am ${CARDS_ANNOUNCEMENT_DATETIME_LABEL}. Das Buch gibt es weiterhin: ${CARDS_URL}`;
 export const CARDS_SHARE_TITLE = "Ein ganzes One Piece OP-17 Case zu gewinnen";
 
@@ -281,7 +284,7 @@ export const CARDS_SHARE_TITLE = "Ein ganzes One Piece OP-17 Case zu gewinnen";
  * der Seite selbst; die Vorschau behauptet keine kostenlose Teilnahme.
  */
 export const CARDS_OG_TITLE = "Ein ganzes One Piece OP-17 Case zu gewinnen 🔥 TCG-Verlosung";
-export const CARDS_OG_DESCRIPTION = `1 × OP-17 Case (12 Boxes), 3 × Dragon Ball Fusion World ST01 Display, 3 × Yu-Gi-Oh! Magnificent Monsters Case (EU, englisch) und ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} Cardmarket-Guthaben – ${CARDS_PRIZE_COUNT} Gewinne für One-Piece-, Dragon-Ball- und Yu-Gi-Oh!-Fans. Teilnahmeschluss ${CARDS_ENTRY_DEADLINE_SHORT}.`;
+export const CARDS_OG_DESCRIPTION = `1 × OP-17 Case (12 Boxes), 3 × Dragon Ball Fusion World ST01 Display, 3 × Yu-Gi-Oh! Magnificent Monsters Case (EU, englisch) und ${CARDS_CARDMARKET_COUNT} × ${CARDS_CARDMARKET_VALUE_LABEL} cardmarket.pro-Guthaben – ${CARDS_PRIZE_COUNT} Gewinne für One-Piece-, Dragon-Ball- und Yu-Gi-Oh!-Fans. Teilnahmeschluss ${CARDS_ENTRY_DEADLINE_SHORT}.`;
 
 /** Primärer Amazon-CTA – Vorgabe des Auftraggebers: immer „bestellen“ (nie „vorbestellen“/„kaufen“). */
 export function cardsAmazonCtaLabel(): string {

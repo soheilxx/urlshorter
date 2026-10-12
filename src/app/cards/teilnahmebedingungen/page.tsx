@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BUCH_TITEL } from "@/lib/buch-config";
 import {
-  CARDMARKET_VOUCHER_HELP_URL,
+  CARDMARKET_PRO_NAME,
+  CARDMARKET_PRO_URL,
   CARDS_ANNOUNCEMENT_DATETIME_LABEL,
   CARDS_CARDMARKET_COUNT,
   CARDS_CARDMARKET_TOTAL_LABEL,
@@ -71,7 +72,7 @@ export default function CardsTeilnahmebedingungenPage() {
             </p>
             <p className="mt-2">
               ONE PIECE CARD GAME, Dragon Ball Super Card Game Fusion World, Yu-Gi-Oh! TRADING CARD
-              GAME, Cardmarket und Amazon sind Marken bzw. Angebote der jeweiligen Inhaber; die
+              GAME, cardmarket.pro und Amazon sind Marken bzw. Angebote der jeweiligen Inhaber; die
               Nennung bezeichnet die verlosten Produkte bzw. Gutscheine. Eine Sponsoring- oder
               Kooperationspartnerschaft wird damit nicht behauptet. Der Kinderschutzbund als
               Spendenempfänger der Autoreneinnahmen ist an dem Gewinnspiel nicht beteiligt.
@@ -110,20 +111,28 @@ export default function CardsTeilnahmebedingungenPage() {
               Produkts.
             </p>
             <p className="mt-2">
-              Für die Cardmarket-Wertgutscheine gelten die offiziellen Einlösebedingungen von
-              Cardmarket (
+              Die Wertgutscheine werden von{" "}
               <a
-                href={CARDMARKET_VOUCHER_HELP_URL}
+                href={CARDMARKET_PRO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline decoration-[var(--cd-gold)]/50 underline-offset-2 hover:text-[var(--cd-gold)]"
               >
-                Cardmarket-Hilfe: Gutscheine
-              </a>
-              ): Der Gutschein wird im Cardmarket-Konto eingelöst, das Guthaben ist ausschließlich
-              für Einkäufe auf Cardmarket nutzbar und nicht auszahlbar. Eine Barauszahlung oder ein
-              Umtausch der Gewinne ist ausgeschlossen. Pro Person wird innerhalb des
-              Cards-Gewinnspiels höchstens ein Gewinn vergeben.
+                {CARDMARKET_PRO_NAME}
+              </a>{" "}
+              ausgestellt und dort eingelöst; eine Auszahlung des Guthabens ist nicht vorgesehen.
+              Gültigkeitsdauer und Einlösebedingungen werden den Gewinnerinnen und Gewinnern
+              zusammen mit dem Gutschein mitgeteilt. Eine Barauszahlung oder ein Umtausch der
+              Gewinne ist ausgeschlossen. Pro Person wird innerhalb des Cards-Gewinnspiels höchstens
+              ein Gewinn vergeben.
+            </p>
+            <p className="mt-2">
+              Hinweis zur Fassung {CARDS_TERMS_VERSION}: Die Wertgutscheine werden von{" "}
+              {CARDMARKET_PRO_NAME} ausgestellt. Sie treten aus rechtlichen Gründen (Ziffer 6 und 7)
+              als gleichwertige Ersatzleistung an die Stelle der in der Fassung cards-1.2 genannten
+              Wertgutscheine eines anderen Anbieters; Anzahl und Wert ({CARDS_CARDMARKET_COUNT} ×{" "}
+              {CARDS_CARDMARKET_VALUE_LABEL}) bleiben unverändert. Dies gilt für alle gültigen
+              Teilnahmen.
             </p>
           </section>
 
@@ -210,10 +219,10 @@ export default function CardsTeilnahmebedingungenPage() {
               Die Gewinne sind nicht übertragbar. Sachgewinne werden nach Bestätigung der
               Gewinnberechtigung (Rückmeldung und auf Anforderung Bestellnachweis) an die bei der
               Registrierung angegebene Anschrift in {ELIGIBLE_COUNTRIES_LABEL} versendet; die
-              Cardmarket-Wertgutscheine werden per E-Mail an die bei der Registrierung angegebene
-              Adresse übermittelt. Kann ein Gewinn aus Gründen, die der Veranstalter nicht zu
-              vertreten hat, nicht erbracht werden, erhält die jeweilige Gewinnerin bzw. der
-              jeweilige Gewinner eine gleichwertige Ersatzleistung.
+              Wertgutscheine für {CARDMARKET_PRO_NAME} werden per E-Mail an die bei der
+              Registrierung angegebene Adresse übermittelt. Kann ein Gewinn aus Gründen, die der
+              Veranstalter nicht zu vertreten hat, nicht erbracht werden, erhält die jeweilige
+              Gewinnerin bzw. der jeweilige Gewinner eine gleichwertige Ersatzleistung.
             </p>
           </section>
 

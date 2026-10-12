@@ -329,7 +329,7 @@ Verlosung. Beispiel-Link mit bereinigten Kampagnenparametern:
 
 Eigenständige Kampagne **`cards_2026`** (One Piece OP-17 Case, 3 × Story Booster 01
 Booster Box Fusion World, 3 × Magnificent Monsters EU Version Case, 10 × 100 €
-Cardmarket-Wertgutschein = 17 Gewinne) mit eigenem Lostopf – **nicht** Teil der
+Wertgutschein für cardmarket.pro = 17 Gewinne) mit eigenem Lostopf – **nicht** Teil der
 Dubai-Verlosung. Ausführliche Doku: `docs/cards-kampagne.md`.
 
 - Routen: `/cards` (Landingpage), `/cards/danke` (Bestätigung nur mit signiertem

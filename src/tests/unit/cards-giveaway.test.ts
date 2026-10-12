@@ -56,7 +56,7 @@ describe("Cards-Gewinnspiel: Gewinnumfang (exakt laut Briefing)", () => {
     expect(CARDS_MAIN_PRIZE.id).toBe("op17_case");
   });
 
-  it("leitet 17 Gewinne und 1.000 € Cardmarket-Gutscheinwert ab – ohne erfundenen Gesamtmarktwert", () => {
+  it("leitet 17 Gewinne und 1.000 € cardmarket.pro-Gutscheinwert ab – ohne erfundenen Gesamtmarktwert", () => {
     expect(CARDS_PRIZE_COUNT).toBe(17);
     expect(CARDS_CARDMARKET_COUNT).toBe(10);
     expect(CARDS_CARDMARKET_TOTAL_EUR).toBe(1000);
@@ -68,7 +68,7 @@ describe("Cards-Gewinnspiel: Gewinnumfang (exakt laut Briefing)", () => {
       ),
     ).toBe(true);
     expect(CARDS_PRIZE_SCOPE).toContain("1×OP-17 Case");
-    expect(CARDS_PRIZE_SCOPE).toContain("10×100 € Cardmarket");
+    expect(CARDS_PRIZE_SCOPE).toContain("10×100 € cardmarket.pro");
     expect(CARDS_PRIZE_SCOPE).toContain(CARDS_TERMS_VERSION);
   });
 
@@ -77,7 +77,7 @@ describe("Cards-Gewinnspiel: Gewinnumfang (exakt laut Briefing)", () => {
       "1 × OP-17 Case (12 Boxes)",
       "3 × ST01 Display",
       "3 × Magnificent Monsters Case (EU)",
-      "10 × 100 € Cardmarket",
+      "10 × 100 € cardmarket.pro",
     ]);
     expect(cardsPrizeFullLabel(CARDS_PRIZES[1]!)).toBe(
       "3 × Story Booster 01 Display Fusion World (ST01)",
@@ -112,7 +112,17 @@ describe("Cards-Gewinnspiel: Teilen und Kampagnenregister", () => {
     expect(CARDS_URL).toBe("https://lizenzzumerfolg.com/cards");
     expect(CARDS_SHARE_TEXT).toContain("OP-17 Case (12 Boxes)");
     expect(CARDS_SHARE_TEXT).toContain("17 Gewinne");
-    expect(CARDS_SHARE_TEXT).toContain("10 × 100 € Cardmarket");
+    expect(CARDS_SHARE_TEXT).toContain("10 × 100 € cardmarket.pro");
+    // Abmahnung Cardmarket (12.10.2026): der frühere Anbietername darf in keinem Text mehr auftauchen
+    for (const text of [
+      CARDS_SHARE_TEXT,
+      CARDS_PRIZE_SCOPE,
+      ...CARDS_PRIZES.map(
+        (p) => `${p.unit} ${p.short} ${p.franchise} ${p.headline} ${p.description}`,
+      ),
+    ]) {
+      expect(text).not.toMatch(/\bCardmarket\b(?!\.pro)/i);
+    }
     expect(CARDS_SHARE_TEXT).toContain("100 % der Autoreneinnahmen");
     expect(CARDS_SHARE_TEXT.endsWith(CARDS_URL)).toBe(true);
     expect(CARDS_SHARE_TEXT).not.toContain("utm_");

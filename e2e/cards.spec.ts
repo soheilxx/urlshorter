@@ -87,7 +87,7 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", CANONICAL);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       "content",
-      `${CANONICAL}/og.jpg`,
+      `${CANONICAL}/og-v2.jpg`,
     );
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
       "content",
@@ -126,7 +126,9 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     await expect(page.getByTestId("prize-chip-magnificent_monsters_eu_case")).toHaveText(
       "3 × Magnificent Monsters Case (EU)",
     );
-    await expect(page.getByTestId("prize-chip-cardmarket_100")).toHaveText("10 × 100 € Cardmarket");
+    await expect(page.getByTestId("prize-chip-cardmarket_100")).toHaveText(
+      "10 × 100 € cardmarket.pro",
+    );
 
     // Hauptgewinn-Sektion und Nebenbühnen
     await expect(
@@ -151,7 +153,10 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     expect(await page.locator("body").innerText()).not.toMatch(/vorbestellen/i);
     await expect(page.getByTestId("yugioh-variant")).toHaveText("EU Version");
     const cm = page.getByTestId("prize-panel-cardmarket_100");
-    await expect(cm).toContainText("10 × 100 € Cardmarket-Wertgutschein");
+    await expect(cm).toContainText("10 × 100 € Wertgutschein für cardmarket.pro");
+    // Kein fremdes Logo: der Anbieter erscheint nur als Text; der frühere Anbietername darf nirgends mehr stehen
+    expect(await cm.locator("img, svg[aria-label], [data-logo]").count()).toBe(0);
+    expect(await page.locator("body").innerText()).not.toMatch(/\bCardmarket\b(?!\.pro)/i);
     await expect(cm).toContainText("1.000 €");
     await expect(page.getByTestId("donation-promise")).toHaveText(
       "Soheil Hosseini spendet 100 % seiner Einnahmen aus diesem Buch an den Kinderschutzbund.",
@@ -516,26 +521,56 @@ test.describe("TCG-Gewinnspiel /cards", () => {
     });
   });
 
-  test("Teilnahmebedingungen Cards: Version, exakte Gewinne, Fristen, Cardmarket-Bedingungen, Dubai-Abgrenzung", async ({
+  test("Markenname nach Abmahnung: nur cardmarket.pro in Seitentext, Meta-/OG-Beschreibung und Vorschaubild", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/cards");
+    const forbidden = /\bCardmarket\b(?!\.pro)/i;
+    expect(await page.locator("body").innerText()).not.toMatch(forbidden);
+    for (const selector of [
+      'meta[name="description"]',
+      'meta[property="og:description"]',
+      'meta[name="twitter:description"]',
+      'meta[property="og:image:alt"]',
+    ]) {
+      const content = await page.locator(selector).getAttribute("content");
+      expect(content, selector).not.toMatch(forbidden);
+    }
+    expect(await page.locator('meta[name="description"]').getAttribute("content")).toContain(
+      "cardmarket.pro",
+    );
+    // Altes Vorschaubild mit dem fremden Markennamen wird nicht mehr ausgeliefert, neues ist da
+    expect((await request.get("/cards/og.jpg")).status()).toBe(404);
+    const og = await request.get("/cards/og-v2.jpg");
+    expect(og.status()).toBe(200);
+    expect(og.headers()["content-type"]).toContain("image/jpeg");
+    // Gutscheinkarte: reiner Text, kein eingebettetes Logo
+    const voucher = page.getByTestId("voucher-card").first();
+    await expect(voucher).toContainText("cardmarket.pro");
+    expect(await voucher.locator("img, svg, picture").count()).toBe(0);
+  });
+
+  test("Teilnahmebedingungen Cards: Version, exakte Gewinne, Fristen, Gutschein-Bedingungen, Dubai-Abgrenzung", async ({
     page,
   }) => {
     await page.goto("/cards/teilnahmebedingungen");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Teilnahmebedingungen Cards-Gewinnspiel",
     );
-    await expect(page.getByText(/Version cards-1\.2 \(18\.09\.2026\)/)).toBeVisible();
+    await expect(page.getByText(/Version cards-1\.3 \(12\.10\.2026\)/)).toBeVisible();
     await expect(page.getByText("1 × One Piece OP-17 Case (OP-17)")).toBeVisible();
     await expect(page.getByText("3 × Story Booster 01 Display Fusion World (ST01)")).toBeVisible();
     await expect(page.getByText(/12 Booster Boxes à 24 Packs/)).toBeVisible();
     await expect(page.getByText("3 × Magnificent Monsters EU Version Case")).toBeVisible();
-    await expect(page.getByText("10 × Cardmarket-Wertgutschein über 100 €")).toBeVisible();
+    await expect(page.getByText("10 × Wertgutschein für cardmarket.pro über 100 €")).toBeVisible();
     await expect(page.getByText(/05\.10\.2026, 23:59 Uhr \(MESZ\)/).first()).toBeVisible();
     await expect(
       page.getByText(/Gewinnerbekanntgabe erfolgt am 21\.10\.2026 um 12 Uhr/),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: "Cardmarket-Hilfe: Gutscheine" })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "cardmarket.pro" }).first()).toHaveAttribute(
       "href",
-      "https://help.cardmarket.com/de/cardmarket-coupons",
+      "https://cardmarket.pro",
     );
     await expect(
       page.getByText(/kann für das Cards-Gewinnspiel einmal separat registriert werden/),

@@ -1,6 +1,7 @@
 /**
  * Generiert das Vorschaubild des TCG-Gewinnspiels für Messenger/Social
- * (public/cards/og.jpg, 1200×630, JPEG < 300 KB für WhatsApp/Telegram):
+ * (public/cards/og-v2.jpg, 1200×630, JPEG < 300 KB für WhatsApp/Telegram;
+ * Dateiname mit Version, damit Messenger-Caches das alte Bild nicht weiterzeigen):
  * echte Produktbilder (OP-17 Booster Box im Fokus, ST01 Display, Magnificent
  * Monsters Box), Goldlicht, klickstarke Headline – ohne Anleitungstext.
  * Ausführen: npx tsx scripts/generate-cards-og.ts (nutzt Playwright-Chromium).
@@ -33,7 +34,7 @@ const html = `<!doctype html><html><body style="margin:0">
       <span style="border:1px solid rgba(255,213,106,0.8);background:rgba(255,213,106,0.12);color:#ffd56a;font-size:15px;font-weight:800;letter-spacing:1.5px;padding:8px 12px;border-radius:6px;">1 × OP-17 CASE · 12 BOXES</span>
       <span style="border:1px solid rgba(255,138,50,0.7);color:#ffb066;font-size:15px;font-weight:700;letter-spacing:1px;padding:8px 12px;border-radius:6px;">3 × ST01 DISPLAY</span>
       <span style="border:1px solid rgba(168,139,255,0.7);color:#c9b8ff;font-size:15px;font-weight:700;letter-spacing:1px;padding:8px 12px;border-radius:6px;">3 × MAGNIFICENT MONSTERS CASE (EU)</span>
-      <span style="border:1px solid rgba(101,189,255,0.7);color:#9fd4ff;font-size:15px;font-weight:700;letter-spacing:1px;padding:8px 12px;border-radius:6px;">10 × 100 € CARDMARKET</span>
+      <span style="border:1px solid rgba(79,209,197,0.75);color:#8ff0e3;font-size:15px;font-weight:700;letter-spacing:1px;padding:8px 12px;border-radius:6px;">10 × 100 € GUTSCHEIN · <span style="text-transform:none;letter-spacing:0;">cardmarket.pro</span></span>
     </div>
     <div style="margin-top:26px;font-size:24px;line-height:1.3;color:#f5f2e9;font-weight:600;">17 Gewinne für deine Sammlung.</div>
     <div style="margin-top:10px;font-size:17px;color:#8a97b0;">lizenzzumerfolg.com/cards · Verlosung zur Buchaktion „Die Lizenz zum Erfolg“</div>
@@ -54,9 +55,11 @@ async function main() {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });
   await page.setContent(html, { waitUntil: "networkidle" });
-  await page.locator("#og").screenshot({ path: "public/cards/og.jpg", type: "jpeg", quality: 84 });
+  await page
+    .locator("#og")
+    .screenshot({ path: "public/cards/og-v2.jpg", type: "jpeg", quality: 84 });
   await browser.close();
-  console.log("public/cards/og.jpg geschrieben (1200×630)");
+  console.log("public/cards/og-v2.jpg geschrieben (1200×630)");
 }
 
 main().catch((err) => {

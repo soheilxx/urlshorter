@@ -102,7 +102,7 @@ export const SWEEPSTAKES_CAMPAIGNS: Record<CampaignId, SweepstakesCampaign> = {
   cards_2026: {
     id: CARDS_CAMPAIGN_ID,
     slug: "cards",
-    label: "Cards – TCG-Gewinnspiel (OP-17 Case, Fusion World, Yu-Gi-Oh!, Cardmarket)",
+    label: "Cards – TCG-Gewinnspiel (OP-17 Case, Fusion World, Yu-Gi-Oh!, cardmarket.pro)",
     shortLabel: "Cards",
     entryPaths: [CARDS_ENTRY_PATH],
     termsVersion: CARDS_TERMS_VERSION,
