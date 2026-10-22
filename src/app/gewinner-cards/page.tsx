@@ -52,11 +52,28 @@ export default async function GewinnerCardsPage() {
       </div>
     </div>
   );
+  const voucherMini = (
+    <div
+      className="tc-voucher-mini"
+      role="img"
+      aria-label={`Wertgutschein für cardmarket.pro über ${CARDS_CARDMARKET_VALUE_LABEL}`}
+    >
+      <span className="tc-voucher-mini-value">{CARDS_CARDMARKET_VALUE_LABEL}</span>
+      <span className="tc-voucher-mini-label">Wertgutschein</span>
+      <span className="tc-voucher-mini-brand">cardmarket.pro</span>
+    </div>
+  );
   const visuals = (size: "mini" | "panel") =>
     Object.fromEntries(
       CARDS_PRIZES.map((prize) => [
         prize.id,
-        prize.image ? <ProductShowcase prize={prize} size={size} showCaption={false} /> : voucher,
+        prize.image ? (
+          <ProductShowcase prize={prize} size={size} showCaption={false} />
+        ) : size === "mini" ? (
+          voucherMini
+        ) : (
+          voucher
+        ),
       ]),
     ) as Record<CardsPrizeId, ReactNode>;
 

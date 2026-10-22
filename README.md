@@ -351,8 +351,9 @@ Dubai-Verlosung. Ausführliche Doku: `docs/cards-kampagne.md`.
   je Klick serverseitig ein Los (`crypto.randomInt`, serialisierbare Transaktion,
   Protokoll `SweepstakesDraw`, Audit). Regel des Veranstalters: jede Bestellnummer ist
   ein Los, ein Los gewinnt höchstens einmal, Personen mit mehreren Losen können mehrfach
-  gewinnen (Option „ein Gewinn je Person“ zuschaltbar). Anzeige nur Los-Nr./Bestellnummer,
-  nie Namen. Details: `docs/cards-kampagne.md` Abschnitt 10.
+  gewinnen (Option „ein Gewinn je Person“ zuschaltbar). Anzeige: Vorname + Initial,
+  Los-Nr., Bestellnummer. Reset, Los-Ausschluss und Wartungsskript
+  `scripts/reset-cards-draw.ts`. Details: `docs/cards-kampagne.md` Abschnitt 10.
 
 ## Zentrales Tracking-Snippet (t.js)
 

@@ -306,6 +306,38 @@
   color: var(--cd-ink-mute);
 }
 
+/* Kleines Gutschein-Bild (Spot) */
+.tc-voucher-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1.6 / 1;
+  width: 100%;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0f6b63, #4fd1c5 60%, #c7fff8);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  color: #06201d;
+  text-align: center;
+}
+.tc-voucher-mini-value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.tc-voucher-mini-label {
+  margin-top: 3px;
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.tc-voucher-mini-brand {
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
 /* Lostrommel-Ticker */
 .tc-ticker {
   overflow: hidden;
@@ -617,9 +649,9 @@
   }
 }
 .tc-flash {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 70;
   background: #fff;
   pointer-events: none;
   animation: tc-flash 0.42s ease-out 1 forwards;
@@ -836,12 +868,13 @@
 
 /* Gewinner-Enthüllung */
 .tc-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 30;
+  z-index: 60;
   display: grid;
   place-items: center;
   padding: 16px;
+  overflow: auto;
   background: radial-gradient(
     900px 600px at 50% 40%,
     rgba(255, 213, 106, 0.22),
@@ -849,9 +882,6 @@
   );
   overflow: hidden;
   animation: tc-fade 0.35s ease-out 1;
-}
-.tc-stage:fullscreen .tc-overlay {
-  position: fixed;
 }
 @keyframes tc-fade {
   from {
@@ -924,6 +954,7 @@
   position: relative;
   z-index: 2;
   width: min(880px, 100%);
+  max-width: calc(100vw - 32px);
   border-radius: 28px;
   padding: 3px;
   background: linear-gradient(135deg, #fff2c2, var(--tc-gold), #8a5a00, var(--tc-gold), #fff2c2);
@@ -947,6 +978,7 @@
   }
 }
 .tc-winner-inner {
+  overflow: hidden;
   border-radius: 25px;
   padding: 26px 22px 24px;
   background:
@@ -961,8 +993,9 @@
 }
 .tc-winner-name {
   margin-top: 10px;
+  overflow-wrap: anywhere;
   font-family: var(--font-display);
-  font-size: clamp(2.6rem, 9vw, 6rem);
+  font-size: clamp(2.2rem, 8vw, 6rem);
   font-weight: 900;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -1000,7 +1033,7 @@
 }
 @media (min-width: 640px) {
   .tc-winner-prize {
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
   }
 }
 .tc-winner-visual {
