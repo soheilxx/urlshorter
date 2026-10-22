@@ -62,6 +62,11 @@
     radial-gradient(800px 400px at 50% 0%, rgba(255, 213, 106, 0.1), transparent 60%), #0a0714;
   overflow: hidden;
 }
+/* Während Enthüllung/Blitz liegt der gesamte Bühnen-Stacking-Context über der Seite */
+.tc-page[data-phase="triple"] .tc-stage,
+.tc-page[data-phase="reveal"] .tc-stage {
+  z-index: 50;
+}
 .tc-stage:fullscreen {
   border-radius: 0;
   padding: 24px;
