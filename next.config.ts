@@ -17,6 +17,16 @@ const nextConfig: NextConfig = {
       {
         // Bestätigungsseite des Cards-Gewinnspiels: an ein Receipt-Cookie gebunden,
         // nie öffentlich cachen, nicht indexieren.
+        source: "/gewinner-cards",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-cache, no-store, max-age=0, must-revalidate",
+          },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      },
+      {
         source: "/cards/danke",
         headers: [
           {

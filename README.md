@@ -23,16 +23,16 @@ Tracking-Projekt genutzt.
 7. [Analytics-Tab (Geo & Kanäle)](#analytics-tab-geo--kanäle)
 8. [Migrationen](#migrationen)
 9. [Tests](#tests)
-8. [Deployment auf Vercel](#deployment-auf-vercel)
-9. [Domain und DNS](#domain-und-dns)
-10. [Tracking-Konfiguration](#tracking-konfiguration)
-11. [Consent-Konfiguration (DSGVO)](#consent-konfiguration-dsgvo)
-12. [Datenschutz-Hinweise](#datenschutz-hinweise)
-13. [Bot-Erkennung](#bot-erkennung)
-14. [Datenaufbewahrung](#datenaufbewahrung)
-15. [Backup-Hinweise](#backup-hinweise)
-16. [Fehlerbehebung](#fehlerbehebung)
-17. [Grenzen der Messbarkeit](#grenzen-der-messbarkeit)
+10. [Deployment auf Vercel](#deployment-auf-vercel)
+11. [Domain und DNS](#domain-und-dns)
+12. [Tracking-Konfiguration](#tracking-konfiguration)
+13. [Consent-Konfiguration (DSGVO)](#consent-konfiguration-dsgvo)
+14. [Datenschutz-Hinweise](#datenschutz-hinweise)
+15. [Bot-Erkennung](#bot-erkennung)
+16. [Datenaufbewahrung](#datenaufbewahrung)
+17. [Backup-Hinweise](#backup-hinweise)
+18. [Fehlerbehebung](#fehlerbehebung)
+19. [Grenzen der Messbarkeit](#grenzen-der-messbarkeit)
 
 ---
 
@@ -71,24 +71,24 @@ weitergeleitet – ein Trackingfehler kostet nie einen Kauf.
 
 ### Wichtige Dateien
 
-| Pfad                                    | Zweck                                                     |
-| --------------------------------------- | --------------------------------------------------------- |
-| `src/app/[code]/route.ts`               | Redirect-/Tracking-Route (Kern des Systems)               |
-| `src/lib/bridge-html.ts`                | Generierung der Bridge-Page + Fehlerseiten + CSP          |
-| `src/lib/bot-detection.ts`              | Bot-/Crawler-/Preview-Erkennung                           |
-| `src/lib/event-token.ts`                | Signierte, kurzlebige Event-Tokens (HMAC)                 |
-| `src/app/api/beacon/route.ts`           | Clientseitige Event-Bestätigungen                         |
-| `src/lib/url-validation.ts`             | Ziel-URL-Validierung (HTTPS-Pflicht, optionale Allowlist) |
-| `src/lib/shortcode.ts`                  | Kryptografisch sichere 4-Buchstaben-Codes                 |
-| `src/lib/auth.ts`, `src/lib/session.ts` | Benutzer-Auth (DB + Env-Bootstrap), Session, Rate Limiting |
-| `src/lib/permissions.ts`                | Rollen (Admin/Marketer/Viewer) und Rechte                 |
-| `src/lib/stats.ts`                      | Serverseitig aggregierte Dashboard-Statistiken            |
-| `src/lib/geo-stats.ts`, `src/lib/channels.ts` | Geo-/Kanal-Auswertungen für den Analytics-Tab       |
-| `src/lib/world-map.ts`                  | Weltkarten-Geometrie (gebündeltes TopoJSON, kein Fetch)   |
-| `src/lib/retention.ts`                  | Aggregation + Löschung alter Events                       |
-| `src/app/admin/**`                      | Deutschsprachiges Admin-Dashboard                         |
-| `src/actions/**`                        | Server Actions (Zod-validiert, auth-geprüft, auditiert)   |
-| `prisma/schema.prisma`                  | Datenmodell inkl. Indizes                                 |
+| Pfad                                          | Zweck                                                      |
+| --------------------------------------------- | ---------------------------------------------------------- |
+| `src/app/[code]/route.ts`                     | Redirect-/Tracking-Route (Kern des Systems)                |
+| `src/lib/bridge-html.ts`                      | Generierung der Bridge-Page + Fehlerseiten + CSP           |
+| `src/lib/bot-detection.ts`                    | Bot-/Crawler-/Preview-Erkennung                            |
+| `src/lib/event-token.ts`                      | Signierte, kurzlebige Event-Tokens (HMAC)                  |
+| `src/app/api/beacon/route.ts`                 | Clientseitige Event-Bestätigungen                          |
+| `src/lib/url-validation.ts`                   | Ziel-URL-Validierung (HTTPS-Pflicht, optionale Allowlist)  |
+| `src/lib/shortcode.ts`                        | Kryptografisch sichere 4-Buchstaben-Codes                  |
+| `src/lib/auth.ts`, `src/lib/session.ts`       | Benutzer-Auth (DB + Env-Bootstrap), Session, Rate Limiting |
+| `src/lib/permissions.ts`                      | Rollen (Admin/Marketer/Viewer) und Rechte                  |
+| `src/lib/stats.ts`                            | Serverseitig aggregierte Dashboard-Statistiken             |
+| `src/lib/geo-stats.ts`, `src/lib/channels.ts` | Geo-/Kanal-Auswertungen für den Analytics-Tab              |
+| `src/lib/world-map.ts`                        | Weltkarten-Geometrie (gebündeltes TopoJSON, kein Fetch)    |
+| `src/lib/retention.ts`                        | Aggregation + Löschung alter Events                        |
+| `src/app/admin/**`                            | Deutschsprachiges Admin-Dashboard                          |
+| `src/actions/**`                              | Server Actions (Zod-validiert, auth-geprüft, auditiert)    |
+| `prisma/schema.prisma`                        | Datenmodell inkl. Indizes                                  |
 
 ### Datenmodell
 
@@ -200,11 +200,11 @@ Login-Seite eine Setup-Meldung und der Admin-Bereich bleibt gesperrt.
 Das Dashboard hat eine Benutzerverwaltung (`/admin/users`, nur für Admins)
 mit E-Mail + Passwort (bcrypt) und drei Rollen:
 
-| Rolle        | Rechte                                                                 |
-| ------------ | ---------------------------------------------------------------------- |
-| **Admin**    | Vollzugriff: Benutzer, Einstellungen, Links, Ziele, alle Auswertungen  |
-| **Marketer** | Kurzlinks & Ziele anlegen/bearbeiten, alle Auswertungen und Exporte    |
-| **Viewer**   | Nur Lesezugriff (Übersicht, Analytics, Klicks, Listen, CSV-Export)     |
+| Rolle        | Rechte                                                                |
+| ------------ | --------------------------------------------------------------------- |
+| **Admin**    | Vollzugriff: Benutzer, Einstellungen, Links, Ziele, alle Auswertungen |
+| **Marketer** | Kurzlinks & Ziele anlegen/bearbeiten, alle Auswertungen und Exporte   |
+| **Viewer**   | Nur Lesezugriff (Übersicht, Analytics, Klicks, Listen, CSV-Export)    |
 
 Funktionsweise und Schutzregeln:
 
@@ -347,6 +347,12 @@ Dubai-Verlosung. Ausführliche Doku: `docs/cards-kampagne.md`.
   jeder Amazon-Klick = Amazon-Outbound / AddToCart-Proxy mit
   `giveaway_campaign=cards_2026`, nie `Purchase`.
 - OG-Bild neu erzeugen: `npx tsx scripts/generate-cards-og.ts`.
+- Gewinnziehung: `/gewinner-cards` („Triple Chance“, nur Admin, noindex/no-store) zieht
+  je Klick serverseitig ein Los (`crypto.randomInt`, serialisierbare Transaktion,
+  Protokoll `SweepstakesDraw`, Audit). Regel des Veranstalters: jede Bestellnummer ist
+  ein Los, ein Los gewinnt höchstens einmal, Personen mit mehreren Losen können mehrfach
+  gewinnen (Option „ein Gewinn je Person“ zuschaltbar). Anzeige nur Los-Nr./Bestellnummer,
+  nie Namen. Details: `docs/cards-kampagne.md` Abschnitt 10.
 
 ## Zentrales Tracking-Snippet (t.js)
 
@@ -717,11 +723,11 @@ weiterreicht – Meta, TikTok und LinkedIn deduplizieren Pixel- und
 Server-Event damit selbst. Der signierte Kontext (`book-conversion-context.ts`,
 `APP_SECRET`) bindet Route und Consent-Modus; Tokens verlassen den Server nie.
 
-| Handlung                        | Meta Pixel + CAPI | TikTok Pixel + Events API | LinkedIn                      | GA4/GTM       | Intern             |
-| ------------------------------- | ----------------- | ------------------------- | ----------------------------- | ------------- | ------------------ |
-| Sichtbarer Seitenaufruf         | `PageView`        | `Pageview` (nur Pixel)    | Insight Tag                   | Seiten-Event  | `book_page_view`   |
-| Klick auf einen Amazon-Buchlink | `AddToCart`       | `AddToCart`               | Conversion (nur `li_fat_id`)  | `add_to_cart` | `book_add_to_cart` |
-| Gewinnspiel-Teilnahme gespeichert (`/gewinn`, `/verlosung`) | `CompleteRegistration` | `CompleteRegistration` | – (eigene Regel nötig) | `gewinnspiel_teilnahme` | `sweepstakes_registration` |
+| Handlung                                                    | Meta Pixel + CAPI      | TikTok Pixel + Events API | LinkedIn                     | GA4/GTM                 | Intern                     |
+| ----------------------------------------------------------- | ---------------------- | ------------------------- | ---------------------------- | ----------------------- | -------------------------- |
+| Sichtbarer Seitenaufruf                                     | `PageView`             | `Pageview` (nur Pixel)    | Insight Tag                  | Seiten-Event            | `book_page_view`           |
+| Klick auf einen Amazon-Buchlink                             | `AddToCart`            | `AddToCart`               | Conversion (nur `li_fat_id`) | `add_to_cart`           | `book_add_to_cart`         |
+| Gewinnspiel-Teilnahme gespeichert (`/gewinn`, `/verlosung`) | `CompleteRegistration` | `CompleteRegistration`    | – (eigene Regel nötig)       | `gewinnspiel_teilnahme` | `sweepstakes_registration` |
 
 `AddToCart` trägt `content_ids` = ISBN, `value` 18, `currency` EUR
 (Kauf-Proxy auf ausdrücklichen Wunsch – kein Umsatz, kein Purchase). Der
@@ -731,12 +737,13 @@ Kaufverifikation, kein Wert; es wird nur nach tatsächlicher Speicherung mit
 der vom Server vergebenen Ereignis-ID gesendet (Honeypot-Scheinerfolg: nichts).
 Benötigte Variablen: `META_PIXEL_ID` + `META_CAPI_ACCESS_TOKEN`,
 `TIKTOK_PIXEL_ID` + `TIKTOK_EVENTS_API_TOKEN`, optional `LINKEDIN_PARTNER_ID`
-+ `LINKEDIN_CONVERSION_RULE_ID` + `LINKEDIN_CAPI_ACCESS_TOKEN`. Ohne Token
-läuft nur das Pixel (Log `book_capi.meta_not_configured`). Logs:
-`book_capi.meta_sent`, `book_capi.tiktok_sent`, `linkedin_capi.sent`,
-`book_collect.failed`. Prüfen: Meta Events Manager → Test-Events
-(`META_CAPI_TEST_EVENT_CODE` temporär setzen), Browserprüfung
-`npm run test:e2e:book` (Port 3102, blockiert alle externen Zugriffe).
+
+- `LINKEDIN_CONVERSION_RULE_ID` + `LINKEDIN_CAPI_ACCESS_TOKEN`. Ohne Token
+  läuft nur das Pixel (Log `book_capi.meta_not_configured`). Logs:
+  `book_capi.meta_sent`, `book_capi.tiktok_sent`, `linkedin_capi.sent`,
+  `book_collect.failed`. Prüfen: Meta Events Manager → Test-Events
+  (`META_CAPI_TEST_EVENT_CODE` temporär setzen), Browserprüfung
+  `npm run test:e2e:book` (Port 3102, blockiert alle externen Zugriffe).
 
 ### Woran erkenne ich, dass ein Link korrekt trackt?
 
@@ -857,18 +864,18 @@ zeigen so die Amazon-Seite an.
 
 ## Fehlerbehebung
 
-| Symptom                                                  | Ursache / Lösung                                                                                                                                                                                                                                     |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Login-Seite meldet „Setup unvollständig“                 | Auth-Variablen fehlen → `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH_BASE64`, `AUTH_SECRET` setzen und neu deployen.                                                                                                                                          |
-| Login schlägt trotz korrektem Passwort fehl              | Klassiker: `$`-Zeichen im bcrypt-Hash wurden vom Env-Loader expandiert → `ADMIN_PASSWORD_HASH_BASE64` verwenden (`npm run hash-password`).                                                                                                           |
-| „Zu viele fehlgeschlagene Loginversuche“                 | Rate Limit (5 Fehlversuche/15 min) → warten oder alte `LoginAttempt`-Einträge löschen.                                                                                                                                                               |
-| Kurzlink zeigt Fehlerseite                               | Link oder Ziel deaktiviert bzw. abgelaufen → Dashboard → Kurzlinks/Ziele prüfen.                                                                                                                                                                     |
-| Pixel feuern nicht                                       | Consent-Modus `required` ohne gültigen Consent-Cookie (gewollt), Adblocker, oder ID-Format ungültig (Dashboard → Einstellungen → Systemstatus).                                                                                                      |
-| GTM-Tags eines Drittanbieters laden nicht                | CSP der Bridge-Page → Host in `BRIDGE_EXTRA_CSP_HOSTS` ergänzen.                                                                                                                                                                                     |
-| `/api/health` liefert `degraded`                         | Datenbank nicht erreichbar → `DATABASE_URL`/DB-Status prüfen.                                                                                                                                                                                        |
-| Zu viele DB-Verbindungen (Serverless)                    | Gepoolte Connection-URL verwenden.                                                                                                                                                                                                                   |
-| Cron läuft nicht                                         | `CRON_SECRET` fehlt oder Cron nicht aktiv (Vercel → Settings → Cron Jobs).                                                                                                                                                                           |
-| Formular-Submit bleibt auf „Wird gespeichert …“ hängen   | Next-15-Race: Bei `useActionState` **mit** `revalidatePath` (oder key-Remount des `<form>`) verwirft der Client-Router sporadisch die Action-Antwort – der Server hat aber geschrieben (Beleg: POST 200 + `x-action-revalidated`, kein Console-Fehler). Die Benutzer-Formulare nutzen deshalb `router.refresh()` nach Erfolg statt `revalidatePath` (siehe `user-forms.tsx`/`user-actions.ts`). Die älteren Link-/Ziel-Formulare können lokal unter Last selten noch hängen → Seite neu laden, Eintrag ist angelegt; die E2E-Tests prüfen deshalb das Ergebnis (Listeneintrag) statt nur der Erfolgsmeldung. |
+| Symptom                                                | Ursache / Lösung                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Login-Seite meldet „Setup unvollständig“               | Auth-Variablen fehlen → `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH_BASE64`, `AUTH_SECRET` setzen und neu deployen.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Login schlägt trotz korrektem Passwort fehl            | Klassiker: `$`-Zeichen im bcrypt-Hash wurden vom Env-Loader expandiert → `ADMIN_PASSWORD_HASH_BASE64` verwenden (`npm run hash-password`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| „Zu viele fehlgeschlagene Loginversuche“               | Rate Limit (5 Fehlversuche/15 min) → warten oder alte `LoginAttempt`-Einträge löschen.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Kurzlink zeigt Fehlerseite                             | Link oder Ziel deaktiviert bzw. abgelaufen → Dashboard → Kurzlinks/Ziele prüfen.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Pixel feuern nicht                                     | Consent-Modus `required` ohne gültigen Consent-Cookie (gewollt), Adblocker, oder ID-Format ungültig (Dashboard → Einstellungen → Systemstatus).                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| GTM-Tags eines Drittanbieters laden nicht              | CSP der Bridge-Page → Host in `BRIDGE_EXTRA_CSP_HOSTS` ergänzen.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `/api/health` liefert `degraded`                       | Datenbank nicht erreichbar → `DATABASE_URL`/DB-Status prüfen.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Zu viele DB-Verbindungen (Serverless)                  | Gepoolte Connection-URL verwenden.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Cron läuft nicht                                       | `CRON_SECRET` fehlt oder Cron nicht aktiv (Vercel → Settings → Cron Jobs).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Formular-Submit bleibt auf „Wird gespeichert …“ hängen | Next-15-Race: Bei `useActionState` **mit** `revalidatePath` (oder key-Remount des `<form>`) verwirft der Client-Router sporadisch die Action-Antwort – der Server hat aber geschrieben (Beleg: POST 200 + `x-action-revalidated`, kein Console-Fehler). Die Benutzer-Formulare nutzen deshalb `router.refresh()` nach Erfolg statt `revalidatePath` (siehe `user-forms.tsx`/`user-actions.ts`). Die älteren Link-/Ziel-Formulare können lokal unter Last selten noch hängen → Seite neu laden, Eintrag ist angelegt; die E2E-Tests prüfen deshalb das Ergebnis (Listeneintrag) statt nur der Erfolgsmeldung. |
 
 Systemstatus: Dashboard → Einstellungen (DB-Status, konfigurierte
 Integrationen, Consent-Modus, Retention, Audit-Log). Health-Endpoint:

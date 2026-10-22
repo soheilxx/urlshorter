@@ -1,4 +1,4 @@
-import { Download, Eye } from "lucide-react";
+import { Download, Eye, Trophy } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FilterPanel } from "@/components/admin/filter-panel";
@@ -129,6 +129,12 @@ export default async function SweepstakesAdminPage({
         description="Teilnahmen der Buch-Gewinnspiele – zwei getrennte Kampagnen: Dubai (lizenzzumerfolg.com/gewinn, /verlosung) und Cards (lizenzzumerfolg.com/cards) · nur für Admins"
       >
         <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row">
+          <Link href="/gewinner-cards" className="w-full md:w-auto" data-testid="draw-link">
+            <Button variant="secondary" size="sm" className="w-full md:w-auto">
+              <Trophy className="h-3.5 w-3.5" aria-hidden="true" />
+              Ziehung Cards (Triple Chance)
+            </Button>
+          </Link>
           {exportTargets.map((c) => (
             <a key={c.id} href={exportHref(c.id)} className="w-full md:w-auto">
               <Button variant="secondary" size="sm" className="w-full md:w-auto">

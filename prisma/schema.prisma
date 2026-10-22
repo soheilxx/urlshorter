@@ -275,6 +275,9 @@ model SweepstakesEntry {
   /// Gesetzt, sobald eine Bestätigungs-E-Mail tatsächlich versendet wurde.
   emailConfirmationSentAt DateTime? @db.Timestamptz(3)
 
+  /// Ziehungsprotokoll (höchstens ein Gewinn je Los)
+  draw SweepstakesDraw?
+
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
@@ -288,6 +291,31 @@ model SweepstakesEntry {
   @@index([lastName])
   @@index([submissionIdentifier, createdAt])
   @@index([landingPath])
+}
+
+/// Ziehungsprotokoll der Gewinnspiele (kampagnenrein): jede Ziehung eines
+/// Gewinns mit Vorzustand, Topfgröße und Zufallsindex (crypto.randomInt).
+/// Ein Los (Teilnahme) gewinnt höchstens einmal; Personen mit mehreren Losen
+/// können mehrfach gewinnen (Regel des Veranstalters für Cards).
+model SweepstakesDraw {
+  id             String                 @id
+  campaignId     String
+  prizeId        String
+  /// Laufende Nummer der Ziehung innerhalb der Kampagne (1 = erste Ziehung)
+  sequence       Int
+  entryId        String                 @unique
+  entry          SweepstakesEntry       @relation(fields: [entryId], references: [id])
+  /// Status der Teilnahme vor der Ziehung (für „Ziehung verwerfen“)
+  previousStatus SweepstakesEntryStatus
+  /// Anzahl der Lose im Topf zum Zeitpunkt der Ziehung
+  poolSize       Int
+  /// Gezogener Index (0-basiert, crypto.randomInt(poolSize))
+  randomIndex    Int
+  drawnBy        String
+  drawnAt        DateTime               @default(now()) @db.Timestamptz(3)
+
+  @@unique([campaignId, sequence])
+  @@index([campaignId, prizeId])
 }
 
 /// Gutscheincode der Newsletter-Aktion (50 % Wiresoft-Shop). Codes werden
