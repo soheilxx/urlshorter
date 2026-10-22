@@ -62,11 +62,6 @@
     radial-gradient(800px 400px at 50% 0%, rgba(255, 213, 106, 0.1), transparent 60%), #0a0714;
   overflow: hidden;
 }
-/* Während Enthüllung/Blitz liegt der gesamte Bühnen-Stacking-Context über der Seite */
-.tc-page[data-phase="triple"] .tc-stage,
-.tc-page[data-phase="reveal"] .tc-stage {
-  z-index: 50;
-}
 .tc-stage:fullscreen {
   border-radius: 0;
   padding: 24px;
@@ -654,9 +649,10 @@
   }
 }
 .tc-flash {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 70;
+  z-index: 40;
+  border-radius: 20px;
   background: #fff;
   pointer-events: none;
   animation: tc-flash 0.42s ease-out 1 forwards;
@@ -873,13 +869,15 @@
 
 /* Gewinner-Enthüllung */
 .tc-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 60;
+  z-index: 30;
   display: grid;
   place-items: center;
-  padding: 16px;
+  padding: 14px;
   overflow: auto;
+  border-radius: 20px;
+  container-type: inline-size;
   background: radial-gradient(
     900px 600px at 50% 40%,
     rgba(255, 213, 106, 0.22),
@@ -958,8 +956,8 @@
 .tc-winner {
   position: relative;
   z-index: 2;
-  width: min(880px, 100%);
-  max-width: calc(100vw - 32px);
+  width: 100%;
+  max-width: 100%;
   border-radius: 28px;
   padding: 3px;
   background: linear-gradient(135deg, #fff2c2, var(--tc-gold), #8a5a00, var(--tc-gold), #fff2c2);
@@ -985,7 +983,7 @@
 .tc-winner-inner {
   overflow: hidden;
   border-radius: 25px;
-  padding: 26px 22px 24px;
+  padding: 20px 18px 20px;
   background:
     radial-gradient(700px 300px at 50% 0%, rgba(255, 213, 106, 0.2), transparent 70%), #0d0a1c;
   text-align: center;
@@ -1000,7 +998,7 @@
   margin-top: 10px;
   overflow-wrap: anywhere;
   font-family: var(--font-display);
-  font-size: clamp(2.2rem, 8vw, 6rem);
+  font-size: clamp(2rem, 11cqw, 5.4rem);
   font-weight: 900;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -1036,15 +1034,15 @@
   text-align: left;
   animation: tc-fade 0.6s ease-out 0.9s both;
 }
-@media (min-width: 640px) {
+@container (min-width: 560px) {
   .tc-winner-prize {
-    grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
+    grid-template-columns: minmax(170px, 230px) minmax(0, 1fr);
   }
 }
 .tc-winner-visual {
   position: relative;
   margin: 0 auto;
-  width: min(280px, 80vw);
+  width: min(230px, 70cqw);
 }
 .tc-winner-visual::before {
   content: "";
@@ -1058,7 +1056,7 @@
 }
 .tc-winner-prize-title {
   font-family: var(--font-display);
-  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-size: clamp(1.15rem, 3.4cqw, 1.8rem);
   font-weight: 700;
   color: var(--tc-gold);
   line-height: 1.15;
@@ -1066,7 +1064,7 @@
 .tc-winner-los {
   margin-top: 10px;
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-size: clamp(1.4rem, 5cqw, 2.4rem);
   font-weight: 700;
   letter-spacing: 0.3em;
   color: var(--tc-led);
@@ -1087,10 +1085,10 @@
 }
 .tc-winner-btn {
   display: inline-flex;
-  min-height: 56px;
+  min-height: 52px;
   align-items: center;
   justify-content: center;
-  margin-top: 22px;
+  margin-top: 18px;
   padding: 0 34px;
   font-size: 1.05rem;
   font-weight: 700;

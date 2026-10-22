@@ -136,15 +136,24 @@ test.describe("Gewinnziehung /gewinner-cards", () => {
     await expect(page.getByTestId("tc-drawn")).toContainText("GEZOGEN 00/17");
     await expect(page.getByTestId("tc-wall-won")).toHaveCount(0);
 
-    // Los ausschließen und wieder aufnehmen
-    await page.getByTestId("tc-lots").locator("summary").click();
-    const lotRow = page.getByTestId(`tc-lot-${los}`);
+    // Bühne verrät nichts über ausgeschlossene Lose (Stream!)
+    expect(await page.locator("main").innerText()).not.toMatch(/ausgeschlossen|Testeintrag/i);
+
+    // Los ausschließen und wieder aufnehmen – auf der getrennten Verwaltungsseite
+    await page.getByTestId("tc-lots-link").click();
+    await expect(page).toHaveURL(/\/gewinner-cards\/lose$/);
+    const lotRow = page.getByTestId(`lot-${los}`);
     page.once("dialog", (dialog) => dialog.accept());
-    await lotRow.getByTestId("tc-exclude").click();
-    await expect(page.getByTestId("tc-excluded")).toHaveText("1");
+    await lotRow.getByTestId("lot-exclude").click();
+    await expect(page.getByTestId("lots-excluded")).toHaveText("1");
     await expect(lotRow).toContainText("ausgeschlossen");
-    await lotRow.getByRole("button", { name: "Wieder aufnehmen" }).click();
-    await expect(page.getByTestId("tc-excluded")).toHaveText("0");
+    await page.goto("/gewinner-cards");
+    await expect(page.getByTestId("tc-pool")).toContainText("LOSE IM TOPF 0000");
+    expect(await page.locator("main").innerText()).not.toMatch(/ausgeschlossen|Testeintrag/i);
+    await page.goto("/gewinner-cards/lose");
+    await page.getByTestId(`lot-${los}`).getByRole("button", { name: "Wieder aufnehmen" }).click();
+    await expect(page.getByTestId("lots-excluded")).toHaveText("0");
+    await page.goto("/gewinner-cards");
     await page.screenshot({
       path: "test-results/screenshots/gewinner-cards-1440.png",
       fullPage: true,

@@ -7,7 +7,6 @@ import {
   drawCardsWinnerAction,
   markRemainingCardsNotWonAction,
   resetCardsDrawAction,
-  setCardsLotExcludedAction,
   undoLastCardsDrawAction,
 } from "@/actions/cards-draw-actions";
 import { CardsConfetti } from "@/components/cards/cards-confetti";
@@ -68,15 +67,6 @@ function formatBerlin(iso: string) {
     timeZone: "Europe/Berlin",
   }).format(new Date(iso));
 }
-
-const STATUS_LABEL: Record<string, string> = {
-  RECEIVED: "im Topf",
-  IN_REVIEW: "im Topf (in Prüfung)",
-  REVIEWED: "im Topf (geprüft)",
-  WINNER: "Gewinner",
-  NOT_WON: "nicht gewonnen",
-  INVALID: "ausgeschlossen",
-};
 
 export function TripleChanceDraw({
   initialState,
@@ -392,34 +382,6 @@ export function TripleChanceDraw({
     }
   }
 
-  async function toggleLot(entryId: string, excluded: boolean, reference: string) {
-    if (phase !== "idle" || busy) return;
-    if (
-      excluded &&
-      !window.confirm(
-        `Los ${reference} vom Topf ausschließen? Es nimmt dann nicht mehr an der Ziehung teil (protokolliert).`,
-      )
-    )
-      return;
-    setBusy(true);
-    try {
-      const result = await setCardsLotExcludedAction({ entryId, excluded });
-      setState(result.state);
-      setMessage(
-        result.ok
-          ? {
-              kind: "info",
-              text: excluded
-                ? `Los ${result.referenceNumber} ausgeschlossen.`
-                : `Los ${result.referenceNumber} wieder im Topf.`,
-            }
-          : { kind: "error", text: result.error },
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function markNotWon() {
     if (phase !== "idle" || busy) return;
     if (
@@ -514,6 +476,9 @@ export function TripleChanceDraw({
           <nav className="flex flex-wrap items-center gap-2 text-sm">
             <Link href="/admin/gewinnspiel?campaign=cards_2026" className="tc-navbtn">
               Admin · Teilnahmen
+            </Link>
+            <Link href="/gewinner-cards/lose" className="tc-navbtn" data-testid="tc-lots-link">
+              Lose verwalten
             </Link>
             <a href={exportHref} className="tc-navbtn">
               <Download className="h-4 w-4" aria-hidden="true" />
@@ -706,6 +671,79 @@ export function TripleChanceDraw({
               Jede Bestellnummer ist ein Los · ein Los gewinnt höchstens einmal · der Zufall wird
               serverseitig entschieden und protokolliert.
             </p>
+            {flash ? <div className="tc-flash" aria-hidden="true" /> : null}
+
+            {/* Gewinner-Enthüllung – im Automatenfenster, weil nur dieser Bereich gestreamt wird */}
+            {phase === "reveal" && current ? (
+              <div
+                className="tc-overlay"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="tc-winner-heading"
+                data-testid="tc-winner"
+              >
+                {!reducedMotion ? <CardsConfetti /> : null}
+                <div className="tc-rays" aria-hidden="true" />
+                {!reducedMotion ? (
+                  <div className="tc-coins" aria-hidden="true">
+                    {particles.map((p, i) => (
+                      <i
+                        key={i}
+                        style={{
+                          left: p.left,
+                          animationDelay: p.delay,
+                          width: p.size,
+                          height: p.size,
+                        }}
+                        data-hue={p.hue}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+                <div className="tc-winner">
+                  <div className="tc-winner-inner">
+                    <p className="tc-winner-kicker">
+                      Triple Chance · Ziehung {current.sequence} von {state.totalPrizes}
+                    </p>
+                    <p className="tc-winner-name" data-testid="tc-winner-name">
+                      {current.displayName}
+                    </p>
+                    <p className="tc-winner-gewinnt">gewinnt</p>
+                    <div className="tc-winner-prize">
+                      <div
+                        className="tc-winner-visual"
+                        style={{ ["--tc-world" as string]: WORLD_COLOR[current.world] }}
+                      >
+                        {prizeVisualsLarge[current.prizeId]}
+                      </div>
+                      <div>
+                        <p className="tc-winner-prize-title" data-testid="tc-winner-prize">
+                          {current.prizeUnit}
+                        </p>
+                        <p className="tc-winner-los" data-testid="tc-winner-los">
+                          {current.referenceNumber}
+                        </p>
+                        <p className="tc-winner-order" data-testid="tc-winner-order">
+                          Bestellnummer {current.orderNumber || "–"} · {current.retailer}
+                        </p>
+                        <p className="tc-winner-meta">
+                          Gezogen aus {current.poolSize} Losen (Index {current.randomIndex}) am{" "}
+                          {formatBerlin(current.drawnAt)} · protokolliert
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={closeReveal}
+                      className="cd-btn-gold tc-winner-btn"
+                      data-testid="tc-close"
+                    >
+                      Weiter
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </section>
 
           {/* Gewinner-Wand */}
@@ -743,80 +781,6 @@ export function TripleChanceDraw({
               ))}
             </div>
           </section>
-
-          {flash ? <div className="tc-flash" aria-hidden="true" /> : null}
-
-          {/* Gewinner-Enthüllung (innerhalb der Bühne, damit sie auch im Vollbild erscheint) */}
-          {phase === "reveal" && current ? (
-            <div
-              className="tc-overlay"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="tc-winner-heading"
-              data-testid="tc-winner"
-            >
-              {!reducedMotion ? <CardsConfetti /> : null}
-              <div className="tc-rays" aria-hidden="true" />
-              {!reducedMotion ? (
-                <div className="tc-coins" aria-hidden="true">
-                  {particles.map((p, i) => (
-                    <i
-                      key={i}
-                      style={{
-                        left: p.left,
-                        animationDelay: p.delay,
-                        width: p.size,
-                        height: p.size,
-                      }}
-                      data-hue={p.hue}
-                    />
-                  ))}
-                </div>
-              ) : null}
-              <div className="tc-winner">
-                <div className="tc-winner-inner">
-                  <p className="tc-winner-kicker">
-                    Triple Chance · Ziehung {current.sequence} von {state.totalPrizes}
-                  </p>
-                  <p className="tc-winner-name" data-testid="tc-winner-name">
-                    {current.displayName}
-                  </p>
-                  <p className="tc-winner-gewinnt">gewinnt</p>
-                  <div className="tc-winner-prize">
-                    <div
-                      className="tc-winner-visual"
-                      style={{ ["--tc-world" as string]: WORLD_COLOR[current.world] }}
-                    >
-                      {prizeVisualsLarge[current.prizeId]}
-                    </div>
-                    <div>
-                      <p className="tc-winner-prize-title" data-testid="tc-winner-prize">
-                        {current.prizeUnit}
-                      </p>
-                      <p className="tc-winner-los" data-testid="tc-winner-los">
-                        {current.referenceNumber}
-                      </p>
-                      <p className="tc-winner-order" data-testid="tc-winner-order">
-                        Bestellnummer {current.orderNumber || "–"} · {current.retailer}
-                      </p>
-                      <p className="tc-winner-meta">
-                        Gezogen aus {current.poolSize} Losen (Index {current.randomIndex}) am{" "}
-                        {formatBerlin(current.drawnAt)} · protokolliert
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={closeReveal}
-                    className="cd-btn-gold tc-winner-btn"
-                    data-testid="tc-close"
-                  >
-                    Weiter
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
         </div>
 
         {/* Seitenleiste */}
@@ -888,10 +852,8 @@ export function TripleChanceDraw({
                 <dd className="font-semibold text-[var(--cd-ink)]">{state.poolSize}</dd>
               </div>
               <div>
-                <dt className="text-[var(--cd-ink-mute)]">Ausgeschlossen</dt>
-                <dd className="font-semibold text-[var(--cd-ink)]" data-testid="tc-excluded">
-                  {state.excluded}
-                </dd>
+                <dt className="text-[var(--cd-ink-mute)]">Gewinne offen</dt>
+                <dd className="font-semibold text-[var(--cd-ink)]">{state.remainingTotal}</dd>
               </div>
             </dl>
             <label className="mt-4 flex items-start gap-3 text-sm text-[var(--cd-ink-soft)]">
@@ -988,87 +950,6 @@ export function TripleChanceDraw({
             </ul>
           </div>
         </aside>
-
-        {/* Lose verwalten */}
-        <details
-          className="lg:col-span-2 rounded-2xl border border-[var(--cd-border-soft)] bg-[var(--cd-surface)] p-4 sm:p-5"
-          data-testid="tc-lots"
-        >
-          <summary className="cd-display cursor-pointer text-lg font-semibold text-[var(--cd-ink)]">
-            Lose prüfen & ausschließen ({state.lots.length})
-            {state.lots.some((l) => l.suspicious && l.status !== "INVALID") ? (
-              <span className="ml-2 rounded-full bg-[rgba(231,92,88,0.18)] px-2 py-0.5 text-xs font-semibold text-[var(--cd-red)]">
-                Testeinträge prüfen
-              </span>
-            ) : null}
-          </summary>
-          <p className="mt-2 text-xs text-[var(--cd-ink-mute)]">
-            Ausschließen setzt das Los auf „ungültig“ (protokolliert) – z. B. eigene Testeinträge.
-            Gewinner-Lose müssen zuerst verworfen werden.
-          </p>
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="text-xs tracking-wider text-[var(--cd-ink-mute)] uppercase">
-                <tr>
-                  <th className="py-2 pr-3">Name</th>
-                  <th className="py-2 pr-3">Los-Nr.</th>
-                  <th className="py-2 pr-3">Status</th>
-                  <th className="py-2">Aktion</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--cd-border-soft)]">
-                {state.lots.map((lot) => (
-                  <tr
-                    key={lot.entryId}
-                    data-testid={`tc-lot-${lot.referenceNumber}`}
-                    className={cn(
-                      lot.suspicious && lot.status !== "INVALID" && "bg-[rgba(231,92,88,0.08)]",
-                    )}
-                  >
-                    <td className="py-1.5 pr-3 text-[var(--cd-ink)]">
-                      {lot.displayName}
-                      {lot.suspicious ? (
-                        <span className="ml-2 text-xs font-semibold text-[var(--cd-red)]">
-                          Testeintrag?
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="py-1.5 pr-3 font-mono text-[var(--tc-led)]">
-                      {lot.referenceNumber}
-                    </td>
-                    <td className="py-1.5 pr-3 text-[var(--cd-ink-soft)]">
-                      {STATUS_LABEL[lot.status] ?? lot.status}
-                    </td>
-                    <td className="py-1.5">
-                      {lot.status === "INVALID" ? (
-                        <button
-                          type="button"
-                          className="tc-navbtn tc-navbtn--sm"
-                          disabled={phase !== "idle" || busy}
-                          onClick={() => toggleLot(lot.entryId, false, lot.referenceNumber)}
-                        >
-                          Wieder aufnehmen
-                        </button>
-                      ) : lot.status === "WINNER" || lot.status === "NOT_WON" ? (
-                        <span className="text-xs text-[var(--cd-ink-mute)]">–</span>
-                      ) : (
-                        <button
-                          type="button"
-                          className="tc-navbtn tc-navbtn--sm"
-                          disabled={phase !== "idle" || busy}
-                          onClick={() => toggleLot(lot.entryId, true, lot.referenceNumber)}
-                          data-testid="tc-exclude"
-                        >
-                          Ausschließen
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </details>
 
         {/* Protokoll */}
         <section className="lg:col-span-2" aria-labelledby="tc-protocol-heading">
