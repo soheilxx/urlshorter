@@ -95,6 +95,7 @@ test.describe("Gewinnziehung /gewinner-cards", () => {
       );
     }
 
+    await page.waitForTimeout(700);
     await page.screenshot({
       path: "test-results/screenshots/gewinner-cards-reveal-1440.png",
       fullPage: false,

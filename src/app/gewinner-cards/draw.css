@@ -1146,6 +1146,7 @@
   .tc-wall-slot--won {
     animation: none;
   }
+  .tc-overlay,
   .tc-winner-gewinnt,
   .tc-winner-prize,
   .tc-winner-btn {
