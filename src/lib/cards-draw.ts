@@ -264,8 +264,8 @@ export async function getCardsDrawState(): Promise<CardsDrawState> {
   };
 }
 
-/** Zufällige Lose aus dem Topf für die Walzenoptik (Anzeigename + Los-Nummer). */
-async function reelStrip(excludeEntryId: string, size = 30): Promise<ReelItem[]> {
+/** Alle Lose aus dem Topf (gemischt) für die Walzenoptik – echte Teilnehmende, keine erfundenen Namen. */
+async function reelStrip(excludeEntryId: string, size = 200): Promise<ReelItem[]> {
   const rows = await prisma.sweepstakesEntry.findMany({
     where: {
       campaignId: CARDS_CAMPAIGN_ID,

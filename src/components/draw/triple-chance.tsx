@@ -28,8 +28,8 @@ import { cn } from "@/lib/utils";
  */
 
 const CELL = 96;
-const REPEAT = 9;
-const MIN_SYMBOLS = 14;
+/** Zellen, die jede Walze bis zum Gewinner-Los durchläuft (dritte Walze am längsten) */
+const TRAVEL = [64, 96, 136] as const;
 const REEL_DURATIONS = [2400, 4000, 6800];
 const COUNTDOWN_MS = 2900;
 const WORLD_COLOR: Record<string, string> = {
@@ -45,19 +45,30 @@ function easeOutQuint(p: number) {
   return 1 - Math.pow(1 - p, 5);
 }
 
-function buildSymbols(winner: ReelItem, decoys: ReelItem[], seed: number): ReelItem[] {
+/**
+ * Walzenstreifen: alle echten Lose aus dem Topf (je Walze anders gemischt),
+ * dann das Gewinner-Los, danach zwei Füllzellen – keine erfundenen Namen.
+ */
+function buildStrip(
+  winner: ReelItem,
+  decoys: ReelItem[],
+  travel: number,
+  seed: number,
+): ReelItem[] {
   const pool = decoys.filter((d) => d.referenceNumber !== winner.referenceNumber);
-  const off = pool.length ? seed % pool.length : 0;
-  const rotated = [...pool.slice(off), ...pool.slice(0, off)];
-  const symbols: ReelItem[] = [winner];
-  let i = 0;
-  while (symbols.length < MIN_SYMBOLS) {
-    symbols.push(
-      rotated.length ? rotated[i % rotated.length]! : { referenceNumber: "— — —", displayName: "" },
-    );
-    i++;
+  const source = pool.length ? pool : [{ referenceNumber: "— — —", displayName: "" }];
+  const mixed = [...source];
+  let x = seed * 9301 + 49297;
+  for (let i = mixed.length - 1; i > 0; i--) {
+    x = (x * 9301 + 49297) % 233280;
+    const j = x % (i + 1);
+    [mixed[i], mixed[j]] = [mixed[j]!, mixed[i]!];
   }
-  return symbols;
+  const strip: ReelItem[] = [];
+  for (let i = 0; i < travel; i++) strip.push(mixed[i % mixed.length]!);
+  strip.push(winner);
+  for (let i = 0; i < 2; i++) strip.push(mixed[(travel + i) % mixed.length]!);
+  return strip;
 }
 
 function formatBerlin(iso: string) {
@@ -177,10 +188,9 @@ export function TripleChanceDraw({
   /** Walzenlauf: alle drei Walzen landen auf dem Gewinner-Los (Mittelreihe). */
   const spinReels = useCallback(
     (reelSymbols: ReelItem[][]) => {
-      const finals = reelSymbols.map((syms) => {
-        const L = syms.length;
-        const winnerIdx = (REPEAT - 2) * L;
-        return { L, finalY: -(winnerIdx - 1) * CELL, startY: -(L - 1) * CELL };
+      const finals = reelSymbols.map((syms, i) => {
+        const winnerIdx = TRAVEL[i] ?? syms.length - 3;
+        return { L: syms.length, finalY: -(winnerIdx - 1) * CELL, startY: 0 };
       });
       const stripsEl = stripRefs.current;
       finals.forEach((f, i) => {
@@ -302,7 +312,7 @@ export function TripleChanceDraw({
         displayName: result.draw.displayName,
       };
       const reelSymbols = [0, 1, 2].map((i) =>
-        buildSymbols(winnerItem, result.reelStrip, i * 5 + 1),
+        buildStrip(winnerItem, result.reelStrip, TRAVEL[i]!, i + 1),
       );
       setSymbols(reelSymbols);
       setPhase("spinning");
@@ -411,15 +421,7 @@ export function TripleChanceDraw({
     else void el.requestFullscreen?.();
   }
 
-  const reelCells = useMemo(
-    () =>
-      symbols.map((syms) => {
-        const cells: ReelItem[] = [];
-        for (let r = 0; r < REPEAT; r++) cells.push(...syms);
-        return cells;
-      }),
-    [symbols],
-  );
+  const reelCells = symbols;
 
   /** Lostrommel-Ticker: Namen aus dem Topf, mehrfach wiederholt */
   const tickerItems = useMemo(() => {
@@ -605,8 +607,7 @@ export function TripleChanceDraw({
                             </div>
                           ))
                         : reelCells[i]!.map((sym, k) => {
-                            const L = symbols[i]!.length;
-                            const isWinnerCell = k === (REPEAT - 2) * L;
+                            const isWinnerCell = k === TRAVEL[i];
                             return (
                               <div
                                 key={k}
