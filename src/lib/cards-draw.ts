@@ -41,6 +41,37 @@ export interface DrawPrizeState {
   remaining: number;
 }
 
+/** Anzeigename auf der Bühne: Vorname + Anfangsbuchstabe des Nachnamens (Vorgabe 22.10.2026). */
+export function toDisplayName(firstName: string, lastName: string): string {
+  const first = firstName.trim().replace(/\s+/g, " ");
+  const initial = lastName.trim().charAt(0).toUpperCase();
+  return initial ? `${first} ${initial}.` : first;
+}
+
+const SUSPICIOUS = /\b(test|tester|muster|demo|beispiel|asdf|dummy|xxx)\b/i;
+
+/** Ein Los auf der Lostafel (kein Klartext außer Anzeigename). */
+export interface DrawLot {
+  entryId: string;
+  referenceNumber: string;
+  displayName: string;
+  status: SweepstakesEntryStatus;
+  /** Heuristik: Name/E-Mail sieht nach Testeintrag aus – Admin soll prüfen */
+  suspicious: boolean;
+}
+
+/** Person (E-Mail-Adresse) mit Anzahl gültiger Lose und bisherigen Gewinnen. */
+export interface DrawPerson {
+  displayName: string;
+  lots: number;
+  wins: number;
+}
+
+export interface ReelItem {
+  referenceNumber: string;
+  displayName: string;
+}
+
 export interface DrawRecord {
   id: string;
   sequence: number;
@@ -50,6 +81,7 @@ export interface DrawRecord {
   world: CardsWorld;
   entryId: string;
   referenceNumber: string;
+  displayName: string;
   orderNumber: string;
   retailer: string;
   poolSize: number;
@@ -72,10 +104,16 @@ export interface CardsDrawState {
   remainingTotal: number;
   draws: DrawRecord[];
   notWonMarked: number;
+  /** Ausgeschlossene Lose (Status INVALID) */
+  excluded: number;
+  /** Alle Lose der Kampagne (Topf, Gewinner, nicht gewonnen, ausgeschlossen) */
+  lots: DrawLot[];
+  /** Personen mit gültigen Losen, absteigend nach Losanzahl */
+  people: DrawPerson[];
 }
 
 export type DrawOutcome =
-  | { ok: true; draw: DrawRecord; reelStrip: string[]; state: CardsDrawState }
+  | { ok: true; draw: DrawRecord; reelStrip: ReelItem[]; state: CardsDrawState }
   | { ok: false; error: string; state: CardsDrawState };
 
 class DrawError extends Error {}
@@ -97,6 +135,8 @@ function toRecord(
   },
   entry: {
     referenceNumber: string;
+    firstName: string;
+    lastName: string;
     orderNumberEncrypted: string;
     retailer: string;
     retailerOther: string | null;
@@ -113,6 +153,7 @@ function toRecord(
     world: prize?.world ?? "cardmarket",
     entryId: draw.entryId,
     referenceNumber: entry.referenceNumber,
+    displayName: toDisplayName(entry.firstName, entry.lastName),
     orderNumber:
       entry.status === "DELETED" ? "" : (decryptOrderNumber(entry.orderNumberEncrypted) ?? ""),
     retailer: retailerLabel(entry.retailer, entry.retailerOther),
@@ -123,35 +164,73 @@ function toRecord(
   };
 }
 
+const ENTRY_SELECT = {
+  referenceNumber: true,
+  firstName: true,
+  lastName: true,
+  orderNumberEncrypted: true,
+  retailer: true,
+  retailerOther: true,
+  status: true,
+} as const;
+
 export async function getCardsDrawState(): Promise<CardsDrawState> {
   const campaignId = CARDS_CAMPAIGN_ID;
-  const [poolSize, validLose, participantRows, draws, notWonMarked] = await Promise.all([
-    prisma.sweepstakesEntry.count({ where: { campaignId, status: { in: DRAW_POOL_STATUSES } } }),
-    prisma.sweepstakesEntry.count({
-      where: { campaignId, status: { in: [...DRAW_POOL_STATUSES, "WINNER", "NOT_WON"] } },
-    }),
+  const [entries, draws] = await Promise.all([
     prisma.sweepstakesEntry.findMany({
-      where: { campaignId, status: { in: [...DRAW_POOL_STATUSES, "WINNER", "NOT_WON"] } },
-      distinct: ["email"],
-      select: { email: true },
+      where: {
+        campaignId,
+        status: { in: [...DRAW_POOL_STATUSES, "WINNER", "NOT_WON", "INVALID"] },
+      },
+      select: {
+        id: true,
+        referenceNumber: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        status: true,
+      },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }, { createdAt: "asc" }],
     }),
     prisma.sweepstakesDraw.findMany({
       where: { campaignId },
       orderBy: { sequence: "asc" },
-      include: {
-        entry: {
-          select: {
-            referenceNumber: true,
-            orderNumberEncrypted: true,
-            retailer: true,
-            retailerOther: true,
-            status: true,
-          },
-        },
-      },
+      include: { entry: { select: ENTRY_SELECT } },
     }),
-    prisma.sweepstakesEntry.count({ where: { campaignId, status: "NOT_WON" } }),
   ]);
+
+  const isPool = (st: SweepstakesEntryStatus) => DRAW_POOL_STATUSES.includes(st);
+  const isValid = (st: SweepstakesEntryStatus) => isPool(st) || st === "WINNER" || st === "NOT_WON";
+  const poolSize = entries.filter((e) => isPool(e.status)).length;
+  const validLose = entries.filter((e) => isValid(e.status)).length;
+  const excluded = entries.filter((e) => e.status === "INVALID").length;
+  const notWonMarked = entries.filter((e) => e.status === "NOT_WON").length;
+
+  const byEmail = new Map<string, DrawPerson>();
+  for (const e of entries) {
+    if (!isValid(e.status)) continue;
+    const key = e.email.trim().toLowerCase();
+    const person = byEmail.get(key) ?? {
+      displayName: toDisplayName(e.firstName, e.lastName),
+      lots: 0,
+      wins: 0,
+    };
+    person.lots += 1;
+    if (e.status === "WINNER") person.wins += 1;
+    byEmail.set(key, person);
+  }
+  const people = [...byEmail.values()].sort(
+    (a, b) => b.lots - a.lots || a.displayName.localeCompare(b.displayName, "de"),
+  );
+
+  const lots: DrawLot[] = entries.map((e) => ({
+    entryId: e.id,
+    referenceNumber: e.referenceNumber,
+    displayName: toDisplayName(e.firstName, e.lastName),
+    status: e.status,
+    suspicious: SUSPICIOUS.test(`${e.firstName} ${e.lastName} ${e.email.split("@")[0] ?? ""}`),
+  }));
+
   const drawnByPrize = new Map<string, number>();
   for (const d of draws) drawnByPrize.set(d.prizeId, (drawnByPrize.get(d.prizeId) ?? 0) + 1);
   const prizes: DrawPrizeState[] = CARDS_PRIZES.map((p) => {
@@ -166,35 +245,41 @@ export async function getCardsDrawState(): Promise<CardsDrawState> {
       remaining: Math.max(0, p.count - drawn),
     };
   });
-  const totalPrizes = prizes.reduce((s, p) => s + p.total, 0);
-  const drawnTotal = prizes.reduce((s, p) => s + p.drawn, 0);
+  const totalPrizes = prizes.reduce((sum, p) => sum + p.total, 0);
+  const drawnTotal = prizes.reduce((sum, p) => sum + p.drawn, 0);
   return {
     campaignId,
     poolSize,
     validLose,
-    participants: participantRows.filter((r) => r.email).length,
+    participants: people.length,
     prizes,
     totalPrizes,
     drawnTotal,
     remainingTotal: totalPrizes - drawnTotal,
     draws: draws.map((d) => toRecord(d, d.entry)),
     notWonMarked,
+    excluded,
+    lots,
+    people,
   };
 }
 
-/** Zufällige Los-Nummern aus dem Topf für die Walzenoptik (keine Personendaten). */
-async function reelStrip(excludeEntryId: string, size = 30): Promise<string[]> {
+/** Zufällige Lose aus dem Topf für die Walzenoptik (Anzeigename + Los-Nummer). */
+async function reelStrip(excludeEntryId: string, size = 30): Promise<ReelItem[]> {
   const rows = await prisma.sweepstakesEntry.findMany({
     where: {
       campaignId: CARDS_CAMPAIGN_ID,
       status: { in: [...DRAW_POOL_STATUSES, "WINNER"] },
       id: { not: excludeEntryId },
     },
-    select: { referenceNumber: true },
+    select: { referenceNumber: true, firstName: true, lastName: true },
     orderBy: { createdAt: "desc" },
     take: 200,
   });
-  const refs = rows.map((r) => r.referenceNumber);
+  const refs: ReelItem[] = rows.map((r) => ({
+    referenceNumber: r.referenceNumber,
+    displayName: toDisplayName(r.firstName, r.lastName),
+  }));
   // Fisher-Yates mit crypto.randomInt
   for (let i = refs.length - 1; i > 0; i--) {
     const j = randomInt(i + 1);
@@ -258,6 +343,8 @@ export async function drawCardsWinner(input: {
             id: true,
             status: true,
             referenceNumber: true,
+            firstName: true,
+            lastName: true,
             orderNumberEncrypted: true,
             retailer: true,
             retailerOther: true,
@@ -352,17 +439,7 @@ export async function undoLastCardsDraw(
         const last = await tx.sweepstakesDraw.findFirst({
           where: { campaignId },
           orderBy: { sequence: "desc" },
-          include: {
-            entry: {
-              select: {
-                referenceNumber: true,
-                orderNumberEncrypted: true,
-                retailer: true,
-                retailerOther: true,
-                status: true,
-              },
-            },
-          },
+          include: { entry: { select: ENTRY_SELECT } },
         });
         if (!last) throw new DrawError("Es gibt keine Ziehung, die verworfen werden könnte.");
         await tx.sweepstakesEntry.update({
@@ -429,4 +506,125 @@ export async function markRemainingCardsNotWon(
     changes: { campaign: CARDS_CAMPAIGN_ID, count: result.count },
   });
   return { ok: true, count: result.count, state: await getCardsDrawState() };
+}
+
+/**
+ * Ziehung komplett zurücksetzen: alle Ziehungen rückgängig (Lose zurück in
+ * ihren Vorzustand), Protokoll geleert. Die Liste der verworfenen Ziehungen
+ * bleibt im Audit-Log erhalten (sweepstakes.draw_reset).
+ */
+export async function resetCardsDraw(
+  actor: string,
+): Promise<
+  | { ok: true; count: number; state: CardsDrawState }
+  | { ok: false; error: string; state: CardsDrawState }
+> {
+  const campaignId = CARDS_CAMPAIGN_ID;
+  try {
+    const undone = await prisma.$transaction(
+      async (tx) => {
+        const draws = await tx.sweepstakesDraw.findMany({
+          where: { campaignId },
+          orderBy: { sequence: "asc" },
+          include: { entry: { select: { referenceNumber: true } } },
+        });
+        for (const d of draws) {
+          await tx.sweepstakesEntry.update({
+            where: { id: d.entryId, campaignId },
+            data: { status: d.previousStatus, prizeId: null },
+          });
+        }
+        await tx.sweepstakesDraw.deleteMany({ where: { campaignId } });
+        return draws;
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+    await writeAuditLog({
+      actor,
+      action: "sweepstakes.draw_reset",
+      entityType: "SweepstakesEntry",
+      changes: {
+        campaign: campaignId,
+        count: undone.length,
+        draws: undone.map((d) => ({
+          sequence: d.sequence,
+          prize: d.prizeId,
+          reference: d.entry.referenceNumber,
+          poolSize: d.poolSize,
+          randomIndex: d.randomIndex,
+          drawnAt: d.drawnAt.toISOString(),
+          drawnBy: d.drawnBy,
+        })),
+      },
+    });
+    logger.info("sweepstakes.draw_reset", { campaign: campaignId, count: undone.length });
+    return { ok: true, count: undone.length, state: await getCardsDrawState() };
+  } catch (error) {
+    logger.error("sweepstakes.draw_reset_failed", {
+      message: error instanceof Error ? error.message : "unknown",
+    });
+    return {
+      ok: false,
+      error: "Die Ziehung konnte nicht zurückgesetzt werden. Bitte erneut versuchen.",
+      state: await getCardsDrawState(),
+    };
+  }
+}
+
+/**
+ * Los vom Topf ausschließen (z. B. Testeintrag) bzw. wieder aufnehmen.
+ * Ausschluss = Status INVALID; Gewinner-Lose müssen zuerst verworfen werden.
+ */
+export async function setCardsLotExcluded(input: {
+  entryId: string;
+  excluded: boolean;
+  actor: string;
+}): Promise<
+  | { ok: true; referenceNumber: string; state: CardsDrawState }
+  | { ok: false; error: string; state: CardsDrawState }
+> {
+  const campaignId = CARDS_CAMPAIGN_ID;
+  try {
+    const entry = await prisma.sweepstakesEntry.findFirst({
+      where: { id: input.entryId, campaignId },
+      select: { id: true, referenceNumber: true, status: true },
+    });
+    if (!entry) throw new DrawError("Dieses Los gehört nicht zur Cards-Kampagne.");
+    if (input.excluded) {
+      if (!DRAW_POOL_STATUSES.includes(entry.status)) {
+        throw new DrawError(
+          entry.status === "WINNER"
+            ? "Ein bereits gezogenes Los kann nicht ausgeschlossen werden – zuerst die Ziehung verwerfen."
+            : "Dieses Los liegt nicht im Topf.",
+        );
+      }
+      await prisma.sweepstakesEntry.update({
+        where: { id: entry.id },
+        data: { status: "INVALID" },
+      });
+    } else {
+      if (entry.status !== "INVALID") throw new DrawError("Dieses Los ist nicht ausgeschlossen.");
+      await prisma.sweepstakesEntry.update({
+        where: { id: entry.id },
+        data: { status: "RECEIVED" },
+      });
+    }
+    await writeAuditLog({
+      actor: input.actor,
+      action: input.excluded ? "sweepstakes.lot_excluded" : "sweepstakes.lot_restored",
+      entityType: "SweepstakesEntry",
+      entityId: entry.id,
+      changes: { campaign: campaignId, reference: entry.referenceNumber, from: entry.status },
+    });
+    return { ok: true, referenceNumber: entry.referenceNumber, state: await getCardsDrawState() };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof DrawError
+          ? error.message
+          : "Das Los konnte nicht geändert werden. Bitte erneut versuchen.",
+      state: await getCardsDrawState(),
+    };
+  }
 }

@@ -3,6 +3,9 @@ import {
   drawCardsWinner,
   getCardsDrawState,
   markRemainingCardsNotWon,
+  resetCardsDraw,
+  setCardsLotExcluded,
+  toDisplayName,
   undoLastCardsDraw,
 } from "@/lib/cards-draw";
 import { CARDS_PRIZES } from "@/lib/cards-giveaway-config";
@@ -93,8 +96,18 @@ describe("Cards-Gewinnziehung", () => {
     expect(result.draw.randomIndex).toBeLessThan(3);
     expect(result.draw.referenceNumber).toMatch(/^[2-9A-HJKMNP-Z]{8}$/);
     expect(result.draw.orderNumber).toMatch(/^306-000000[123]-000000[123]$/);
-    expect(result.reelStrip).not.toContain(result.draw.referenceNumber);
+    expect(result.draw.displayName).toBe("Test P.");
+    expect(result.reelStrip.map((r) => r.referenceNumber)).not.toContain(
+      result.draw.referenceNumber,
+    );
+    expect(result.reelStrip.every((r) => r.displayName === "Test P.")).toBe(true);
     expect(result.reelStrip.length).toBe(2);
+    expect(before.lots).toHaveLength(3);
+    expect(before.people).toEqual([
+      { displayName: "Test P.", lots: 1, wins: 0 },
+      { displayName: "Test P.", lots: 1, wins: 0 },
+      { displayName: "Test P.", lots: 1, wins: 0 },
+    ]);
 
     const entry = await prisma.sweepstakesEntry.findUnique({ where: { id: result.draw.entryId } });
     expect(entry?.campaignId).toBe("cards_2026");
@@ -256,5 +269,84 @@ describe("Cards-Gewinnziehung", () => {
       expect(marked.state.poolSize).toBe(0);
       expect(marked.state.notWonMarked).toBe(3);
     }
+  });
+
+  it("Anzeigename: Vorname + Initial des Nachnamens", () => {
+    expect(toDisplayName("Lukas", "Petersen")).toBe("Lukas P.");
+    expect(toDisplayName("  Hoang Tan ", "pham")).toBe("Hoang Tan P.");
+    expect(toDisplayName("Chiara", "")).toBe("Chiara");
+  });
+
+  it("Lose ausschließen und wieder aufnehmen: Testeintrag verlässt den Topf, Gewinner-Lose sind gesperrt", async () => {
+    await seedCards([
+      ["H-100001", "echt@beispiel.de"],
+      ["H-100002", "test.test@beispiel.de"],
+    ]);
+    const before = await getCardsDrawState();
+    expect(before.poolSize).toBe(2);
+    const testLot = before.lots.find((l) => l.suspicious);
+    expect(testLot).toBeDefined();
+    if (!testLot) return;
+
+    const excluded = await setCardsLotExcluded({
+      entryId: testLot.entryId,
+      excluded: true,
+      actor: "admin@test.local",
+    });
+    expect(excluded.ok).toBe(true);
+    if (!excluded.ok) return;
+    expect(excluded.state.poolSize).toBe(1);
+    expect(excluded.state.excluded).toBe(1);
+    expect(excluded.state.participants).toBe(1);
+
+    // Ausgeschlossene Lose werden nie gezogen
+    const draw = await drawCardsWinner({ prizeId: "op17_case", actor: "admin@test.local" });
+    expect(draw.ok).toBe(true);
+    if (draw.ok) expect(draw.draw.entryId).not.toBe(testLot.entryId);
+
+    const locked = await setCardsLotExcluded({
+      entryId: draw.ok ? draw.draw.entryId : "",
+      excluded: true,
+      actor: "admin@test.local",
+    });
+    expect(locked.ok).toBe(false);
+
+    const restored = await setCardsLotExcluded({
+      entryId: testLot.entryId,
+      excluded: false,
+      actor: "admin@test.local",
+    });
+    expect(restored.ok).toBe(true);
+    if (restored.ok) expect(restored.state.poolSize).toBe(1);
+  });
+
+  it("setzt die komplette Ziehung zurück: alle Lose zurück im Topf, Protokoll leer, Audit vorhanden", async () => {
+    await seedCards([
+      ["R-100001", "r1@beispiel.de"],
+      ["R-100002", "r2@beispiel.de"],
+      ["R-100003", "r3@beispiel.de"],
+    ]);
+    for (const prizeId of ["cardmarket_100", "fusion_world_st01_display", "op17_case"]) {
+      const r = await drawCardsWinner({ prizeId, actor: "admin@test.local" });
+      expect(r.ok).toBe(true);
+    }
+    expect((await getCardsDrawState()).poolSize).toBe(0);
+
+    const reset = await resetCardsDraw("admin@test.local");
+    expect(reset.ok).toBe(true);
+    if (!reset.ok) return;
+    expect(reset.count).toBe(3);
+    expect(reset.state.poolSize).toBe(3);
+    expect(reset.state.drawnTotal).toBe(0);
+    expect(reset.state.draws).toHaveLength(0);
+    expect(await prisma.sweepstakesDraw.count()).toBe(0);
+    expect(await prisma.sweepstakesEntry.count({ where: { status: "WINNER" } })).toBe(0);
+    const audit = await prisma.auditLog.findFirst({ where: { action: "sweepstakes.draw_reset" } });
+    expect(audit).not.toBeNull();
+
+    // Danach beginnt die Nummerierung wieder bei 1
+    const again = await drawCardsWinner({ prizeId: "op17_case", actor: "admin@test.local" });
+    expect(again.ok).toBe(true);
+    if (again.ok) expect(again.draw.sequence).toBe(1);
   });
 });

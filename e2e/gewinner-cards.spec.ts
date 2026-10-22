@@ -80,16 +80,19 @@ test.describe("Gewinnziehung /gewinner-cards", () => {
     // Enthüllung: Los-Nr. (8 Zeichen), Bestellnummer, Gewinn – keine Namen
     const winner = page.getByTestId("tc-winner");
     await expect(winner).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("tc-winner-name")).toHaveText("Ziehung T.");
     await expect(page.getByTestId("tc-winner-los")).toHaveText(/^[2-9A-HJKMNP-Z]{8}$/);
     await expect(page.getByTestId("tc-winner-order")).toContainText("Bestellnummer 306-");
     await expect(page.getByTestId("tc-winner-prize")).toHaveText(
       "Wertgutschein für cardmarket.pro über 100 €",
     );
-    expect(await winner.innerText()).not.toMatch(/Ziehung Test|ziehung@test\.local/);
+    expect(await winner.innerText()).not.toMatch(/Ziehung Test|ziehung@test\.local|Losweg/);
     // Alle drei Walzen zeigen das Gewinner-Los in der Mittelreihe
     const los = await page.getByTestId("tc-winner-los").innerText();
     for (const i of [0, 1, 2]) {
-      await expect(page.getByTestId(`tc-reel-${i}`).locator('[data-winner="1"]')).toHaveText(los);
+      await expect(page.getByTestId(`tc-reel-${i}`).locator('[data-winner="1"]')).toContainText(
+        los,
+      );
     }
 
     await page.screenshot({
@@ -105,6 +108,8 @@ test.describe("Gewinnziehung /gewinner-cards", () => {
     await expect(row).toContainText(los);
     await expect(row).toContainText("Wertgutschein für cardmarket.pro über 100 €");
     await expect(row).toContainText("admin@test.local");
+    await expect(row).toContainText("Ziehung T.");
+    await expect(page.getByTestId("tc-wall-won").first()).toContainText("Ziehung T.");
 
     // Im Admin ist das Los als Gewinner mit Gewinn sichtbar
     await page.goto(`/admin/gewinnspiel?campaign=cards_2026&status=WINNER&ref=${los}`);
@@ -118,6 +123,27 @@ test.describe("Gewinnziehung /gewinner-cards", () => {
     await expect(page.getByTestId("tc-drawn")).toContainText(
       `GEZOGEN ${String(drawnBefore).padStart(2, "0")}/17`,
     );
+
+    // Erneut ziehen und komplett zurücksetzen (Eingabe ZURÜCKSETZEN)
+    await page.getByTestId("tc-prize-cardmarket_100").click();
+    await page.getByTestId("tc-start").click();
+    await expect(page.getByTestId("tc-winner")).toBeVisible({ timeout: 20_000 });
+    await page.getByTestId("tc-close").click();
+    page.once("dialog", (dialog) => dialog.accept("ZURÜCKSETZEN"));
+    await page.getByTestId("tc-reset").click();
+    await expect(page.getByTestId("tc-message")).toContainText("zurückgesetzt");
+    await expect(page.getByTestId("tc-drawn")).toContainText("GEZOGEN 00/17");
+    await expect(page.getByTestId("tc-wall-won")).toHaveCount(0);
+
+    // Los ausschließen und wieder aufnehmen
+    await page.getByTestId("tc-lots").locator("summary").click();
+    const lotRow = page.getByTestId(`tc-lot-${los}`);
+    page.once("dialog", (dialog) => dialog.accept());
+    await lotRow.getByTestId("tc-exclude").click();
+    await expect(page.getByTestId("tc-excluded")).toHaveText("1");
+    await expect(lotRow).toContainText("ausgeschlossen");
+    await lotRow.getByRole("button", { name: "Wieder aufnehmen" }).click();
+    await expect(page.getByTestId("tc-excluded")).toHaveText("0");
     await page.screenshot({
       path: "test-results/screenshots/gewinner-cards-1440.png",
       fullPage: true,

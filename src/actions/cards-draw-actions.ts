@@ -7,6 +7,8 @@ import {
   type DrawOutcome,
   getCardsDrawState,
   markRemainingCardsNotWon,
+  resetCardsDraw,
+  setCardsLotExcluded,
   undoLastCardsDraw,
 } from "@/lib/cards-draw";
 
@@ -49,4 +51,27 @@ export async function markRemainingCardsNotWonAction(): Promise<
 export async function refreshCardsDrawStateAction(): Promise<CardsDrawState> {
   await requireRoleOrThrow("ADMIN");
   return getCardsDrawState();
+}
+
+export async function resetCardsDrawAction(): Promise<
+  | { ok: true; count: number; state: CardsDrawState }
+  | { ok: false; error: string; state: CardsDrawState }
+> {
+  const session = await requireRoleOrThrow("ADMIN");
+  return resetCardsDraw(session.email);
+}
+
+export async function setCardsLotExcludedAction(input: {
+  entryId: string;
+  excluded: boolean;
+}): Promise<
+  | { ok: true; referenceNumber: string; state: CardsDrawState }
+  | { ok: false; error: string; state: CardsDrawState }
+> {
+  const session = await requireRoleOrThrow("ADMIN");
+  return setCardsLotExcluded({
+    entryId: String(input.entryId),
+    excluded: Boolean(input.excluded),
+    actor: session.email,
+  });
 }

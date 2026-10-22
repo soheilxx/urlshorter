@@ -1,214 +1,294 @@
 /**
- * Soundeffekte der Gewinnziehung – vollständig per Web Audio synthetisiert
- * (keine fremden Audiodateien). Start erst nach Nutzeraktion (Autoplay-Regeln).
- * Alle Methoden sind fehlertolerant: ohne AudioContext passiert nichts.
+ * Synthetisierte Klangkulisse der Gewinnziehung (Web Audio, keine Fremddateien):
+ * Countdown, Trommelwirbel, Walzen-Ticks und -Stopps, Herzschlag-Spannung,
+ * Triple-Chance-Jingle, Fanfare, Applaus, Münzregen. Alles wird erst nach einer
+ * Nutzeraktion freigeschaltet (Autoplay-Regeln der Browser).
  */
-type Ctx = AudioContext;
-
 export class DrawSynth {
-  private ctx: Ctx | null = null;
-  private master: GainNode | null = null;
-  private suspenseNodes: { osc: OscillatorNode; gain: GainNode; lfo: OscillatorNode } | null = null;
   enabled = true;
+  private ctx: AudioContext | null = null;
+  private master: GainNode | null = null;
+  private suspenseTimer: number | null = null;
+  private noiseBuffer: AudioBuffer | null = null;
 
-  private ensure(): Ctx | null {
-    if (typeof window === "undefined") return null;
-    try {
-      if (!this.ctx) {
-        const Ctor =
-          window.AudioContext ??
-          (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        if (!Ctor) return null;
-        this.ctx = new Ctor();
-        this.master = this.ctx.createGain();
-        this.master.gain.value = 0.28;
-        this.master.connect(this.ctx.destination);
-      }
-      if (this.ctx.state === "suspended") void this.ctx.resume();
-      return this.ctx;
-    } catch {
-      return null;
+  unlock() {
+    if (typeof window === "undefined") return;
+    if (!this.ctx) {
+      const Ctor =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctor) return;
+      this.ctx = new Ctor();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.3;
+      this.master.connect(this.ctx.destination);
     }
+    if (this.ctx.state === "suspended") void this.ctx.resume();
   }
 
-  /** Muss aus einer Nutzeraktion heraus aufgerufen werden (Autoplay-Policy). */
-  unlock() {
-    this.ensure();
+  private get ready(): { ctx: AudioContext; master: GainNode } | null {
+    if (!this.enabled || !this.ctx || !this.master) return null;
+    return { ctx: this.ctx, master: this.master };
+  }
+
+  private noise(): AudioBuffer | null {
+    const r = this.ready;
+    if (!r) return null;
+    if (!this.noiseBuffer) {
+      const len = r.ctx.sampleRate * 2;
+      const buf = r.ctx.createBuffer(1, len, r.ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      this.noiseBuffer = buf;
+    }
+    return this.noiseBuffer;
   }
 
   private tone(
     freq: number,
+    at: number,
+    dur: number,
     opts: {
       type?: OscillatorType;
-      at?: number;
-      duration?: number;
       gain?: number;
       attack?: number;
-      release?: number;
       slideTo?: number;
+      vibrato?: number;
     } = {},
   ) {
-    const ctx = this.ensure();
-    if (!ctx || !this.master || !this.enabled) return;
-    const t0 = ctx.currentTime + (opts.at ?? 0);
-    const dur = opts.duration ?? 0.12;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = opts.type ?? "square";
-    osc.frequency.setValueAtTime(freq, t0);
-    if (opts.slideTo) osc.frequency.exponentialRampToValueAtTime(opts.slideTo, t0 + dur);
+    const r = this.ready;
+    if (!r) return;
+    const osc = r.ctx.createOscillator();
+    const g = r.ctx.createGain();
+    osc.type = opts.type ?? "sine";
+    osc.frequency.setValueAtTime(freq, at);
+    if (opts.slideTo) osc.frequency.exponentialRampToValueAtTime(opts.slideTo, at + dur);
+    if (opts.vibrato) {
+      const lfo = r.ctx.createOscillator();
+      const lfoGain = r.ctx.createGain();
+      lfo.frequency.value = 6;
+      lfoGain.gain.value = opts.vibrato;
+      lfo.connect(lfoGain).connect(osc.frequency);
+      lfo.start(at);
+      lfo.stop(at + dur);
+    }
     const peak = opts.gain ?? 0.5;
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.exponentialRampToValueAtTime(peak, t0 + (opts.attack ?? 0.005));
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + (opts.release ?? 0.04));
-    osc.connect(gain).connect(this.master);
-    osc.start(t0);
-    osc.stop(t0 + dur + (opts.release ?? 0.04) + 0.02);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(peak, at + (opts.attack ?? 0.01));
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    osc.connect(g).connect(r.master);
+    osc.start(at);
+    osc.stop(at + dur + 0.02);
   }
 
-  private noise(at = 0, duration = 0.03, gain = 0.25, highpass = 1800) {
-    const ctx = this.ensure();
-    if (!ctx || !this.master || !this.enabled) return;
-    const frames = Math.max(1, Math.floor(ctx.sampleRate * duration));
-    const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < frames; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
-    const src = ctx.createBufferSource();
-    src.buffer = buffer;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "highpass";
-    filter.frequency.value = highpass;
-    const g = ctx.createGain();
-    g.gain.value = gain;
-    src.connect(filter).connect(g).connect(this.master);
-    src.start(ctx.currentTime + at);
+  private burst(at: number, dur: number, gain: number, filterHz = 1200, q = 0.8) {
+    const r = this.ready;
+    const buf = this.noise();
+    if (!r || !buf) return;
+    const src = r.ctx.createBufferSource();
+    src.buffer = buf;
+    const filter = r.ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = filterHz;
+    filter.Q.value = q;
+    const g = r.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(gain, at + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    src.connect(filter).connect(g).connect(r.master);
+    src.start(at);
+    src.stop(at + dur + 0.02);
   }
 
-  /** Walzen-Tick (je Symbolwechsel), Tonhöhe sinkt mit abnehmender Geschwindigkeit. */
-  tick(speed = 1) {
-    this.noise(0, 0.018, 0.16, 2600);
-    this.tone(520 + 380 * Math.min(1, speed), { type: "square", duration: 0.018, gain: 0.08 });
+  /** Startknopf: kurzer Zweiklang nach oben */
+  start() {
+    const r = this.ready;
+    if (!r) return;
+    const t = r.ctx.currentTime;
+    this.tone(440, t, 0.09, { type: "square", gain: 0.2 });
+    this.tone(660, t + 0.09, 0.14, { type: "square", gain: 0.2 });
   }
 
-  /** Walze rastet ein. */
-  reelStop(index: number) {
-    this.noise(0, 0.05, 0.4, 600);
-    this.tone(150 - index * 12, { type: "sine", duration: 0.14, gain: 0.6, slideTo: 70 });
-    this.tone(880 + index * 110, { type: "triangle", at: 0.02, duration: 0.08, gain: 0.18 });
+  /** Countdown-Piep (3-2-1) und Startton */
+  countdown(step: number) {
+    const r = this.ready;
+    if (!r) return;
+    const t = r.ctx.currentTime;
+    if (step > 0) {
+      this.tone(880, t, 0.14, { type: "square", gain: 0.25 });
+    } else {
+      this.tone(1320, t, 0.45, { type: "square", gain: 0.3 });
+      this.tone(1760, t + 0.05, 0.4, { type: "sine", gain: 0.2 });
+    }
   }
 
-  /** Zwei Walzen gleich: kurzer Hinweis-Chime. */
+  /** Trommelwirbel mit steigender Dichte */
+  drumroll(ms: number) {
+    const r = this.ready;
+    if (!r) return;
+    const t0 = r.ctx.currentTime;
+    const total = ms / 1000;
+    let t = 0;
+    let i = 0;
+    while (t < total) {
+      const p = t / total;
+      this.burst(t0 + t, 0.05, 0.18 + p * 0.25, 180 + p * 120, 0.6);
+      this.tone(70, t0 + t, 0.06, { type: "triangle", gain: 0.15 + p * 0.2 });
+      t += 0.14 - p * 0.1;
+      i++;
+      if (i > 400) break;
+    }
+    this.burst(t0 + total, 0.5, 0.55, 300, 0.4);
+    this.tone(55, t0 + total, 0.5, { type: "sine", gain: 0.5 });
+  }
+
+  /** Walzen-Tick, Tonhöhe folgt der Geschwindigkeit */
+  tick(speed: number) {
+    const r = this.ready;
+    if (!r) return;
+    const t = r.ctx.currentTime;
+    this.tone(700 + speed * 900, t, 0.03, { type: "square", gain: 0.08 });
+    this.burst(t, 0.02, 0.05, 3000, 1.5);
+  }
+
+  /** Walze rastet ein: dumpfer Schlag + metallischer Klick */
+  reelStop(i: number) {
+    const r = this.ready;
+    if (!r) return;
+    const t = r.ctx.currentTime;
+    this.tone(120 - i * 15, t, 0.22, { type: "sine", gain: 0.6, slideTo: 50 });
+    this.burst(t, 0.09, 0.3, 900 + i * 200, 1.2);
+    this.tone(1500 + i * 250, t + 0.01, 0.08, { type: "triangle", gain: 0.12 });
+  }
+
+  /** Zwei Walzen gleich: heller Doppelklang */
   match() {
-    this.tone(988, { type: "square", duration: 0.09, gain: 0.22 });
-    this.tone(1319, { type: "square", at: 0.1, duration: 0.14, gain: 0.22 });
+    const r = this.ready;
+    if (!r) return;
+    const t = r.ctx.currentTime;
+    this.tone(880, t, 0.16, { type: "triangle", gain: 0.3 });
+    this.tone(1320, t + 0.14, 0.3, { type: "triangle", gain: 0.3 });
   }
 
-  /** Spannungston vor der letzten Walze (steigend, mit Tremolo). Stoppt mit stopSuspense(). */
-  startSuspense(durationMs: number) {
-    const ctx = this.ensure();
-    if (!ctx || !this.master || !this.enabled) return;
+  /** Herzschlag-Spannung bis zur letzten Walze */
+  startSuspense(ms: number) {
     this.stopSuspense();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
-    osc.type = "sawtooth";
-    const t0 = ctx.currentTime;
-    const t1 = t0 + durationMs / 1000;
-    osc.frequency.setValueAtTime(196, t0);
-    osc.frequency.exponentialRampToValueAtTime(392, t1);
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.exponentialRampToValueAtTime(0.16, t0 + 0.2);
-    lfo.type = "square";
-    lfo.frequency.setValueAtTime(6, t0);
-    lfo.frequency.linearRampToValueAtTime(16, t1);
-    lfoGain.gain.value = 0.08;
-    lfo.connect(lfoGain).connect(gain.gain);
-    osc.connect(gain).connect(this.master);
-    osc.start(t0);
-    lfo.start(t0);
-    osc.stop(t1 + 0.3);
-    lfo.stop(t1 + 0.3);
-    this.suspenseNodes = { osc, gain, lfo };
+    const r = this.ready;
+    if (!r) return;
+    const started = performance.now();
+    const beat = () => {
+      const rr = this.ready;
+      if (!rr) return;
+      const elapsed = performance.now() - started;
+      if (elapsed > ms) {
+        this.suspenseTimer = null;
+        return;
+      }
+      const p = Math.min(1, elapsed / ms);
+      const t = rr.ctx.currentTime;
+      this.tone(60, t, 0.12, { type: "sine", gain: 0.5 + p * 0.3 });
+      this.tone(60, t + 0.17, 0.1, { type: "sine", gain: 0.35 + p * 0.3 });
+      this.suspenseTimer = window.setTimeout(beat, 720 - p * 380);
+    };
+    beat();
   }
 
   stopSuspense() {
-    const ctx = this.ctx;
-    const nodes = this.suspenseNodes;
-    if (!ctx || !nodes) return;
-    try {
-      nodes.gain.gain.cancelScheduledValues(ctx.currentTime);
-      nodes.gain.gain.setValueAtTime(nodes.gain.gain.value, ctx.currentTime);
-      nodes.gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
-      nodes.osc.stop(ctx.currentTime + 0.1);
-      nodes.lfo.stop(ctx.currentTime + 0.1);
-    } catch {
-      /* bereits gestoppt */
+    if (this.suspenseTimer !== null) {
+      window.clearTimeout(this.suspenseTimer);
+      this.suspenseTimer = null;
     }
-    this.suspenseNodes = null;
   }
 
-  /** „TRIPLE CHANCE“-Jingle: dreimal aufsteigendes Arpeggio (Automaten-Stil). */
+  /** Triple Chance: Blitz-Schlag + aufsteigender Jingle */
   tripleChance() {
-    const notes = [523.25, 659.25, 783.99, 1046.5];
-    for (let round = 0; round < 3; round++) {
-      const base = round * 0.42;
-      notes.forEach((f, i) =>
-        this.tone(f * (1 + round * 0.06), {
-          type: "square",
-          at: base + i * 0.085,
-          duration: 0.09,
-          gain: 0.26,
-        }),
-      );
-      this.noise(base, 0.02, 0.1, 3000);
-    }
+    const r = this.ready;
+    if (!r) return;
+    const t = r.ctx.currentTime;
+    this.burst(t, 0.35, 0.5, 2000, 0.3);
+    this.tone(45, t, 0.5, { type: "sine", gain: 0.6 });
+    const seq = [523, 659, 784, 1047, 1319, 1568, 2093];
+    seq.forEach((f, i) => this.tone(f, t + 0.12 + i * 0.09, 0.35, { type: "square", gain: 0.2 }));
+    seq.forEach((f, i) =>
+      this.tone(f * 0.5, t + 0.12 + i * 0.09, 0.4, { type: "triangle", gain: 0.12 }),
+    );
   }
 
-  /** Gewinn-Fanfare: Akkordfolge + Glitzer. */
+  /** Große Fanfare (Blechbläser-Charakter mit Vibrato) */
   fanfare() {
-    const chords: Array<[number[], number]> = [
-      [[523.25, 659.25, 783.99], 0],
-      [[698.46, 880, 1046.5], 0.28],
-      [[783.99, 987.77, 1174.66], 0.56],
-      [[1046.5, 1318.51, 1567.98], 0.84],
-    ];
-    for (const [freqs, at] of chords) {
-      for (const f of freqs) {
-        this.tone(f, {
-          type: "triangle",
-          at,
-          duration: 0.3,
-          gain: 0.22,
-          attack: 0.01,
-          release: 0.2,
-        });
-        this.tone(f / 2, { type: "sine", at, duration: 0.3, gain: 0.12, release: 0.2 });
-      }
-    }
-    for (let i = 0; i < 10; i++) {
-      this.tone(1800 + Math.random() * 1800, {
-        type: "sine",
-        at: 1.1 + i * 0.07,
-        duration: 0.05,
-        gain: 0.1,
+    const r = this.ready;
+    if (!r) return;
+    const t = r.ctx.currentTime;
+    const chord = (freqs: number[], at: number, dur: number, gain: number) =>
+      freqs.forEach((f) => {
+        this.tone(f, at, dur, { type: "sawtooth", gain, attack: 0.03, vibrato: 4 });
+        this.tone(f * 2, at, dur * 0.8, { type: "square", gain: gain * 0.25, attack: 0.03 });
       });
+    chord([392, 494, 587], t, 0.28, 0.14);
+    chord([392, 494, 587], t + 0.3, 0.28, 0.14);
+    chord([440, 554, 659], t + 0.6, 0.28, 0.14);
+    chord([523, 659, 784, 1047], t + 0.9, 1.6, 0.18);
+    this.tone(1568, t + 1.2, 1.3, { type: "sine", gain: 0.12, vibrato: 8 });
+    this.burst(t + 0.9, 0.6, 0.25, 4000, 0.4);
+  }
+
+  /** Applaus-Rauschen (gefiltertes Rauschen in dichten Tupfern) */
+  applause(ms: number) {
+    const r = this.ready;
+    if (!r) return;
+    const t0 = r.ctx.currentTime;
+    const total = ms / 1000;
+    let t = 0;
+    let n = 0;
+    while (t < total && n < 500) {
+      const env = Math.sin((t / total) * Math.PI);
+      this.burst(
+        t0 + t,
+        0.04 + Math.random() * 0.05,
+        0.05 + env * 0.14,
+        1500 + Math.random() * 2500,
+        0.9,
+      );
+      t += 0.025 + Math.random() * 0.045;
+      n++;
     }
   }
 
-  /** Lampenlauf-Klick. */
+  /** Münzregen: Kaskade heller Pings */
+  coins(count = 18) {
+    const r = this.ready;
+    if (!r) return;
+    const t = r.ctx.currentTime;
+    for (let i = 0; i < count; i++) {
+      const f = 2200 + Math.random() * 2200;
+      const at = t + i * 0.07 + Math.random() * 0.03;
+      this.tone(f, at, 0.14, { type: "sine", gain: 0.12 });
+      this.tone(f * 1.5, at, 0.08, { type: "triangle", gain: 0.05 });
+    }
+  }
+
+  /** Lampenlauf-Klick */
   lamp() {
-    this.tone(2400, { type: "square", duration: 0.012, gain: 0.05 });
+    const r = this.ready;
+    if (!r) return;
+    this.tone(2400, r.ctx.currentTime, 0.02, { type: "square", gain: 0.05 });
   }
 
-  /** Start-Knopf. */
-  start() {
-    this.tone(330, { type: "square", duration: 0.06, gain: 0.25 });
-    this.tone(494, { type: "square", at: 0.07, duration: 0.09, gain: 0.25 });
+  /** Overlay fliegt ein */
+  whoosh() {
+    const r = this.ready;
+    if (!r) return;
+    const t = r.ctx.currentTime;
+    this.burst(t, 0.35, 0.25, 600, 0.3);
+    this.tone(200, t, 0.35, { type: "sine", gain: 0.15, slideTo: 900 });
   }
 
-  /** Fehler / nichts zu ziehen. */
+  /** Fehlerton */
   error() {
-    this.tone(220, { type: "sawtooth", duration: 0.18, gain: 0.2, slideTo: 110 });
+    const r = this.ready;
+    if (!r) return;
+    const t = r.ctx.currentTime;
+    this.tone(220, t, 0.18, { type: "sawtooth", gain: 0.2 });
+    this.tone(160, t + 0.2, 0.3, { type: "sawtooth", gain: 0.2 });
   }
 }
